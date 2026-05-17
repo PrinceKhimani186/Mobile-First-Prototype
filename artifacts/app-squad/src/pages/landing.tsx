@@ -1,80 +1,135 @@
 import { motion } from "framer-motion";
-import { Smartphone, Code2, Banknote, PlayCircle, ShieldCheck, Gamepad2, Settings } from "lucide-react";
+import { Smartphone, Code2, TrendingUp, PlayCircle, ShieldCheck, BarChart3, ArrowRight, Sparkles, Layers, Rocket } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0 },
+};
 
 export default function Landing() {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       className="flex flex-col min-h-screen"
     >
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-24 pb-32">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
-        
+      {/* Hero */}
+      <section className="relative overflow-hidden pt-20 pb-32 grid-bg">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_60%_40%,hsl(217_91%_60%_/_0.12)_0%,transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_40%_at_20%_70%,hsl(195_88%_52%_/_0.07)_0%,transparent_60%)]" />
+
         <div className="container mx-auto px-4 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="max-w-2xl">
-              <motion.h1 
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium tracking-wide mb-8"
+              >
+                <Sparkles className="w-3 h-3" />
+                Mobile Game App Development Studio
+              </motion.div>
+
+              <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="font-serif text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tight mb-6"
+                className="text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] tracking-tight mb-6"
               >
-                Launch Your Own <br />
-                <span className="text-primary italic">Custom Mobile Game</span> <br />
-                App Without Coding
+                Launch Your Own{" "}
+                <span className="gradient-text">Custom Mobile Game App</span>{" "}
+                Without Coding
               </motion.h1>
-              <motion.p 
+
+              <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-xl"
+                transition={{ delay: 0.15 }}
+                className="text-lg text-muted-foreground mb-10 leading-relaxed max-w-xl"
               >
                 App Squad helps aspiring entrepreneurs build, brand, and launch mobile game apps designed for app store monetization through ads, upgrades, and digital engagement.
               </motion.p>
+
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.2 }}
+                className="flex flex-col sm:flex-row gap-4"
               >
                 <Link href="/training">
-                  <Button size="lg" className="h-14 px-8 text-lg font-medium shadow-[0_0_40px_-10px_hsl(var(--primary))] hover:shadow-[0_0_60px_-10px_hsl(var(--primary))] transition-shadow">
+                  <Button
+                    size="lg"
+                    className="h-12 px-7 text-base font-semibold bg-primary hover:bg-primary/90 glow-blue transition-all"
+                    data-testid="button-watch-training-hero"
+                  >
                     Watch Free Training
-                    <PlayCircle className="ml-2 w-5 h-5" />
+                    <PlayCircle className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
+                <Link href="/apply">
+                  <Button
+                    size="lg"
+                    variant="ghost"
+                    className="h-12 px-7 text-base font-medium border border-white/10 hover:bg-white/[0.05] hover:border-white/20"
+                    data-testid="button-apply-hero"
+                  >
+                    Apply Now
+                    <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </Link>
               </motion.div>
             </div>
 
-            {/* Abstract Phone Mockup */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4, duration: 0.7, ease: "easeOut" }}
-              className="relative hidden lg:block"
+            {/* Phone Mockup */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="relative hidden lg:flex items-center justify-center"
             >
-              <div className="relative w-[320px] h-[640px] mx-auto border-[8px] border-white/10 rounded-[3rem] bg-card p-4 shadow-2xl overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-primary/5 before:to-transparent">
-                <div className="absolute top-0 inset-x-0 h-6 flex justify-center">
-                  <div className="w-32 h-6 bg-white/10 rounded-b-xl" />
+              <div className="absolute w-80 h-80 rounded-full bg-primary/8 blur-3xl" />
+              <div className="absolute w-48 h-48 rounded-full bg-accent/8 blur-2xl translate-x-20 translate-y-10" />
+
+              <div className="relative w-[280px] h-[580px] rounded-[2.8rem] border border-white/10 bg-card overflow-hidden shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-accent/5" />
+                <div className="absolute top-0 inset-x-0 flex justify-center pt-2">
+                  <div className="w-28 h-5 bg-background rounded-b-2xl" />
                 </div>
-                <div className="h-full flex flex-col gap-4 pt-8">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center">
-                      <Gamepad2 className="w-6 h-6 text-primary" />
+
+                <div className="p-5 pt-10 h-full flex flex-col gap-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+                      <Rocket className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <div className="w-24 h-4 rounded-full bg-white/10 mb-2" />
-                      <div className="w-16 h-3 rounded-full bg-white/5" />
+                      <div className="h-3 w-20 bg-foreground/10 rounded-full mb-1.5" />
+                      <div className="h-2 w-14 bg-foreground/5 rounded-full" />
                     </div>
                   </div>
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="w-full h-24 rounded-2xl bg-white/5 animate-pulse" style={{ animationDelay: `${i * 0.15}s` }} />
+
+                  {[
+                    { color: "from-primary/20 to-primary/5", h: "h-28" },
+                    { color: "from-accent/15 to-accent/5", h: "h-20" },
+                    { color: "from-purple-500/15 to-purple-500/5", h: "h-16" },
+                    { color: "from-primary/10 to-transparent", h: "h-24" },
+                  ].map((block, i) => (
+                    <div
+                      key={i}
+                      className={`w-full ${block.h} rounded-2xl bg-gradient-to-br ${block.color} border border-white/[0.06]`}
+                    />
                   ))}
+
+                  <div className="mt-auto flex gap-2">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={`flex-1 h-12 rounded-xl border border-white/[0.06] ${i === 1 ? "bg-primary/20" : "bg-white/[0.03]"}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -83,113 +138,126 @@ export default function Landing() {
       </section>
 
       {/* Benefits */}
-      <section className="py-24 bg-card/50 border-y border-white/5">
+      <section className="py-24 border-y border-white/[0.06]">
         <div className="container mx-auto px-4">
-          <motion.div 
+          <motion.div
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.1 }
-              }
-            }}
-            className="grid md:grid-cols-3 gap-8"
+            variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } }}
+            className="grid md:grid-cols-3 gap-6"
           >
             {[
-              { icon: Smartphone, title: "Own a Digital Asset", desc: "Build equity in a real digital property that lives on the App Store." },
-              { icon: Code2, title: "No Coding Required", desc: "We handle the technical heavy lifting while you focus on the brand." },
-              { icon: Banknote, title: "Monetization-Ready", desc: "Pre-integrated with leading ad networks and in-app purchase systems." }
+              {
+                icon: Layers,
+                title: "Own a Digital Asset",
+                desc: "Build equity in a real digital property that lives on the App Store — a product you can grow, sell, or license.",
+                color: "text-primary",
+                bg: "bg-primary/10 border-primary/20",
+              },
+              {
+                icon: Code2,
+                title: "No Coding Required",
+                desc: "We handle the full technical stack so you can focus on brand strategy, audience, and go-to-market execution.",
+                color: "text-accent",
+                bg: "bg-accent/10 border-accent/20",
+              },
+              {
+                icon: TrendingUp,
+                title: "Monetization-Ready",
+                desc: "Pre-integrated with leading ad networks and in-app purchase systems, ready for your first monetization event.",
+                color: "text-purple-400",
+                bg: "bg-purple-500/10 border-purple-500/20",
+              },
             ].map((benefit, i) => (
-              <motion.div
-                key={i}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0 }
-                }}
-              >
-                <Card className="bg-background border-white/5 hover:border-primary/50 transition-colors h-full">
-                  <CardContent className="pt-8">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-                      <benefit.icon className="w-6 h-6 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-3">{benefit.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{benefit.desc}</p>
-                  </CardContent>
-                </Card>
+              <motion.div key={i} variants={cardVariants} whileHover={{ y: -4, transition: { duration: 0.2 } }}>
+                <div className="glass rounded-2xl p-8 h-full hover:border-white/20 transition-all group">
+                  <div className={`w-12 h-12 rounded-xl border ${benefit.bg} flex items-center justify-center mb-6`}>
+                    <benefit.icon className={`w-6 h-6 ${benefit.color}`} />
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">{benefit.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed text-sm">{benefit.desc}</p>
+                </div>
               </motion.div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      {/* How it Works */}
-      <section className="py-32">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-2xl mx-auto mb-20">
-            <h2 className="font-serif text-4xl font-bold mb-4">The Launch Process</h2>
-            <p className="text-muted-foreground">Four simple steps to go from concept to published game on the App Store.</p>
+      {/* How It Works */}
+      <section className="py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,hsl(217_91%_60%_/_0.05)_0%,transparent_70%)]" />
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center max-w-xl mx-auto mb-20">
+            <p className="text-primary text-sm font-semibold tracking-widest uppercase mb-4">The Process</p>
+            <h2 className="text-4xl font-bold mb-4">From Idea to App Store</h2>
+            <p className="text-muted-foreground">Four structured steps that take you from concept to published game.</p>
           </div>
 
-          <div className="relative">
-            <div className="absolute top-1/2 left-0 w-full h-[2px] bg-white/5 -translate-y-1/2 hidden lg:block" />
-            <div className="grid lg:grid-cols-4 gap-12 lg:gap-8 relative z-10">
-              {[
-                { step: "01", title: "Watch Training", desc: "Learn the fundamentals of the mobile game business model." },
-                { step: "02", title: "Apply", desc: "Submit your application to ensure we're a mutual fit." },
-                { step: "03", title: "Build Your App", desc: "Customize your game type, brand identity, and monetization." },
-                { step: "04", title: "Launch", desc: "We deploy your game to the iOS App Store and Google Play." }
-              ].map((item, i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="relative flex flex-col items-center text-center group"
-                >
-                  <div className="w-16 h-16 rounded-2xl bg-card border border-white/10 flex items-center justify-center text-2xl font-serif font-bold text-primary mb-6 group-hover:scale-110 group-hover:border-primary/50 transition-all shadow-xl">
-                    {item.step}
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.desc}</p>
-                </motion.div>
-              ))}
-            </div>
+          <div className="relative grid lg:grid-cols-4 gap-10 lg:gap-8">
+            <div className="absolute top-8 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent hidden lg:block" />
+            {[
+              { step: "01", title: "Watch Training", desc: "Learn the mobile game business model and see if App Squad is the right fit.", icon: PlayCircle },
+              { step: "02", title: "Apply", desc: "Submit your application so we can understand your goals and timeline.", icon: Smartphone },
+              { step: "03", title: "Build Your App", desc: "Choose your game type, customize branding, and configure monetization.", icon: Layers },
+              { step: "04", title: "Launch", desc: "We deploy your finished game to iOS App Store and Google Play.", icon: Rocket },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="relative flex flex-col items-center text-center group"
+                data-testid={`step-${item.step}`}
+              >
+                <div className="relative w-16 h-16 rounded-2xl glass border border-white/10 flex items-center justify-center mb-6 group-hover:border-primary/40 group-hover:bg-primary/5 transition-all">
+                  <item.icon className="w-7 h-7 text-primary" />
+                  <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold mb-2">{item.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Trust */}
-      <section className="py-24 bg-card/50 border-t border-white/5">
-        <div className="container mx-auto px-4 text-center">
-          <div className="grid md:grid-cols-3 gap-12 max-w-4xl mx-auto">
-            <div className="flex flex-col items-center">
-              <Settings className="w-8 h-8 text-primary mb-4" />
-              <h4 className="font-bold mb-2">Custom App Development</h4>
-              <p className="text-sm text-muted-foreground">High-quality native-feeling frameworks optimized for performance.</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <ShieldCheck className="w-8 h-8 text-primary mb-4" />
-              <h4 className="font-bold mb-2">App Store Guidance</h4>
-              <p className="text-sm text-muted-foreground">Full support through Apple and Google's review processes.</p>
-            </div>
-            <div className="flex flex-col items-center">
-              <Banknote className="w-8 h-8 text-primary mb-4" />
-              <h4 className="font-bold mb-2">Monetization Support</h4>
-              <p className="text-sm text-muted-foreground">Ad networks and in-app purchase systems properly configured.</p>
-            </div>
+      <section className="py-24 border-t border-white/[0.06] bg-card/30">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-10 max-w-4xl mx-auto text-center">
+            {[
+              { icon: Layers, title: "Custom App Development", desc: "High-quality frameworks optimized for performance across iOS and Android." },
+              { icon: ShieldCheck, title: "App Store Guidance", desc: "Full support through Apple and Google's submission and review processes." },
+              { icon: BarChart3, title: "Monetization Support", desc: "Ad networks and in-app purchase systems properly configured from day one." },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="flex flex-col items-center"
+              >
+                <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
+                  <item.icon className="w-5 h-5 text-primary" />
+                </div>
+                <h4 className="font-bold text-base mb-2">{item.title}</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Disclaimer Footer */}
-      <footer className="py-12 border-t border-white/10 mt-auto">
+      {/* Disclaimer */}
+      <footer className="py-10 border-t border-white/[0.06]">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-xs text-muted-foreground/60 italic max-w-3xl mx-auto">
-            Disclaimer: App results depend on marketing, user engagement, platform approval, and other factors outside of App Squad's control. We do not guarantee income, downloads, rankings, or profits. The examples shown are for illustrative purposes. Building a business requires risk, effort, and capital.
+          <p className="text-xs text-muted-foreground/50 italic max-w-3xl mx-auto leading-relaxed">
+            Disclaimer: App results depend on marketing, user engagement, platform approval, and other factors outside of App Squad's control. We do not guarantee income, downloads, rankings, or profits. The examples shown are for illustrative purposes only. Building a business requires risk, effort, and capital.
           </p>
         </div>
       </footer>

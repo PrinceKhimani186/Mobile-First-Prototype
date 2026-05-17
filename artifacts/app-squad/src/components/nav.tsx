@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -17,20 +17,26 @@ export function Nav() {
   const [location] = useLocation();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-background/70 backdrop-blur-xl">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="font-serif text-xl font-bold text-primary tracking-tight">App Squad</span>
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="w-7 h-7 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+            <Zap className="w-4 h-4 text-primary" />
+          </div>
+          <span className="font-display text-lg font-bold tracking-tight text-foreground">
+            App<span className="text-primary">Squad</span>
+          </span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-1">
           {LINKS.map((link) => (
             <Link key={link.href} href={link.href}>
               <span
                 className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary cursor-pointer",
-                  location === link.href ? "text-primary" : "text-muted-foreground"
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                  location === link.href
+                    ? "bg-primary/10 text-primary border border-primary/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
                 )}
               >
                 {link.label}
@@ -39,32 +45,33 @@ export function Nav() {
           ))}
         </nav>
 
-        {/* Mobile Toggle */}
         <button
-          className="md:hidden p-2 -mr-2 text-foreground"
+          className="md:hidden p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Toggle Menu"
+          data-testid="button-mobile-menu"
         >
-          {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
-      {/* Mobile Nav */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden overflow-hidden bg-background border-b border-white/5"
+            className="md:hidden overflow-hidden bg-background/95 backdrop-blur-xl border-b border-white/[0.06]"
           >
-            <nav className="flex flex-col px-4 py-4 gap-4">
+            <nav className="flex flex-col px-4 py-3 gap-1">
               {LINKS.map((link) => (
                 <Link key={link.href} href={link.href} onClick={() => setIsOpen(false)}>
                   <span
                     className={cn(
-                      "block text-lg font-medium transition-colors cursor-pointer",
-                      location === link.href ? "text-primary" : "text-muted-foreground"
+                      "block px-4 py-3 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                      location === link.href
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
                     )}
                   >
                     {link.label}
