@@ -1,0 +1,170 @@
+Build a premium, mobile-first React website prototype for App Squad Inc., a custom mobile game app development company.
+
+The goal is to redesign our ClickFunnels flow with a luxury-tech look so we can later recreate the sections inside ClickFunnels.
+
+Brand style:
+- Black, gold, white
+- Premium tech startup look
+- Clean, modern, high-trust
+- Mobile-first
+- Smooth animations
+- Rounded cards
+- App store / digital asset / mobile game business feel
+- Avoid hypey “get rich quick” language
+
+Business positioning:
+App Squad helps aspiring entrepreneurs launch custom-branded mobile game apps without coding. We build, customize, and help prepare mobile game apps for monetization through ads, in-app purchases, and app store distribution.
+
+Important disclaimer:
+Do not promise income, downloads, rankings, or profits. Include realistic language that app results depend on marketing, user engagement, platform approval, and other factors.
+
+Build these sections/pages:
+
+PAGE 1: Opt-In Landing Page
+Headline:
+“Launch Your Own Custom Mobile Game App Without Coding”
+
+Subheadline:
+“App Squad helps aspiring entrepreneurs build, brand, and launch mobile game apps designed for app store monetization through ads, upgrades, and digital engagement.”
+
+CTA:
+“Watch Free Training”
+
+Sections:
+- Hero with premium phone mockups
+- 3 benefit cards: Own a Digital Asset, No Coding Required, Monetization-Ready Framework
+- How It Works: Watch Training → Apply → Build Your App → Launch
+- Trust section: Custom App Development, App Store Guidance, Monetization Support
+- Disclaimer section
+
+PAGE 2: VSL / Free Training Page
+Headline:
+“See How Mobile Game Apps Are Built, Branded, and Monetized”
+
+Sections:
+- Large video placeholder
+- Bullet list of what the training covers:
+  1. How free apps can monetize
+  2. How app reskinning works
+  3. Why mobile games are digital assets
+  4. What App Squad builds for clients
+  5. What is required to launch and promote an app
+- CTA button:
+“Apply To Launch Your App”
+- Disclaimer block
+
+PAGE 3: Application Page
+Headline:
+“Apply To Launch Your Custom Game App”
+
+Build a premium multi-step form UI with:
+Step 1: Your Goal
+- Side hustle
+- Brand extension
+- Digital product ownership
+- Content creator game
+- Local business engagement
+
+Step 2: Budget
+- Under $500
+- $500–$1,000
+- $1,000–$3,000
+- $3,000–$5,000
+- $5,000+
+
+Step 3: Timeline
+- Immediately
+- This month
+- 30–60 days
+- Just researching
+
+Step 4: Understanding
+Checkbox:
+“I understand App Squad does not guarantee earnings, downloads, app store rankings, approvals, or profits.”
+
+CTA:
+“Continue To Schedule Demo”
+
+PAGE 4: Game Selection Page
+Headline:
+“Choose Your Game Type”
+
+This is for paid/onboarded clients.
+
+Create premium game category cards:
+- Puzzle Match Game
+- Word Game
+- Casino Slots Style Game
+- Racing Game
+- Adventure Game
+- Kids Educational Game
+- Arcade Game
+- Trivia Game
+
+Each card should show:
+- Game type
+- Best for
+- Monetization options
+- Select button
+
+PAGE 5: Customization Form Page
+Headline:
+“Customize Your App Brand”
+
+Fields:
+- App name
+- Business/brand name
+- Preferred colors
+- Upload logo placeholder
+- Target audience
+- App description
+- Monetization preference: Ads, In-App Purchases, Both
+- Notes for development team
+
+Add progress indicator:
+Game Selected → Brand Details → Monetization → Review
+
+PAGE 6: Client Launch Dashboard
+Headline:
+“Your App Launch Dashboard”
+
+Dashboard cards:
+- Game Type Selected
+- Branding Status
+- Monetization Setup
+- App Store Preparation
+- Development Timeline
+- Launch Checklist
+
+Timeline stages:
+1. Intake Received
+2. Game Customization
+3. Monetization Setup
+4. Testing
+5. Client Review
+6. App Store Submission
+7. Launch Support
+
+Add button:
+“Submit Support Ticket”
+
+Navigation:
+Top nav with:
+- Home
+- Training
+- Apply
+- Game Selection
+- Dashboard
+
+Technical requirements:
+- Use React
+- Use Tailwind CSS
+- Use shadcn/ui components if available
+- Use lucide-react icons
+- Add Framer Motion animations
+- Make it fully responsive
+- Keep all pages in one app with simple tab/navigation switching
+- Use placeholder video and placeholder phone/game images
+- Do not connect real payments
+- Do not use real backend
+- Make it look investor/premium enough to show a developer or rebuild in ClickFunnels

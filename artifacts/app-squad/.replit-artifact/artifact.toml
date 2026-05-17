@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "App Squad Inc."
+version = "1.0.0"
+id = "artifacts/app-squad"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22474
+
+[services.development]
+run = "pnpm --filter @workspace/app-squad run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/app-squad", "run", "build" ]
+publicDir = "artifacts/app-squad/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22474"
+BASE_PATH = "/"
