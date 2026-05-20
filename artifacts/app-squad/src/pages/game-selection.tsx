@@ -125,7 +125,7 @@ export default function GameSelection() {
         <div className="flex justify-center">
           <Button
             size="lg"
-            className="h-16 px-12 text-lg font-bold glow-blue disabled:opacity-30 disabled:shadow-none transition-all rounded-full"
+            className="btn-primary h-13 px-10 text-base font-semibold rounded-xl text-white disabled:opacity-25 disabled:shadow-none"
             disabled={!selectedId}
             onClick={() => setLocation("/customize")}
             data-testid="button-continue-customize"

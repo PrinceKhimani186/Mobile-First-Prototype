@@ -17,9 +17,10 @@ export default function Landing() {
     >
       {/* Hero */}
       <section className="relative overflow-hidden pt-20 pb-32 grid-bg">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_70%_20%,hsl(217_91%_60%_/_0.15)_0%,transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_80%,hsl(195_88%_52%_/_0.12)_0%,transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_50%_at_50%_50%,hsl(260_80%_65%_/_0.08)_0%,transparent_50%)]" />
+        {/* Cinematic ambient — subtle, directional, not flooding */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_72%_40%,hsl(217_85%_50%_/_0.09)_0%,transparent_65%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_35%_40%_at_15%_75%,hsl(255_70%_60%_/_0.06)_0%,transparent_60%)]" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -61,25 +62,22 @@ export default function Landing() {
                 className="flex flex-col sm:flex-row gap-4 mb-12"
               >
                 <Link href="/training">
-                  <Button
-                    size="lg"
-                    className="h-14 px-8 text-lg font-semibold bg-primary hover:bg-primary/90 glow-blue transition-all w-full sm:w-auto"
+                  <button
+                    className="btn-primary h-14 px-8 text-base font-semibold rounded-xl text-white flex items-center gap-2 w-full sm:w-auto justify-center"
                     data-testid="button-watch-training-hero"
                   >
                     Watch Free Training
-                    <PlayCircle className="ml-2 w-5 h-5" />
-                  </Button>
+                    <PlayCircle className="w-5 h-5" />
+                  </button>
                 </Link>
                 <Link href="/apply">
-                  <Button
-                    size="lg"
-                    variant="ghost"
-                    className="h-14 px-8 text-lg font-medium border border-white/10 hover:bg-white/[0.05] hover:border-white/20 w-full sm:w-auto"
+                  <button
+                    className="btn-ghost h-14 px-8 text-base font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full sm:w-auto justify-center"
                     data-testid="button-apply-hero"
                   >
                     Apply Now
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
                 </Link>
               </motion.div>
 
@@ -103,10 +101,11 @@ export default function Landing() {
               transition={{ delay: 0.25, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
               className="relative hidden lg:flex items-center justify-center min-h-[700px]"
             >
-              <div className="absolute w-96 h-96 rounded-full bg-primary/20 blur-[100px] animate-pulse" style={{ animationDuration: '4s' }} />
-              <div className="absolute w-64 h-64 rounded-full bg-accent/20 blur-[80px] translate-x-32 translate-y-20" />
+              {/* Focused cinematic glow — behind phone only */}
+              <div className="absolute w-72 h-72 rounded-full bg-primary/12 blur-[90px]" style={{ top: '20%', left: '50%', transform: 'translateX(-50%)' }} />
+              <div className="absolute w-48 h-48 rounded-full bg-purple-600/8 blur-[70px]" style={{ bottom: '15%', right: '10%' }} />
 
-              <div className="relative w-[320px] h-[680px] rounded-[3rem] border-4 border-white/10 bg-card overflow-hidden shadow-2xl z-10">
+              <div className="relative w-[300px] h-[640px] rounded-[2.8rem] border border-white/12 bg-card overflow-hidden z-10 glow-hero">
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-accent/10" />
                 <div className="absolute top-0 inset-x-0 flex justify-center pt-3 z-20">
                   <div className="w-32 h-6 bg-background rounded-b-3xl" />
@@ -300,25 +299,28 @@ export default function Landing() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 relative overflow-hidden border-t border-white/[0.06]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,hsl(217_91%_60%_/_0.15)_0%,transparent_60%)]" />
+      <section className="py-24 relative overflow-hidden border-t border-white/[0.05]">
+        {/* Very subtle glow — not flooding */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_100%,hsl(217_85%_50%_/_0.07)_0%,transparent_70%)]" />
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto glass rounded-[3rem] p-12 md:p-20 text-center border-2 border-primary/20 shadow-[0_0_50px_-12px_hsl(217_91%_60%_/_0.2)]">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready To Explore Your App Idea?</h2>
-            <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+          <div className="max-w-3xl mx-auto glass rounded-[2.5rem] p-12 md:p-16 text-center border border-white/[0.08] shadow-[0_0_60px_-20px_hsl(217_85%_50%_/_0.15),0_1px_0_0_hsl(220_20%_97%_/_0.05)_inset]">
+            <p className="text-primary text-xs font-semibold tracking-widest uppercase mb-5">Get Started</p>
+            <h2 className="text-4xl md:text-5xl font-bold mb-5 leading-tight">Ready To Explore<br/>Your App Idea?</h2>
+            <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed">
               See how App Squad helps entrepreneurs launch custom-branded mobile game apps without coding.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/training">
-                <Button size="lg" className="h-14 px-8 text-lg font-semibold glow-blue w-full sm:w-auto">
+                <button className="btn-primary h-13 px-8 text-base font-semibold rounded-xl text-white flex items-center gap-2 w-full sm:w-auto justify-center" data-testid="button-cta-training">
                   Watch Free Training
-                  <PlayCircle className="ml-2 w-5 h-5" />
-                </Button>
+                  <PlayCircle className="w-5 h-5" />
+                </button>
               </Link>
               <Link href="/apply">
-                <Button size="lg" variant="outline" className="h-14 px-8 text-lg font-semibold border-white/20 hover:bg-white/5 w-full sm:w-auto">
+                <button className="btn-ghost h-13 px-8 text-base font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full sm:w-auto justify-center" data-testid="button-cta-apply">
                   Apply To Launch Your App
-                </Button>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </Link>
             </div>
           </div>

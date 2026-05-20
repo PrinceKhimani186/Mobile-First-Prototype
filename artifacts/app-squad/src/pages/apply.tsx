@@ -189,7 +189,7 @@ export default function Apply() {
                     size="lg"
                     disabled={!understood}
                     onClick={() => setLocation("/game-selection")}
-                    className="w-full h-16 text-lg font-bold glow-blue disabled:opacity-30 disabled:shadow-none transition-all rounded-2xl mt-auto"
+                    className="btn-primary w-full h-13 text-base font-semibold rounded-xl text-white disabled:opacity-25 disabled:shadow-none mt-auto"
                     data-testid="button-schedule-demo"
                   >
                     Continue To Schedule Demo

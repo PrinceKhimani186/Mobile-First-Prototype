@@ -1,0 +1,169 @@
+Refine and rebalance the current App Squad color system and visual hierarchy.
+
+The current blue palette feels too flat and overly saturated. The goal is to make the experience feel more premium, cinematic, memorable, and venture-backed — not generic SaaS template blue.
+
+DO NOT redesign the site.
+Refine the color psychology, lighting, accents, and contrast.
+
+NEW COLOR DIRECTION:
+
+Use a darker neutral base with controlled electric accents.
+
+PRIMARY BACKGROUNDS:
+
+* Deep navy
+* Soft graphite
+* Midnight blue-black
+* Slight gradient layering
+
+Avoid overly bright or fully saturated blue backgrounds.
+
+ACCENT COLORS:
+Use electric blue sparingly for:
+
+* CTA buttons
+* hover states
+* glow effects
+* borders
+* active elements
+* icons
+* analytics highlights
+
+Add secondary accent tones:
+
+* subtle cyan
+* indigo
+* violet-blue gradients
+* soft white glow
+
+IMPORTANT:
+The site should feel:
+
+* cinematic
+* futuristic
+* premium
+* software-company quality
+* emotionally immersive
+
+NOT:
+
+* generic SaaS template
+* crypto landing page
+* overly neon
+* gaming website overload
+
+VISUAL LIGHTING IMPROVEMENTS:
+
+Add:
+
+* soft ambient glows
+* layered radial gradients
+* subtle lighting behind cards
+* directional lighting behind phones/mockups
+* faint animated particles
+* subtle blur depth
+
+Use glow sparingly and strategically.
+
+The page should feel:
+“alive”
+without becoming distracting.
+
+CTA COLOR STRATEGY:
+
+Make CTA buttons visually dominant.
+
+Primary CTA:
+Use electric blue gradient with glow.
+
+Secondary CTA:
+Use transparent glass style with subtle border glow.
+
+Buttons should feel:
+
+* clickable
+* modern
+* premium
+* conversion-focused
+
+Add:
+
+* hover glow
+* soft scaling animation
+* stronger contrast against background
+
+HERO SECTION IMPROVEMENTS:
+
+The hero section should immediately capture attention.
+
+Add:
+
+* one strong focal glow behind phone mockup
+* layered gradients behind headline
+* stronger contrast between text and background
+* floating analytics widget
+* subtle animated app metrics
+* cleaner composition
+
+Reduce excessive blue flooding.
+
+Use more:
+
+* darkness
+* depth
+* contrast
+* spacing
+* cinematic lighting
+
+TYPOGRAPHY COLOR IMPROVEMENTS:
+
+Headlines:
+
+* soft white
+* slight gradient highlight
+* stronger contrast
+
+Subheadings:
+
+* lighter gray-blue
+* more subtle
+
+Reduce overly bright blue text.
+
+SECTION DEPTH:
+
+Each section should feel separated with:
+
+* lighting transitions
+* gradient fades
+* spacing rhythm
+* subtle overlays
+
+Avoid making every section identical.
+
+VISUAL REFERENCES:
+The site should feel inspired by:
+
+* OpenAI
+* Linear
+* Vercel
+* Apple keynote visuals
+* Arc Browser
+* Stripe Sessions
+* modern AI platforms
+
+FINAL FEEL:
+A premium AI-powered app launch platform that feels:
+
+* futuristic
+* trustworthy
+* modern
+* visually immersive
+* startup-grade
+* emotionally engaging
+
+The site should make users feel:
+“I’m entering a real tech platform.”
+
+NOT:
+“I’m entering a funnel.”

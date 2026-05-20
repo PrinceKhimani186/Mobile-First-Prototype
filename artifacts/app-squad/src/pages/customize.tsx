@@ -132,10 +132,10 @@ export default function Customize() {
           </div>
 
           <div className="pt-6 border-t border-white/[0.08]">
-            <Button type="submit" size="lg" className="w-full h-16 text-lg font-bold glow-blue hover:scale-[1.02] transition-all rounded-xl" data-testid="button-submit-brand">
+            <button type="submit" className="btn-primary w-full h-13 text-base font-semibold rounded-xl text-white flex items-center justify-center gap-2" data-testid="button-submit-brand">
               Submit Brand Details & Proceed
               <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
+            </button>
           </div>
         </form>
       </div>

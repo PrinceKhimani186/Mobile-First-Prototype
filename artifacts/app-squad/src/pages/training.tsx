@@ -114,7 +114,7 @@ export default function Training() {
             <Link href="/apply">
               <Button
                 size="lg"
-                className="h-16 px-12 text-lg font-bold glow-blue hover:scale-105 transition-all w-full md:w-auto"
+                className="btn-primary h-14 px-10 text-base font-semibold rounded-xl text-white w-full md:w-auto"
                 data-testid="button-apply-training"
               >
                 Apply To Launch Your App

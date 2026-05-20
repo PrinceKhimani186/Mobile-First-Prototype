@@ -60,50 +60,55 @@
 }
 
 :root, .dark {
-  --background: 226 35% 5%;
-  --foreground: 213 31% 96%;
+  /* Deeper midnight base — more black than blue */
+  --background: 228 42% 4%;
+  --foreground: 220 20% 97%;
 
-  --primary: 217 91% 60%;
-  --primary-foreground: 226 35% 5%;
+  /* Electric blue — used sparingly as focal accent */
+  --primary: 217 85% 58%;
+  --primary-foreground: 228 42% 4%;
 
-  --card: 224 30% 9%;
-  --card-foreground: 213 31% 96%;
-  --card-border: 225 20% 16%;
+  /* Cards sit 4-5 stops above background */
+  --card: 226 32% 8%;
+  --card-foreground: 220 20% 97%;
+  --card-border: 224 22% 14%;
 
-  --border: 225 20% 16%;
-  --muted: 225 22% 13%;
-  --muted-foreground: 215 20% 55%;
+  --border: 224 22% 13%;
+  --muted: 226 28% 11%;
+  --muted-foreground: 218 16% 52%;
 
-  --accent: 195 88% 52%;
-  --accent-foreground: 226 35% 5%;
+  /* Cyan accent used for secondary highlights */
+  --accent: 198 82% 50%;
+  --accent-foreground: 228 42% 4%;
 
-  --secondary: 225 25% 12%;
-  --secondary-foreground: 213 31% 96%;
+  --secondary: 226 28% 10%;
+  --secondary-foreground: 220 20% 97%;
 
-  --popover: 224 30% 9%;
-  --popover-foreground: 213 31% 96%;
-  --popover-border: 225 20% 16%;
+  --popover: 226 32% 8%;
+  --popover-foreground: 220 20% 97%;
+  --popover-border: 224 22% 14%;
 
-  --input: 225 22% 16%;
-  --ring: 217 91% 60%;
+  --input: 226 26% 14%;
+  --ring: 217 85% 58%;
 
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 213 31% 96%;
+  --destructive: 0 68% 50%;
+  --destructive-foreground: 220 20% 97%;
 
-  --sidebar: 226 35% 4%;
-  --sidebar-foreground: 213 31% 96%;
-  --sidebar-border: 225 20% 14%;
-  --sidebar-primary: 217 91% 60%;
-  --sidebar-primary-foreground: 226 35% 5%;
-  --sidebar-accent: 225 25% 12%;
-  --sidebar-accent-foreground: 213 31% 96%;
-  --sidebar-ring: 217 91% 60%;
+  --sidebar: 228 42% 3%;
+  --sidebar-foreground: 220 20% 97%;
+  --sidebar-border: 224 22% 12%;
+  --sidebar-primary: 217 85% 58%;
+  --sidebar-primary-foreground: 228 42% 4%;
+  --sidebar-accent: 226 28% 10%;
+  --sidebar-accent-foreground: 220 20% 97%;
+  --sidebar-ring: 217 85% 58%;
 
-  --chart-1: 217 91% 60%;
-  --chart-2: 195 88% 52%;
-  --chart-3: 260 80% 65%;
-  --chart-4: 175 75% 45%;
-  --chart-5: 240 85% 68%;
+  /* Chart tones — blue, indigo, violet, cyan, emerald */
+  --chart-1: 217 85% 58%;
+  --chart-2: 198 82% 50%;
+  --chart-3: 255 75% 65%;
+  --chart-4: 172 70% 44%;
+  --chart-5: 238 78% 66%;
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-display: 'Space Grotesk', sans-serif;
@@ -114,41 +119,89 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    /* Barely-there top glow — cinematic, not generic SaaS */
     background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, hsl(217 91% 60% / 0.10) 0%, transparent 60%);
+      radial-gradient(ellipse 90% 40% at 50% -5%, hsl(217 85% 50% / 0.07) 0%, transparent 70%);
   }
+
   h1, h2, h3 {
     font-family: var(--app-font-display);
   }
 }
 
+/* ─── Glass surface ─────────────────────────────────────────── */
 .glass {
-  background: hsl(224 30% 9% / 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid hsl(225 20% 16% / 0.8);
+  background: hsl(226 32% 8% / 0.55);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid hsl(224 22% 14% / 0.7);
 }
 
+/* ─── Glows — electric blue, used sparingly ─────────────────── */
 .glow-blue {
-  box-shadow: 0 0 40px -10px hsl(217 91% 60% / 0.5);
+  box-shadow: 0 0 36px -8px hsl(217 85% 58% / 0.55);
 }
-
 .glow-blue-sm {
-  box-shadow: 0 0 20px -5px hsl(217 91% 60% / 0.4);
+  box-shadow: 0 0 18px -5px hsl(217 85% 58% / 0.4);
+}
+/* Focused directional glow — for hero phone mockup */
+.glow-hero {
+  box-shadow:
+    0 0 80px -20px hsl(217 85% 58% / 0.45),
+    0 0 140px -40px hsl(255 70% 60% / 0.2);
 }
 
+/* ─── CTA button — gradient + glow ──────────────────────────── */
+.btn-primary {
+  background: linear-gradient(135deg, hsl(217 85% 56%) 0%, hsl(235 78% 58%) 100%);
+  box-shadow: 0 0 0 0 hsl(217 85% 58% / 0);
+  transition: box-shadow 0.25s ease, transform 0.15s ease;
+}
+.btn-primary:hover {
+  box-shadow: 0 0 32px -6px hsl(217 85% 58% / 0.6), 0 4px 20px -4px hsl(235 78% 58% / 0.4);
+  transform: translateY(-1px);
+}
+
+/* Glass ghost button */
+.btn-ghost {
+  background: hsl(220 20% 97% / 0.04);
+  border: 1px solid hsl(220 20% 97% / 0.12);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.btn-ghost:hover {
+  background: hsl(220 20% 97% / 0.07);
+  border-color: hsl(220 20% 97% / 0.22);
+}
+
+/* ─── Headline gradient — white → ice blue → indigo ─────────── */
 .gradient-text {
-  background: linear-gradient(135deg, hsl(213 31% 96%) 0%, hsl(195 88% 70%) 60%, hsl(217 91% 70%) 100%);
+  background: linear-gradient(
+    135deg,
+    hsl(220 20% 98%)   0%,
+    hsl(210 60% 82%)  40%,
+    hsl(217 85% 70%)  70%,
+    hsl(240 70% 72%) 100%
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+/* ─── Subtle grid — very low opacity ────────────────────────── */
 .grid-bg {
   background-image:
-    linear-gradient(hsl(225 20% 16% / 0.3) 1px, transparent 1px),
-    linear-gradient(90deg, hsl(225 20% 16% / 0.3) 1px, transparent 1px);
-  background-size: 60px 60px;
+    linear-gradient(hsl(224 22% 14% / 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(224 22% 14% / 0.22) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* ─── Section separators ─────────────────────────────────────── */
+.section-fade-top {
+  background: linear-gradient(to bottom, hsl(228 42% 4%) 0%, transparent 100%);
+}
+.section-fade-bottom {
+  background: linear-gradient(to top, hsl(228 42% 4%) 0%, transparent 100%);
 }
