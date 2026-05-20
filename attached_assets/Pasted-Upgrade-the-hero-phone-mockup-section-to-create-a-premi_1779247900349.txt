@@ -1,0 +1,103 @@
+Upgrade the hero phone mockup section to create a premium animated app ecosystem experience.
+
+The current phone placeholder feels empty and static.
+
+The phone should feel like:
+
+* a live mobile app platform
+* an active digital product ecosystem
+* a modern SaaS/app launch experience
+
+DO NOT make it feel like a flashy gaming ad.
+
+The experience should feel:
+
+* cinematic
+* premium
+* futuristic
+* software-company quality
+* smooth and minimal
+
+PHONE MOCKUP IMPROVEMENTS:
+
+Inside the phone mockup, create an animated rotating showcase of different app experiences.
+
+The phone should cycle smoothly between:
+
+1. Puzzle game preview
+2. Casino/slots style game preview
+3. Kids educational game preview
+4. App analytics dashboard
+5. Monetization/revenue UI
+6. Branding/customization screen
+7. App store preview UI
+
+Use:
+
+* fade transitions
+* smooth slide animations
+* soft glow effects
+* premium UI motion
+* subtle movement only
+
+Avoid:
+
+* flashing lights
+* chaotic movement
+* loud gaming visuals
+* clutter
+
+The motion should feel similar to:
+
+* Apple keynote animations
+* premium SaaS product demos
+* futuristic app showcases
+
+FLOATING UI ELEMENTS:
+
+Around the phone, add floating glassmorphism cards with subtle motion.
+
+Examples:
+
+* “Ad Monetization Ready”
+* “Custom-Branded Apps”
+* “No Coding Required”
+* “Launch Support”
+* “Digital Product Ownership”
+
+Add small animated analytics widgets:
+
+* revenue chart
+* downloads graph
+* engagement metrics
+* app performance indicators
+
+HERO COMPOSITION:
+
+Left side:
+
+* headline
+* subheadline
+* CTA buttons
+
+Right side:
+
+* animated phone ecosystem
+* floating widgets
+* layered glows
+* app previews
+
+BACKGROUND IMPROVEMENTS:
+
+Add:
+
+* radial lighting behind phone
+* subtle animated particles
+* layered gradients
+* depth blur effects
+
+The hero section should immediately communicate:
+“This is a real modern app launch platform.”
+
+FINAL GOAL:
+The homepage hero should feel immersive, premium, and visually impressive enough that users immediately trust the platform and understand the app ecosystem visually before reading much text.
