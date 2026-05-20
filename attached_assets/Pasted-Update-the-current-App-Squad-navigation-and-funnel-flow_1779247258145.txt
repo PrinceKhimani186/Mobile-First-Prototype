@@ -1,0 +1,70 @@
+Update the current App Squad navigation and funnel flow.
+
+Current nav:
+Home
+Training
+Apply
+Game Selection
+Dashboard
+
+Change it to:
+Home
+Training
+Apply
+Schedule Call
+Dashboard
+
+Hide Game Selection from the public navigation. Game Selection should only appear after a user has completed payment or entered the onboarding flow.
+
+Add a new Schedule Call page between Apply and Checkout.
+
+Page title:
+Build Your App Launch Strategy
+
+Subtitle:
+On this call, we’ll walk through your app idea, game options, monetization structure, branding direction, launch options, and pricing plans.
+
+Add a premium Calendly embed placeholder section with a button:
+Schedule My App Launch Call
+
+Add section:
+What We’ll Cover
+
+Cards:
+1. App Types
+Explore which mobile game category best fits your goals and audience.
+
+2. Monetization Structure
+Review how ads, in-app purchases, and upgrades can be prepared inside your app.
+
+3. Branding Process
+Discuss your app name, colors, logo, target audience, and overall creative direction.
+
+4. Launch Options
+Walk through publishing support, app store preparation, and launch checklist.
+
+5. Pricing Plans
+Review available payment options and package recommendations.
+
+Add trust section:
+Why Book The Strategy Call?
+
+Cards:
+- No coding required
+- Custom-branded game app
+- App store launch guidance
+- Monetization setup support
+- Clear next steps before you buy
+
+Add disclaimer:
+App Squad does not guarantee earnings, downloads, rankings, app approvals, or profits. App results depend on marketing, user engagement, platform rules, and other factors.
+
+Add CTA flow:
+After Application submit → route user to Schedule Call page.
+After Schedule Call → show button: Continue To Checkout.
+The checkout button should link to a placeholder external checkout URL that we can later replace with ClickFunnels, Stripe, or GoHighLevel checkout.
+
+Post-payment flow:
+After checkout, users should be redirected to Game Selection, then Customization Form, then Dashboard.
+
+Make the Schedule Call page match the premium AI/SaaS design style of the rest of the site.

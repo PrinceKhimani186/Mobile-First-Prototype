@@ -7,6 +7,7 @@ import { Nav } from "@/components/nav";
 import Landing from "@/pages/landing";
 import Training from "@/pages/training";
 import Apply from "@/pages/apply";
+import ScheduleCall from "@/pages/schedule-call";
 import GameSelection from "@/pages/game-selection";
 import Customize from "@/pages/customize";
 import Dashboard from "@/pages/dashboard";
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/training" component={Training} />
       <Route path="/apply" component={Apply} />
+      <Route path="/schedule-call" component={ScheduleCall} />
       <Route path="/game-selection" component={GameSelection} />
       <Route path="/customize" component={Customize} />
       <Route path="/dashboard" component={Dashboard} />

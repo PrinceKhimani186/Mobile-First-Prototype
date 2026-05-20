@@ -8,7 +8,7 @@ const LINKS = [
   { href: "/", label: "Home" },
   { href: "/training", label: "Training" },
   { href: "/apply", label: "Apply" },
-  { href: "/game-selection", label: "Game Selection" },
+  { href: "/schedule-call", label: "Schedule Call" },
   { href: "/dashboard", label: "Dashboard" },
 ];
 

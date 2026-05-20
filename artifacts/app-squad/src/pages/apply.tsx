@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
-import { Check, ShieldCheck, Briefcase, Star, Gem, Target, Store, DollarSign, Wallet, CreditCard, Rocket, Building, Calendar, Search } from "lucide-react";
+import { Check, ShieldCheck, Briefcase, Star, Gem, Target, Store, DollarSign, Wallet, CreditCard, Rocket, Building, Calendar, Search, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -188,12 +188,12 @@ export default function Apply() {
                   <Button
                     size="lg"
                     disabled={!understood}
-                    onClick={() => setLocation("/game-selection")}
+                    onClick={() => setLocation("/schedule-call")}
                     className="btn-primary w-full h-13 text-base font-semibold rounded-xl text-white disabled:opacity-25 disabled:shadow-none mt-auto"
                     data-testid="button-schedule-demo"
                   >
-                    Continue To Schedule Demo
-                    <Check className="ml-2 w-6 h-6" />
+                    Continue To Schedule Call
+                    <ArrowRight className="ml-2 w-5 h-5" />
                   </Button>
                 </div>
               )}
