@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Zap } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -19,11 +19,14 @@ export function Nav() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-background/70 backdrop-blur-xl">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-7 h-7 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-            <Zap className="w-4 h-4 text-primary" />
-          </div>
-          <span className="font-display text-lg font-bold tracking-tight text-foreground">
+        <Link href="/" className="flex items-center gap-2.5 group" data-testid="link-home-logo">
+          <img
+            src="/logo.png"
+            alt="App Squad logo mark"
+            className="h-9 w-9 object-contain object-top brightness-110 group-hover:brightness-130 transition-all duration-200 drop-shadow-[0_0_8px_hsl(217_91%_60%_/_0.45)]"
+            data-testid="img-logo"
+          />
+          <span className="font-display text-lg font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
             App<span className="text-primary">Squad</span>
           </span>
         </Link>
