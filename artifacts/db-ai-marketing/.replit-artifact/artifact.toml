@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/db-ai-marketing/"
+title = "D&B AI Marketing Co."
+version = "1.0.0"
+id = "artifacts/db-ai-marketing"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/db-ai-marketing/" ]
+localPort = 20472
+
+[services.development]
+run = "pnpm --filter @workspace/db-ai-marketing run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/db-ai-marketing", "run", "build" ]
+publicDir = "artifacts/db-ai-marketing/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20472"
+BASE_PATH = "/db-ai-marketing/"

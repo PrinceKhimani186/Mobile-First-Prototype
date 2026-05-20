@@ -1,0 +1,354 @@
+Build a premium AI marketing agency website prototype for a company called:
+
+# D&B AI Marketing Co.
+
+The site should feel like a modern AI-powered marketing company that creates cinematic AI content, advertising systems, and digital growth campaigns for businesses and creators.
+
+IMPORTANT:
+This should NOT feel like a generic marketing agency.
+
+The experience should feel:
+
+* futuristic
+* premium
+* cinematic
+* startup-grade
+* high-end AI creative agency
+* software-company quality
+* visually immersive
+
+Design inspiration:
+
+* OpenAI
+* Apple keynote visuals
+* Runway AI
+* Stripe
+* Vercel
+* Arc Browser
+* premium AI startup landing pages
+
+VISUAL STYLE:
+
+* Deep navy / graphite backgrounds
+* Electric blue / cyan accent lighting
+* Soft cinematic glow effects
+* Glassmorphism cards
+* Smooth gradients
+* Minimal but powerful
+* Premium motion design
+* High-end typography hierarchy
+* Mobile-first
+* Strong visual depth
+
+IMPORTANT:
+Avoid:
+
+* cheesy marketing agency design
+* generic templates
+* internet marketer vibes
+* crypto landing page feel
+* cluttered layouts
+
+==================================================
+SITE STRUCTURE
+==============
+
+NAVIGATION:
+
+* Home
+* Services
+* Industries
+* AI Content
+* Strategy Call
+* Contact
+
+==================================================
+HOME PAGE
+=========
+
+HERO SECTION
+
+Headline:
+
+# AI Marketing Built For The Attention Economy
+
+Subheadline:
+D&B AI Marketing Co. helps brands, creators, restaurants, clubs, influencers, and app businesses create cinematic AI-powered marketing content designed to capture attention and scale visibility.
+
+PRIMARY CTA:
+
+# Book Strategy Call
+
+SECONDARY CTA:
+
+# View AI Campaigns
+
+RIGHT SIDE HERO VISUAL:
+Large cinematic dashboard/phone/video showcase.
+
+The hero section should immediately communicate:
+
+* AI-powered marketing
+* content creation
+* business growth
+* attention economy
+* premium creative agency
+
+Add:
+
+* floating analytics cards
+* engagement metrics
+* AI video previews
+* ad campaign widgets
+* cinematic motion graphics
+
+==================================================
+VIDEO SHOWCASE SECTION
+======================
+
+THIS IS THE MOST IMPORTANT SECTION.
+
+Create a premium 12-video showcase grid.
+
+Headline:
+
+# AI Campaign Showcase
+
+Subheadline:
+Explore how D&B AI Marketing Co. creates cinematic AI-powered campaigns for different industries.
+
+Create 12 premium animated video placeholders.
+
+Each placeholder should feel:
+
+* cinematic
+* modern
+* premium
+* high-converting
+* social-media optimized
+
+Each video card should have:
+
+* category title
+* short description
+* glowing hover animation
+* play button overlay
+* premium thumbnail styling
+
+12 VIDEO CATEGORIES:
+
+1. Restaurant Marketing
+   AI-generated food ads, social reels, menu promos, customer attraction campaigns.
+
+2. Nightclub & Lounge Marketing
+   Luxury nightlife promos, event visuals, DJ campaigns, VIP atmosphere content.
+
+3. Influencer Branding
+   Personal brand videos, cinematic intros, social growth content.
+
+4. Creator Content Systems
+   Short-form content pipelines for creators and personalities.
+
+5. Mobile Game App Marketing
+   Game trailers, app promos, gameplay ads, monetization visuals.
+
+6. App Marketing
+   Launch campaigns, app store promo videos, feature showcases.
+
+7. Luxury Brand Campaigns
+   Premium cinematic ads for luxury businesses and experiences.
+
+8. Real Estate Marketing
+   Property walkthroughs, AI cinematic home visuals, luxury listing promos.
+
+9. Fitness & Gym Campaigns
+   Transformation content, gym promos, motivational ad campaigns.
+
+10. Podcast & Media Branding
+    Podcast intros, clips, social snippets, media growth visuals.
+
+11. AI Product Commercials
+    Futuristic AI-generated product ads and promo campaigns.
+
+12. Event Promotion Campaigns
+    Concerts, festivals, launch parties, influencer events, nightlife promotions.
+
+IMPORTANT:
+The videos should auto-preview slightly on hover with subtle motion.
+
+==================================================
+WHY CHOOSE US SECTION
+=====================
+
+Headline:
+
+# Why Brands Choose D&B AI Marketing Co.
+
+Create premium feature cards.
+
+CARDS:
+
+1. AI-Powered Creative Systems
+   We combine AI visuals, cinematic editing, and strategic marketing psychology.
+
+2. Built For The Attention Economy
+   Modern brands need content that stops scrolling instantly.
+
+3. Cinematic Content Production
+   We create premium visual experiences instead of generic ads.
+
+4. Multi-Industry Campaigns
+   From restaurants to apps to influencers, we adapt campaigns to each audience.
+
+5. Social-First Marketing
+   Designed for TikTok, Instagram Reels, YouTube Shorts, and digital engagement.
+
+6. High-End Brand Positioning
+   We help businesses feel modern, premium, and culturally relevant.
+
+==================================================
+SERVICES SECTION
+================
+
+Headline:
+
+# AI Marketing Services
+
+Service cards:
+
+* AI Video Commercials
+* Social Media Campaigns
+* AI Ad Creative
+* Influencer Campaign Content
+* Brand Launch Videos
+* App Promo Videos
+* AI Product Visualization
+* Short-Form Video Systems
+* AI Voiceovers
+* Cinematic Editing
+* Content Strategy
+* Viral Hook Development
+
+==================================================
+INDUSTRIES SECTION
+==================
+
+Headline:
+
+# Industries We Work With
+
+Cards:
+
+* Restaurants
+* Nightclubs
+* Influencers
+* Creators
+* Mobile Apps
+* SaaS Companies
+* Podcasts
+* Fitness Brands
+* Luxury Brands
+* Events
+* Startups
+* Real Estate
+
+==================================================
+PROCESS SECTION
+===============
+
+Headline:
+
+# Our Process
+
+Step cards:
+
+1. Strategy
+   We identify your audience, goals, and content direction.
+
+2. AI Production
+   We generate cinematic AI visuals, hooks, and ad creative.
+
+3. Editing & Optimization
+   We optimize content for engagement and platform performance.
+
+4. Launch & Scale
+   You deploy content across social platforms and campaigns.
+
+==================================================
+STRATEGY CALL SECTION
+=====================
+
+Headline:
+
+# Book Your AI Marketing Strategy Session
+
+Subheadline:
+We’ll review your business, brand positioning, audience, and content opportunities.
+
+Add premium Calendly embed placeholder.
+
+CTA Button:
+
+# Schedule Strategy Call
+
+==================================================
+FOOTER
+======
+
+Include:
+
+* social links
+* contact info
+* simple modern footer
+* premium dark aesthetic
+
+==================================================
+ANIMATION REQUIREMENTS
+======================
+
+Add:
+
+* smooth scrolling
+* Framer Motion animations
+* subtle floating effects
+* glowing hover states
+* fade transitions
+* layered gradients
+* premium motion graphics
+* cinematic section transitions
+
+==================================================
+TECH REQUIREMENTS
+=================
+
+* React
+* Tailwind CSS
+* Framer Motion
+* Lucide React icons
+* Fully responsive
+* Mobile-first
+* Reusable components
+* Premium SaaS architecture
+* Fast modern UI
+
+==================================================
+FINAL GOAL
+==========
+
+The website should feel like a high-end AI marketing agency built for the modern attention economy.
+
+The user should immediately feel:
+
+* premium creative quality
+* cinematic marketing power
+* AI-driven production
+* modern brand positioning
+* startup-level sophistication
+
+The site should feel impressive enough to:
+
+* attract business owners
+* attract creators
+* generate strategy calls
+* showcase AI marketing capabilities
+* visually separate the brand from generic marketing agencies.
