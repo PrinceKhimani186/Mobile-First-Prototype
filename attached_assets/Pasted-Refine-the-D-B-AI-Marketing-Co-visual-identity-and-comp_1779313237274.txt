@@ -1,0 +1,155 @@
+Refine the D&B AI Marketing Co. visual identity and completely rebalance the color psychology and emotional tone of the website.
+
+The current blue palette feels too corporate SaaS and does not match the emotional energy needed for a high-end AI marketing and attention-economy brand.
+
+NEW GOAL:
+The site should feel:
+
+* exclusive
+* sexy
+* cinematic
+* luxurious
+* emotionally immersive
+* culturally relevant
+* high-end creative agency
+* premium nightlife/fashion-tech aesthetic
+
+DO NOT make it look like:
+
+* generic SaaS
+* crypto website
+* gaming website
+* corporate AI dashboard
+* internet marketing funnel
+
+VISUAL DIRECTION:
+Blend:
+
+* luxury nightlife visuals
+* cinematic fashion campaigns
+* premium creator economy
+* AI-powered creative studio
+* modern luxury branding
+
+PRIMARY COLOR SYSTEM:
+
+Backgrounds:
+
+* Matte black
+* Obsidian
+* Dark graphite
+* Deep wine-black gradients
+
+Primary accent colors:
+
+* Deep magenta
+* Crimson glow
+* Rich plum
+* Violet gradients
+* Rose gold accents
+* Warm gold reflections
+
+IMPORTANT:
+Use color sparingly and strategically.
+
+The site should feel:
+
+* emotionally charged
+* premium
+* seductive
+* visually addictive
+* cinematic
+
+LIGHTING STYLE:
+Add:
+
+* cinematic glow lighting
+* magenta edge glows
+* crimson ambient depth
+* soft gold reflections
+* subtle lens glow effects
+* luxury nightclub atmosphere
+
+Avoid:
+
+* bright neon overload
+* cyberpunk gamer look
+* Vegas casino visuals
+* loud flashy effects
+
+The design should feel refined and expensive.
+
+CTA BUTTONS:
+Primary CTA:
+Use a deep magenta/crimson gradient with soft glow.
+
+Secondary CTA:
+Glassmorphism dark button with rose-gold border accents.
+
+Buttons should feel:
+
+* premium
+* clickable
+* cinematic
+* emotionally attractive
+
+VIDEO SHOWCASE SECTION:
+The 12 video placeholders should feel like:
+
+* Netflix thumbnails
+* luxury campaign previews
+* cinematic ad showcases
+* music-video level visuals
+
+Add:
+
+* hover zoom effects
+* soft cinematic overlays
+* glowing play buttons
+* premium thumbnail depth
+
+TYPOGRAPHY:
+Use:
+
+* elegant modern typography
+* cinematic spacing
+* luxury-tech hierarchy
+* larger headlines
+* refined subheading contrast
+
+The text should feel:
+
+* bold
+* premium
+* editorial
+* fashion-tech inspired
+
+HERO SECTION:
+The homepage hero should feel emotionally powerful immediately.
+
+Add:
+
+* cinematic lighting behind visuals
+* floating luxury content cards
+* subtle movement
+* premium motion graphics
+* layered visual depth
+* immersive atmosphere
+
+The hero should communicate:
+“This is a high-end AI marketing agency built for the attention economy.”
+
+FINAL FEEL:
+The site should feel like:
+
+* a luxury creative studio
+* a cinematic AI marketing company
+* the agency behind viral campaigns
+* premium creator branding
+* modern cultural marketing
+
+NOT:
+
+* a software company
+* a generic marketing agency
+* a standard SaaS startup.
