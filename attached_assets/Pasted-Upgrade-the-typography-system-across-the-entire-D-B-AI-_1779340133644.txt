@@ -1,0 +1,205 @@
+Upgrade the typography system across the entire D&B AI Marketing Co. website to feel dramatically more premium, cinematic, fashionable, and emotionally powerful.
+
+The current typography feels too standard SaaS.
+
+The typography should become one of the strongest visual identity elements on the entire site.
+
+GOAL:
+The text should feel:
+
+* luxurious
+* bold
+* seductive
+* cinematic
+* fashion-tech inspired
+* high-end editorial
+* visually memorable
+* emotionally engaging
+
+Think:
+
+* luxury fashion campaigns
+* Apple keynote typography
+* cinematic movie trailers
+* premium creator branding
+* high-end magazine covers
+* luxury nightlife campaigns
+* music-industry visuals
+
+NOT:
+
+* generic startup fonts
+* corporate SaaS typography
+* plain UI text
+* default web typography
+
+TYPOGRAPHY DIRECTION:
+
+Headlines should feel:
+
+* large
+* dramatic
+* bold
+* visually commanding
+* immersive
+* cinematic
+
+Subheadings should feel:
+
+* refined
+* elegant
+* lighter
+* modern
+* atmospheric
+
+BODY TEXT:
+
+* highly readable
+* premium spacing
+* clean luxury rhythm
+* softer contrast
+
+FONT STYLE:
+Use a modern luxury-tech combination.
+
+Suggested style direction:
+
+* Editorial headline feel
+* Clean modern sans-serif body
+* Fashion-tech typography pairing
+
+Potential inspiration:
+
+* Neue Montreal
+* Satoshi
+* Clash Display
+* General Sans
+* SF Pro Display
+* Inter (only for body text)
+* modern editorial typography systems
+
+TYPOGRAPHY HIERARCHY:
+
+HERO HEADLINE:
+Make hero headlines much larger and visually dominant.
+
+Examples of visual feel:
+“AI Marketing Built For The Attention Economy”
+should feel cinematic and unforgettable.
+
+Use:
+
+* gradient text highlights
+* subtle glow accents
+* stronger spacing
+* tighter visual composition
+
+SUBHEADINGS:
+
+* softer gray/rose contrast
+* elegant spacing
+* luxury readability
+* wider line spacing
+
+SECTION HEADLINES:
+Each section headline should feel like a cinematic chapter transition.
+
+Examples:
+
+* AI Campaign Showcase
+* Why Brands Choose D&B
+* Built For Viral Attention
+* Cinematic AI Advertising
+
+These should feel:
+
+* premium
+* immersive
+* emotionally charged
+
+TEXT EFFECTS:
+Use effects sparingly and elegantly.
+
+Add:
+
+* soft text glow
+* subtle gradient overlays
+* cinematic fade-ins
+* smooth staggered text animation
+* luxury motion transitions
+
+Avoid:
+
+* cheesy neon glow
+* overdone gradients
+* gamer typography
+* loud effects
+
+SPACING IMPROVEMENTS:
+Increase:
+
+* line-height
+* section spacing
+* breathing room
+* text padding
+
+The site should feel:
+
+* expensive
+* clean
+* immersive
+* intentional
+
+CTA TYPOGRAPHY:
+CTA buttons should feel:
+
+* premium
+* bold
+* fashionable
+* high-converting
+
+Increase:
+
+* button typography weight
+* spacing
+* letter spacing slightly
+* hover motion
+
+VIDEO THUMBNAIL TYPOGRAPHY:
+The text overlays on video showcase cards should feel like:
+
+* Netflix originals
+* luxury campaign posters
+* cinematic promo titles
+
+Use:
+
+* stronger title hierarchy
+* dramatic overlay positioning
+* elegant contrast
+
+MOBILE TYPOGRAPHY:
+Optimize heavily for mobile.
+
+Requirements:
+
+* larger readable headlines
+* cleaner stacking
+* reduced clutter
+* better visual rhythm
+* premium spacing
+* bold mobile CTA visibility
+
+FINAL GOAL:
+The typography should become part of the emotional experience.
+
+When someone lands on the website they should immediately feel:
+
+* luxury
+* attention
+* exclusivity
+* cinematic storytelling
+* premium creative direction
+* elite branding energy
+
+The typography should visually separate D&B AI Marketing Co. from generic AI marketing agencies and make the brand feel culturally powerful and visually unforgettable.
