@@ -1,21 +1,22 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Zap } from "lucide-react";
+import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 
-const LINKS = [
-  { href: "#home", label: "Home" },
-  { href: "#services", label: "Services" },
-  { href: "#industries", label: "Industries" },
-  { href: "#showcase", label: "AI Content" },
-  { href: "#strategy-call", label: "Strategy Call" },
-  { href: "#contact", label: "Contact" },
+const NAV_LINKS = [
+  { label: "Home", type: "anchor", anchor: "home", path: "/" },
+  { label: "AI Campaigns", type: "anchor", anchor: "showcase", path: "/" },
+  { label: "Services", type: "anchor", anchor: "services", path: "/" },
+  { label: "Packages", type: "anchor", anchor: "packages", path: "/" },
+  { label: "Apply", type: "route", path: "/apply" },
+  { label: "Strategy Call", type: "route", path: "/strategy-call" },
 ];
 
 export function Nav() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [active, setActive] = useState("#home");
+  const [location, navigate] = useLocation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -23,65 +24,70 @@ export function Nav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    const sections = LINKS.map(l => l.href.replace("#", ""));
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(e => {
-          if (e.isIntersecting) setActive(`#${e.target.id}`);
-        });
-      },
-      { rootMargin: "-40% 0px -55% 0px" }
-    );
-    sections.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-    return () => observer.disconnect();
-  }, []);
-
-  const scrollTo = (href: string) => {
+  const handleLink = (link: (typeof NAV_LINKS)[0]) => {
     setIsOpen(false);
-    const id = href.replace("#", "");
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: "smooth" });
+    if (link.type === "route") {
+      navigate(link.path);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    if (location === "/") {
+      document.getElementById(link.anchor!)?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate("/");
+      setTimeout(() => {
+        document.getElementById(link.anchor!)?.scrollIntoView({ behavior: "smooth" });
+      }, 180);
+    }
   };
+
+  const isActive = (link: (typeof NAV_LINKS)[0]) => {
+    if (link.type === "route") return location === link.path;
+    return location === "/";
+  };
+
+  const magentaGlow = "hsl(330 65% 52% / 0.12)";
+  const magentaBorder = "hsl(330 65% 52% / 0.28)";
 
   return (
     <header
       className={cn(
         "fixed top-0 z-50 w-full transition-all duration-300",
         scrolled
-          ? "bg-[hsl(228_38%_4%_/_0.85)] backdrop-blur-xl border-b border-white/[0.06] shadow-[0_1px_0_0_hsl(228_20%_14%_/_0.5)]"
+          ? "backdrop-blur-xl border-b shadow-[0_1px_0_0_hsl(345_10%_10%_/_0.5)]"
           : "bg-transparent"
       )}
+      style={scrolled ? { background: "hsl(345 8% 4% / 0.88)", borderBottomColor: "hsl(345 10% 11%)" } : undefined}
     >
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between max-w-7xl">
+      <div className="container mx-auto px-5 md:px-8 h-16 flex items-center justify-between max-w-7xl">
         {/* Logo */}
-        <button
-          onClick={() => scrollTo("#home")}
-          className="flex items-center gap-2.5 group cursor-pointer"
-        >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-[0_0_16px_-3px_hsl(217_85%_58%_/_0.5)]">
+        <button onClick={() => { navigate("/"); window.scrollTo({ top: 0 }); }} className="flex items-center gap-2.5 cursor-pointer">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, hsl(340 72% 46%), hsl(300 60% 42%))", boxShadow: "0 0 16px -4px hsl(330 65% 52% / 0.5)" }}>
             <Zap className="w-4 h-4 text-white" />
           </div>
-          <span className="font-display text-lg font-bold tracking-tight">
-            D<span className="text-primary">&amp;</span>B<span className="text-muted-foreground font-medium"> AI Marketing</span>
+          <span style={{ fontFamily: "'Syne'", fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em" }}>
+            D<span style={{ color: "hsl(330 65% 60%)" }}>&amp;</span>B
+            <span style={{ fontFamily: "'DM Sans'", fontWeight: 400, fontSize: 14, color: "hsl(30 8% 45%)", marginLeft: 4 }}>AI Marketing</span>
           </span>
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-1">
-          {LINKS.map(link => (
+        <nav className="hidden lg:flex items-center gap-0.5">
+          {NAV_LINKS.map(link => (
             <button
-              key={link.href}
-              onClick={() => scrollTo(link.href)}
-              className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer",
-                active === link.href
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
-              )}
+              key={link.label}
+              onClick={() => handleLink(link)}
+              className="px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all cursor-pointer"
+              style={{
+                fontFamily: "'DM Sans'",
+                fontWeight: isActive(link) ? 600 : 400,
+                background: isActive(link) ? magentaGlow : "transparent",
+                border: isActive(link) ? `1px solid ${magentaBorder}` : "1px solid transparent",
+                color: isActive(link) ? "hsl(330 65% 68%)" : "hsl(30 8% 48%)",
+              }}
+              onMouseEnter={e => { if (!isActive(link)) (e.currentTarget as HTMLElement).style.color = "hsl(30 15% 80%)"; }}
+              onMouseLeave={e => { if (!isActive(link)) (e.currentTarget as HTMLElement).style.color = "hsl(30 8% 48%)"; }}
             >
               {link.label}
             </button>
@@ -90,17 +96,18 @@ export function Nav() {
 
         {/* Desktop CTA */}
         <button
-          onClick={() => scrollTo("#strategy-call")}
-          className="hidden md:flex btn-primary h-9 px-5 text-sm font-semibold rounded-xl text-white items-center gap-2"
+          onClick={() => { navigate("/apply"); window.scrollTo({ top: 0 }); }}
+          className="hidden lg:flex btn-primary h-9 px-5 text-[13px] rounded-xl items-center gap-2"
         >
-          Book Call
+          Apply Now
           <Zap className="w-3.5 h-3.5" />
         </button>
 
         {/* Mobile toggle */}
         <button
-          className="md:hidden p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
+          className="lg:hidden p-2 -mr-2 transition-colors cursor-pointer"
           onClick={() => setIsOpen(!isOpen)}
+          style={{ color: "hsl(30 8% 48%)" }}
           aria-label="Toggle menu"
         >
           {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -114,28 +121,30 @@ export function Nav() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden overflow-hidden bg-[hsl(228_38%_4%_/_0.98)] backdrop-blur-xl border-b border-white/[0.06]"
+            className="lg:hidden overflow-hidden border-b"
+            style={{ background: "hsl(345 8% 4% / 0.98)", backdropFilter: "blur(20px)", borderBottomColor: "hsl(345 10% 11%)" }}
           >
-            <nav className="flex flex-col px-4 py-3 gap-1">
-              {LINKS.map(link => (
+            <nav className="flex flex-col px-5 py-3 gap-1">
+              {NAV_LINKS.map(link => (
                 <button
-                  key={link.href}
-                  onClick={() => scrollTo(link.href)}
-                  className={cn(
-                    "block px-4 py-3 rounded-xl text-sm font-medium transition-all text-left cursor-pointer",
-                    active === link.href
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
-                  )}
+                  key={link.label}
+                  onClick={() => handleLink(link)}
+                  className="block px-4 py-3 rounded-xl text-[13px] font-medium transition-all text-left cursor-pointer"
+                  style={{
+                    fontFamily: "'DM Sans'",
+                    fontWeight: isActive(link) ? 600 : 400,
+                    background: isActive(link) ? magentaGlow : "transparent",
+                    color: isActive(link) ? "hsl(330 65% 68%)" : "hsl(30 8% 52%)",
+                  }}
                 >
                   {link.label}
                 </button>
               ))}
               <button
-                onClick={() => scrollTo("#strategy-call")}
-                className="btn-primary mt-2 h-11 px-5 text-sm font-semibold rounded-xl text-white flex items-center justify-center gap-2"
+                onClick={() => { navigate("/apply"); window.scrollTo({ top: 0 }); setIsOpen(false); }}
+                className="btn-primary mt-2 h-11 text-[14px] rounded-xl text-white flex items-center justify-center gap-2"
               >
-                Book Strategy Call
+                Apply Now
                 <Zap className="w-4 h-4" />
               </button>
             </nav>

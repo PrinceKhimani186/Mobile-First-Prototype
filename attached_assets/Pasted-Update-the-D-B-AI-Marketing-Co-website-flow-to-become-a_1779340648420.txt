@@ -1,0 +1,434 @@
+Update the D&B AI Marketing Co. website flow to become a premium agency lead-generation funnel with qualification before booking a strategy call.
+
+DO NOT redesign from scratch.
+Keep the luxury cinematic color direction:
+
+* matte black
+* deep plum
+* crimson
+* magenta
+* rose gold
+* warm gold accents
+* cinematic glow
+* exclusive sexy creative agency feel
+
+CURRENT GOAL:
+The website should guide users through:
+
+Home → AI Campaign Showcase → Services → Packages Preview → Qualifier Form → Strategy Call → Contact
+
+NAVIGATION UPDATE:
+Use this navigation:
+
+* Home
+* AI Campaigns
+* Services
+* Packages
+* Apply
+* Strategy Call
+
+IMPORTANT:
+Do not show full pricing publicly.
+Show package names, value positioning, and “Starting investment discussed on strategy call.”
+
+==================================================
+HOME PAGE FLOW
+==============
+
+Hero Section:
+
+Headline:
+AI Marketing Built For The Attention Economy
+
+Subheadline:
+D&B AI Marketing Co. helps restaurants, clubs, influencers, creators, app companies, and modern brands create cinematic AI-powered content designed to capture attention and drive visibility.
+
+Primary CTA:
+Apply For Strategy Call
+
+Secondary CTA:
+View AI Campaigns
+
+Add small premium text under CTA:
+12-month creative partnerships available for qualified brands.
+
+==================================================
+AI CAMPAIGN SHOWCASE SECTION
+============================
+
+Keep the 12 video placeholders.
+
+Headline:
+AI Campaign Showcase
+
+Subheadline:
+Explore the types of cinematic AI-powered campaigns we create for brands, creators, apps, restaurants, clubs, events, and digital businesses.
+
+12 categories:
+
+1. Restaurant Marketing
+2. Nightclub & Lounge Marketing
+3. Influencer Branding
+4. Creator Content Systems
+5. Mobile Game App Marketing
+6. App Marketing
+7. Luxury Brand Campaigns
+8. Real Estate Marketing
+9. Fitness & Gym Campaigns
+10. Podcast & Media Branding
+11. AI Product Commercials
+12. Event Promotion Campaigns
+
+Each video card should have:
+
+* premium thumbnail placeholder
+* play icon
+* category title
+* short description
+* hover zoom
+* cinematic overlay
+* magenta/crimson glow on hover
+
+==================================================
+WHY CHOOSE US SECTION
+=====================
+
+Headline:
+Why Brands Choose D&B AI Marketing Co.
+
+Cards:
+
+1. Built For Attention
+   We create content designed to stop the scroll and make people feel something.
+
+2. AI-Powered Creative Systems
+   We combine AI visuals, cinematic editing, hooks, and brand psychology.
+
+3. Premium Visual Identity
+   We help brands look more modern, exclusive, and culturally relevant.
+
+4. Multi-Industry Campaigns
+   Restaurants, clubs, influencers, apps, events, creators, and luxury brands.
+
+5. Social-First Content
+   Built for TikTok, Instagram Reels, YouTube Shorts, Facebook, and digital ads.
+
+6. Strategy Before Content
+   We don’t just create videos. We build campaigns around your audience, offer, and goals.
+
+==================================================
+SERVICES SECTION
+================
+
+Headline:
+AI Marketing Services
+
+Service cards:
+
+* AI Video Commercials
+* Short-Form Reels
+* Social Media Campaigns
+* AI Voiceovers
+* Brand Shout-Out Videos
+* Logo/Likeness Video Content
+* App Promo Videos
+* Mobile Game App Ads
+* Event Promo Campaigns
+* Influencer Content
+* Restaurant Promos
+* Nightlife Campaigns
+* Product Commercials
+* Content Strategy
+* Viral Hook Development
+
+==================================================
+PACKAGES PREVIEW SECTION
+========================
+
+Headline:
+AI Marketing Packages
+
+Subheadline:
+Our packages are built for brands that want consistent AI-powered content, stronger visual identity, and monthly creative output.
+
+IMPORTANT:
+Do not show exact public pricing.
+Show package names and deliverables.
+Add note:
+Final pricing and payment structure are reviewed during your strategy call based on business type, volume, and campaign needs.
+
+Create 3 premium package cards:
+
+PACKAGE 1:
+AI Standard Package
+
+Best For:
+Small businesses, restaurants, creators, local brands, and businesses starting with AI content.
+
+Includes:
+
+* 4 AI content creations per week
+* 16 AI content assets per month
+* Mix of AI reels, shout-out videos, brand logo videos, short promo clips, and social content
+* Basic brand/logo integration
+* Caption-ready vertical video formatting
+* Monthly content direction
+* 1 monthly strategy check-in
+* 12-month creative partnership structure
+* Upfront onboarding/down payment required
+
+CTA:
+Apply For AI Standard
+
+PACKAGE 2:
+AI Growth Package
+
+Best For:
+Growing restaurants, clubs, influencers, mobile apps, app marketing, and brands that need stronger content volume.
+
+Includes:
+
+* 8 AI content creations per week
+* 32 AI content assets per month
+* AI reels, cinematic promos, product/service videos, app marketing videos, and campaign creatives
+* Brand/logo/likeness integration
+* Hook development
+* Caption-ready social formatting
+* Monthly campaign calendar
+* 2 monthly strategy check-ins
+* Priority creative turnaround
+* 12-month creative partnership structure
+* Upfront onboarding/down payment required
+
+CTA:
+Apply For AI Growth
+
+PACKAGE 3:
+AI Dominance Package
+
+Best For:
+High-end brands, nightlife groups, influencers, event companies, app launches, luxury businesses, and brands that want aggressive attention.
+
+Includes:
+
+* Custom monthly AI content volume
+* Premium AI commercials
+* Event campaign creatives
+* Influencer-style branded content
+* App launch campaign assets
+* Restaurant/nightclub promotional campaigns
+* Advanced cinematic editing
+* Multi-platform content direction
+* Dedicated creative strategy
+* Monthly campaign planning
+* Priority production
+* 12-month creative partnership structure
+* Upfront onboarding/down payment required
+
+CTA:
+Apply For AI Dominance
+
+Add note below packages:
+Packages are offered as 12-month creative partnerships. Upfront onboarding/down payment is required to begin production. Exact investment is reviewed after qualification.
+
+==================================================
+QUALIFIER FORM PAGE / APPLY SECTION
+===================================
+
+Add a new Apply / Qualifier page before the Strategy Call page.
+
+Page headline:
+Apply For Your AI Marketing Strategy Call
+
+Subheadline:
+Tell us about your business so we can understand your goals, content needs, budget range, and whether D&B AI Marketing Co. is the right fit.
+
+Create a premium multi-step form UI.
+
+STEP 1: Business Info
+Fields:
+
+* Full Name
+* Business Name
+* Email
+* Phone
+* Website or Social Media Link
+* Industry
+
+Industry dropdown:
+
+* Restaurant
+* Nightclub / Lounge
+* Influencer
+* Creator
+* Mobile Game App
+* App / SaaS
+* Real Estate
+* Fitness
+* Podcast / Media
+* Event Company
+* Luxury Brand
+* Other
+
+STEP 2: Marketing Goals
+Question:
+What are you trying to achieve?
+
+Checkbox options:
+
+* More customers
+* More attention online
+* More bookings
+* Better brand image
+* More app installs
+* More event attendance
+* More social media content
+* Better ad creatives
+* Influencer/creator growth
+* Product or service launch
+
+STEP 3: Current Content
+Questions:
+
+* How often do you currently post?
+  Options:
+  Rarely / 1–2 times per week / 3–5 times per week / Daily / We need help building consistency
+
+* What type of content do you currently create?
+  Options:
+  Photos / Reels / Ads / Influencer content / Event promos / App promos / None yet
+
+STEP 4: Monthly Budget Range
+Question:
+What monthly investment range are you comfortable with for AI marketing and content production?
+
+Options:
+
+* Under $1,000
+* $1,000–$2,500
+* $2,500–$5,000
+* $5,000–$10,000
+* $10,000+
+
+Add helper text:
+This helps us recommend the right package and avoid wasting your time.
+
+STEP 5: Timeline
+Question:
+How soon are you looking to start?
+
+Options:
+
+* Immediately
+* This month
+* 30–60 days
+* 60–90 days
+* Just researching
+
+STEP 6: Package Interest
+Question:
+Which package are you most interested in?
+
+Options:
+
+* AI Standard Package
+* AI Growth Package
+* AI Dominance Package
+* Not sure yet
+
+STEP 7: Final Details
+Question:
+Why do you feel your current marketing is not capturing enough attention?
+
+Long text field.
+
+Checkbox:
+I understand D&B AI Marketing Co. provides AI-powered content creation, marketing strategy, and campaign assets, but does not guarantee revenue, followers, views, conversions, bookings, app installs, or business results.
+
+CTA Button:
+Continue To Strategy Call
+
+After form submission:
+Route to Strategy Call page.
+
+==================================================
+STRATEGY CALL PAGE
+==================
+
+Headline:
+Book Your AI Marketing Strategy Session
+
+Subheadline:
+On this call, we’ll review your business, audience, goals, current content, budget range, and recommend the best AI marketing package for your brand.
+
+What We’ll Cover cards:
+
+1. Brand Positioning
+   We’ll look at how your business currently shows up online.
+
+2. Content Opportunities
+   We’ll identify what types of AI content could create more attention.
+
+3. Campaign Direction
+   We’ll map out possible reels, ads, promos, shout-outs, and launch campaigns.
+
+4. Package Fit
+   We’ll recommend the best package based on your goals and budget.
+
+5. Next Steps
+   If it makes sense, we’ll walk through contract, onboarding, down payment, and production timeline.
+
+Add Calendly embed placeholder.
+
+CTA:
+Schedule My Strategy Call
+
+Add trust section:
+Why Book The Call?
+
+* Premium AI creative direction
+* 12-month content partnership options
+* Built for restaurants, clubs, creators, apps, and events
+* Strategy before production
+* No generic content templates
+
+Disclaimer:
+D&B AI Marketing Co. does not guarantee revenue, followers, views, conversions, bookings, app installs, or business results. Results depend on offer, audience, consistency, distribution, market demand, and other factors.
+
+==================================================
+POST-CALL / CHECKOUT PLACEHOLDER
+================================
+
+Add hidden/placeholder Checkout CTA page.
+
+Headline:
+Start Your AI Marketing Partnership
+
+Subheadline:
+Your package, contract, onboarding payment, and monthly plan will be confirmed after your strategy call.
+
+Buttons:
+
+* Complete Onboarding Payment
+* Review Agreement
+
+This page should be hidden from public nav.
+
+==================================================
+FINAL REQUIREMENTS
+==================
+
+* Keep the site mobile-first.
+* Make the qualifier form feel premium.
+* Make the package cards feel exclusive.
+* Do not show exact public pricing.
+* Keep the 12-month contract positioning.
+* Mention upfront onboarding/down payment required.
+* Add no-guarantee disclaimer.
+* Keep luxury cinematic typography.
+* Keep matte black, plum, magenta, crimson, rose-gold color system.
+* Make CTA flow clear:
+  Home → Campaign Showcase → Packages → Apply → Strategy Call.
+
+FINAL GOAL:
+The updated site should work as a premium AI marketing agency funnel that qualifies serious businesses before they book a strategy call.
