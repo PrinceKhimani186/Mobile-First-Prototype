@@ -368,7 +368,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <FloatCard className="top-20 -left-16 px-4 py-3.5 min-w-[162px]" floatY={9} delay={0}>
+              <FloatCard className="top-56 -left-16 px-4 py-3.5 min-w-[162px]" floatY={9} delay={0}>
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "hsl(330 40% 13%)", border: "1px solid hsl(330 40% 21%)" }}>
                     <TrendingUp className="w-4 h-4" style={{ color: "hsl(330 65% 62%)" }} />
