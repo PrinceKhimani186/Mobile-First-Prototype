@@ -1,0 +1,419 @@
+Update the main App Squad Replit website with the correct two-route funnel structure and new front-end headline positioning.
+
+DO NOT use the headline:
+“Most People Use Apps. Very Few Own One.”
+
+That headline is already being used on the closer presentation site: OwnYourGameApp.com.
+
+The App Squad main site should feel like the front-end discovery and qualification hub.
+
+OwnYourGameApp.com is the closer presentation site used later during the sales call.
+
+==================================================
+MAIN HEADLINE UPDATE
+====================
+
+Use this headline on the main App Squad homepage:
+
+Explore The Mobile App Economy
+
+Subheadline:
+Discover how branded mobile game apps are customized, prepared for monetization, and launched through App Squad’s guided app launch process.
+
+Primary CTA:
+Watch The App Ownership Presentation
+
+Secondary CTA:
+Already Spoke With A Specialist?
+
+Helper text:
+Choose the path that fits how you found us.
+
+==================================================
+TWO ENTRY ROUTES
+================
+
+The site must support TWO DIFFERENT funnel flows:
+
+1. Ads / Cold Traffic Flow
+2. Appointment Setter / Bought Lead Flow
+
+==================================================
+FLOW 1 — ADS / COLD TRAFFIC
+===========================
+
+This flow is for:
+
+* Facebook ads
+* Instagram ads
+* YouTube ads
+* TikTok ads
+* organic cold traffic
+
+These visitors do NOT know App Squad yet.
+
+They must enter information BEFORE watching the presentation.
+
+Route:
+/start
+
+Page headline:
+Explore The App Launch Process
+
+Subheadline:
+Enter your information to access the App Ownership Presentation and see how App Squad helps guide customers from game template selection to customization, monetization preparation, and launch support.
+
+Fields:
+
+* First Name
+* Email
+* Phone
+
+CTA:
+Watch The App Ownership Presentation
+
+After submission:
+Route to:
+/presentation
+
+==================================================
+APP OWNERSHIP PRESENTATION PAGE
+===============================
+
+Route:
+/presentation
+
+Headline:
+See How The App Launch Process Works
+
+Subheadline:
+This short presentation explains how mobile game apps are customized, branded, prepared for monetization, and launched through App Squad’s guided onboarding process.
+
+Video Placeholder Title:
+App Ownership Presentation
+
+Video length note:
+60–90 second overview
+
+CTA:
+Apply For An App Launch Strategy Call
+
+Route CTA to:
+/apply
+
+==================================================
+FLOW 2 — APPOINTMENT SETTER / BOUGHT LEAD FLOW
+==============================================
+
+This flow is for:
+
+* bought biz-op leads
+* outbound appointment setter calls
+* leads already contacted by the team
+
+These visitors already expect a sales process and should SKIP the initial lead capture page.
+
+Route:
+/scheduled-leads
+
+Headline:
+Already Spoke With An App Specialist?
+
+Subheadline:
+Complete your qualification form and schedule your app launch strategy call so our team can review your goals, game interests, budget range, and timeline.
+
+CTA:
+Continue To Qualification
+
+Route CTA to:
+/apply
+
+==================================================
+HOME PAGE TWO ROUTE CARDS
+=========================
+
+Directly under the hero section, add two premium route cards.
+
+CARD 1:
+Label:
+New Here?
+
+Title:
+Watch The App Ownership Presentation
+
+Description:
+Explore how the App Squad app launch process works and see how branded mobile game apps are prepared for customization, monetization, and launch.
+
+CTA:
+Watch Presentation
+
+Route:
+Lead Capture → Presentation → Qualification → Book Call
+
+Button link:
+/start
+
+CARD 2:
+Label:
+Already Contacted?
+
+Title:
+Continue Your Application Process
+
+Description:
+If one of our app specialists already contacted you, continue directly to qualification and schedule your app launch strategy call.
+
+CTA:
+Continue Application
+
+Route:
+Qualification → Book Call
+
+Button link:
+/scheduled-leads
+
+==================================================
+SHARED QUALIFIER FORM
+=====================
+
+Route:
+/apply
+
+Headline:
+Apply For Your App Launch Strategy Call
+
+Subheadline:
+Tell us about your goals so our team can recommend the best app launch path for your situation.
+
+Use a premium multi-step form.
+
+Step 1: Contact Info
+
+* Full Name
+* Email
+* Phone
+
+Step 2: Goal
+Question:
+What interests you most about launching a mobile game app?
+
+Options:
+
+* Digital asset ownership
+* Side business opportunity
+* App monetization
+* Building a brand
+* Learning the app business
+* Other
+
+Step 3: Game Interest
+Question:
+Which game style interests you most?
+
+Options:
+
+* Puzzle Game
+* Word Game
+* Casino Slots Style Game
+* Arcade Game
+* Trivia Game
+* Kids Educational Game
+* Racing Game
+* Not sure yet
+
+Step 4: Budget Range
+Question:
+What budget range are you comfortable with for launching a custom-branded app?
+
+Options:
+
+* Under $500
+* $500–$1,000
+* $1,000–$3,000
+* $3,000–$5,000
+* $5,000+
+
+Step 5: Timeline
+Question:
+How soon are you looking to start?
+
+Options:
+
+* Immediately
+* This week
+* This month
+* 30–60 days
+* Just researching
+
+Step 6: Understanding
+Checkbox:
+I understand App Squad does not guarantee earnings, downloads, rankings, app approvals, ad revenue, in-app purchase revenue, profits, or return on investment.
+
+CTA:
+Continue To Book Call
+
+After submission:
+Route to:
+/book-call
+
+Save form data in localStorage for now.
+
+==================================================
+BOOK CALL PAGE
+==============
+
+Route:
+/book-call
+
+Headline:
+Book Your App Launch Strategy Call
+
+Subheadline:
+On this call, our team will review your goals, game interests, budget range, timeline, and the best app launch path for your situation.
+
+Add Calendly placeholder/embed area.
+
+What We’ll Cover cards:
+
+1. Your App Goals
+2. Game Template Direction
+3. Monetization Preparation
+4. Publishing Assistance
+5. Package Recommendation
+6. Next Steps
+
+CTA:
+Schedule My Strategy Call
+
+Add note:
+During your call, our team may walk you through additional market examples and game template options.
+
+==================================================
+PUBLIC NAVIGATION
+=================
+
+Use this public navigation:
+
+* Home
+* Presentation
+* Apply
+* Book Call
+* For Scheduled Leads
+
+Do NOT show:
+
+* Game Selection
+* Customization
+* Dashboard
+
+Those are hidden post-enrollment pages only.
+
+==================================================
+HIDDEN POST-ENROLLMENT ROUTES
+=============================
+
+Keep these routes hidden from public navigation:
+
+* /onboarding/access
+* /onboarding/game-selection
+* /onboarding/customization
+* /onboarding/dashboard
+
+These should only be accessible after payment/enrollment.
+
+==================================================
+ENROLLMENT PLACEHOLDER
+======================
+
+Create hidden route:
+/enrollment
+
+Headline:
+Begin Your App Launch Enrollment
+
+Subheadline:
+After your strategy call, you’ll receive your agreement, payment link, and secure onboarding access.
+
+Button:
+Continue To Secure Enrollment
+
+This should later connect to payment, DocuSign, and hidden onboarding.
+
+Do not show this page in public navigation.
+
+==================================================
+WORDING RULES
+=============
+
+Do NOT use:
+
+* Free Training
+* Webinar
+* Masterclass
+* Coaching
+* Online Course
+
+Use:
+
+* App Ownership Presentation
+* App Launch Process
+* Launch Overview
+* App Launch Strategy Call
+* Guided Launch System
+* App Launch Consultation
+
+==================================================
+DESIGN REQUIREMENTS
+===================
+
+Keep the current premium App Squad visual direction:
+
+* modern AI/SaaS feel
+* dark tech background
+* warm gold/orange CTA buttons
+* clean typography
+* mobile-first
+* app ecosystem visuals
+* phone mockups
+* dashboard cards
+* smooth animations
+* premium spacing
+
+Primary CTA:
+warm gold/orange gradient
+
+Secondary CTA:
+dark glass button with thin border
+
+Avoid:
+
+* cheesy biz-op look
+* exaggerated income claims
+* too much blue
+* cluttered pages
+
+==================================================
+DISCLAIMER
+==========
+
+Add clear disclaimer blocks on:
+/presentation
+/apply
+/book-call
+
+Disclaimer:
+App Squad provides custom mobile game app development, monetization preparation, and app store publishing assistance. App Squad does not guarantee earnings, downloads, rankings, app approvals, ad revenue, in-app purchase revenue, profits, or return on investment. Results vary and depend on marketing, user engagement, platform rules, audience demand, app quality, consistency, and third-party approval processes.
+
+==================================================
+FINAL GOAL
+==========
+
+The App Squad site should now operate as the official lead qualification hub with two separate traffic paths:
+
+1. Ads / Cold Traffic:
+   Lead Capture → App Ownership Presentation → Qualification → Book Call
+
+2. Appointment Setter / Bought Leads:
+   Qualification → Book Call
+
+The closer presentation site, OwnYourGameApp.com, is used later during the actual sales call.

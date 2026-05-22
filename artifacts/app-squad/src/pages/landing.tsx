@@ -468,18 +468,17 @@ export default function Landing() {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wide mb-8 shadow-[0_0_15px_-3px_hsl(217_91%_60%_/_0.2)]"
               >
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                The Mobile Game App Platform
+                The Mobile App Economy
               </motion.div>
 
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-6xl lg:text-7xl xl:text-8xl font-bold leading-[1.0] tracking-tight mb-6"
+                className="text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] tracking-tight mb-6"
               >
-                Launch Your Own<br />
-                <span className="gradient-text block mt-2">Custom Mobile<br />Game App</span>
-                <span className="block mt-2">Without Coding</span>
+                Explore The<br />
+                <span className="gradient-text block mt-2">Mobile App Economy</span>
               </motion.h1>
 
               <motion.p
@@ -488,28 +487,37 @@ export default function Landing() {
                 transition={{ delay: 0.15 }}
                 className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-xl"
               >
-                App Squad helps aspiring entrepreneurs build, brand, and launch mobile game apps designed for app store monetization through ads, upgrades, and digital engagement.
+                Discover how branded mobile game apps are customized, prepared for monetization, and launched through App Squad's guided app launch process.
               </motion.p>
 
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="flex flex-col sm:flex-row gap-4 mb-12"
+                className="flex flex-col sm:flex-row gap-4 mb-6"
               >
-                <Link href="/training">
-                  <button className="btn-primary h-14 px-8 text-base font-semibold rounded-xl text-white flex items-center gap-2 w-full sm:w-auto justify-center" data-testid="button-watch-training-hero">
-                    Watch Free Training
+                <Link href="/start">
+                  <button className="btn-gold h-14 px-8 text-base font-semibold rounded-xl text-white flex items-center gap-2 w-full sm:w-auto justify-center">
+                    Watch The App Ownership Presentation
                     <PlayCircle className="w-5 h-5" />
                   </button>
                 </Link>
-                <Link href="/apply">
-                  <button className="btn-ghost h-14 px-8 text-base font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full sm:w-auto justify-center" data-testid="button-apply-hero">
-                    Apply Now
+                <Link href="/scheduled-leads">
+                  <button className="btn-ghost h-14 px-8 text-base font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full sm:w-auto justify-center">
+                    Already Spoke With A Specialist?
                     <ArrowRight className="w-5 h-5" />
                   </button>
                 </Link>
               </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.28 }}
+                className="text-sm text-muted-foreground/60 mb-8 font-medium"
+              >
+                Choose the path that fits how you found us.
+              </motion.p>
 
               <motion.div
                 initial={{ opacity: 0 }}
@@ -709,6 +717,82 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ═══════════ TWO ROUTE CARDS ═══════════ */}
+      <section className="py-20 border-b border-white/[0.06] relative">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-10"
+          >
+            <p className="text-sm font-semibold tracking-widest uppercase mb-3" style={{ color: "hsl(35 90% 60%)" }}>Choose Your Path</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-3">Where Would You Like To Start?</h2>
+            <p className="text-muted-foreground">Choose the path that fits how you found us.</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Card 1 — Cold Traffic */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.08 }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+            >
+              <Link href="/start">
+                <div className="glass rounded-3xl p-8 h-full group cursor-pointer border border-white/[0.06] hover:border-[hsl(35_90%_55%_/_0.35)] transition-all duration-300 hover:shadow-[0_0_40px_-10px_hsl(35_90%_55%_/_0.25)]">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-5 text-xs font-semibold"
+                    style={{ background: "hsl(35 90% 55% / 0.1)", border: "1px solid hsl(35 90% 55% / 0.25)", color: "hsl(35 90% 65%)" }}>
+                    New Here?
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3 leading-tight">Watch The App Ownership Presentation</h3>
+                  <p className="text-muted-foreground leading-relaxed text-sm mb-6">
+                    Explore how the App Squad app launch process works and see how branded mobile game apps are prepared for customization, monetization, and launch.
+                  </p>
+                  <div className="text-xs text-muted-foreground/50 mb-6 font-medium tracking-wide uppercase">
+                    Lead Capture → Presentation → Qualification → Book Call
+                  </div>
+                  <button className="btn-gold h-12 px-6 text-sm font-semibold rounded-xl text-white flex items-center gap-2 w-full justify-center">
+                    Watch Presentation
+                    <PlayCircle className="w-4 h-4" />
+                  </button>
+                </div>
+              </Link>
+            </motion.div>
+
+            {/* Card 2 — Appointment Setter */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.16 }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+            >
+              <Link href="/scheduled-leads">
+                <div className="glass rounded-3xl p-8 h-full group cursor-pointer border border-white/[0.06] hover:border-primary/35 transition-all duration-300 hover:shadow-[0_0_40px_-10px_hsl(217_85%_58%_/_0.2)]">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-5 text-xs font-semibold"
+                    style={{ background: "hsl(217 85% 58% / 0.1)", border: "1px solid hsl(217 85% 58% / 0.25)", color: "hsl(217 85% 70%)" }}>
+                    Already Contacted?
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3 leading-tight">Continue Your Application Process</h3>
+                  <p className="text-muted-foreground leading-relaxed text-sm mb-6">
+                    If one of our app specialists already contacted you, continue directly to qualification and schedule your app launch strategy call.
+                  </p>
+                  <div className="text-xs text-muted-foreground/50 mb-6 font-medium tracking-wide uppercase">
+                    Qualification → Book Call
+                  </div>
+                  <button className="btn-ghost h-12 px-6 text-sm font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full justify-center">
+                    Continue Application
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ═══════════ BENEFITS ═══════════ */}
       <section className="py-24 border-y border-white/[0.06] relative">
         <div className="container mx-auto px-4">
@@ -786,10 +870,10 @@ export default function Landing() {
               />
             </div>
             {[
-              { step: "01", title: "Watch Training", desc: "Learn the mobile game business model and see if App Squad is the right fit.", icon: PlayCircle },
-              { step: "02", title: "Apply", desc: "Submit your application so we can understand your goals and timeline.", icon: Smartphone },
-              { step: "03", title: "Build Your App", desc: "Choose your game type, customize branding, and configure monetization.", icon: Layers },
-              { step: "04", title: "Launch", desc: "We deploy your finished game to iOS App Store and Google Play.", icon: Rocket },
+              { step: "01", title: "Watch The Presentation", desc: "See how the app launch process works in a short overview presentation.", icon: PlayCircle },
+              { step: "02", title: "Apply", desc: "Complete the qualification form and tell us about your goals and timeline.", icon: Smartphone },
+              { step: "03", title: "Book A Strategy Call", desc: "Our team reviews your application and walks through the best launch path for you.", icon: Layers },
+              { step: "04", title: "Launch Your App", desc: "We guide you from game template selection to App Store and Google Play launch.", icon: Rocket },
             ].map((item, i) => (
               <motion.div
                 key={i}
@@ -819,21 +903,21 @@ export default function Landing() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_100%,hsl(217_85%_50%_/_0.07)_0%,transparent_70%)]" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto glass rounded-[2.5rem] p-12 md:p-16 text-center border border-white/[0.08] shadow-[0_0_60px_-20px_hsl(217_85%_50%_/_0.15),0_1px_0_0_hsl(220_20%_97%_/_0.05)_inset]">
-            <p className="text-primary text-xs font-semibold tracking-widest uppercase mb-5">Get Started</p>
+            <p className="text-xs font-semibold tracking-widest uppercase mb-5" style={{ color: "hsl(35 90% 60%)" }}>Get Started</p>
             <h2 className="text-4xl md:text-5xl font-bold mb-5 leading-tight">Ready To Explore<br />Your App Idea?</h2>
             <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed">
-              See how App Squad helps entrepreneurs launch custom-branded mobile game apps without coding.
+              See how App Squad helps entrepreneurs launch custom-branded mobile game apps through a guided app launch process.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/training">
-                <button className="btn-primary h-13 px-8 text-base font-semibold rounded-xl text-white flex items-center gap-2 w-full sm:w-auto justify-center" data-testid="button-cta-training">
-                  Watch Free Training
+              <Link href="/start">
+                <button className="btn-gold h-13 py-4 px-8 text-base font-semibold rounded-xl text-white flex items-center gap-2 w-full sm:w-auto justify-center">
+                  Watch The App Ownership Presentation
                   <PlayCircle className="w-5 h-5" />
                 </button>
               </Link>
-              <Link href="/apply">
-                <button className="btn-ghost h-13 px-8 text-base font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full sm:w-auto justify-center" data-testid="button-cta-apply">
-                  Apply To Launch Your App
+              <Link href="/scheduled-leads">
+                <button className="btn-ghost h-13 py-4 px-8 text-base font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full sm:w-auto justify-center">
+                  Already Spoke With A Specialist?
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </Link>
