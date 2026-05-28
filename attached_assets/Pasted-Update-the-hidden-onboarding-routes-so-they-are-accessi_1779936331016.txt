@@ -1,0 +1,195 @@
+Update the hidden onboarding routes so they are accessible for dev/CRM integration but still not shown in public navigation.
+
+Do NOT delete the hidden routes.
+
+Keep these routes active:
+- /onboarding/access
+- /onboarding/game-selection
+- /onboarding/customization
+- /onboarding/dashboard
+
+Do not show these routes in the public navigation.
+
+Add a dev/testing access code gate at:
+/onboarding/access
+
+Access code:
+APPSTART
+
+After entering the access code, route to:
+/onboarding/game-selection
+
+==================================================
+ONBOARDING FLOW
+==================================================
+
+Step 1:
+/onboarding/game-selection
+
+Purpose:
+Client selects game template.
+
+Fields/data:
+- selectedGameType
+- gameCategory
+- templateName
+
+CTA:
+Save Game Selection
+
+After save:
+Route to:
+/onboarding/customization
+
+==================================================
+Step 2:
+/onboarding/customization
+
+Purpose:
+Client submits app customization details.
+
+Fields:
+- appName
+- brandName
+- preferredColors
+- logoUploadPlaceholder
+- targetAudience
+- appDescription
+- monetizationPreference: Ads, In-App Purchases, Both
+- notesForDevelopmentTeam
+
+CTA:
+Submit Customization
+
+After save:
+Route to:
+/onboarding/dashboard
+
+==================================================
+Step 3:
+/onboarding/dashboard
+
+Purpose:
+Client sees app launch status.
+
+Display:
+- client name
+- selected game type
+- submitted app name
+- brand name
+- monetization preference
+- project status timeline
+
+Timeline:
+1. Intake Received
+2. Game Selected
+3. Branding Submitted
+4. Monetization Setup Pending
+5. Development Queued
+6. Testing
+7. App Store Preparation
+8. Launch Support
+
+==================================================
+GOHIGHLEVEL / CRM INTEGRATION PREP
+==================================================
+
+Add placeholder integration functions in code:
+
+sendLeadToCRM()
+sendApplicationToCRM()
+sendGameSelectionToCRM()
+sendCustomizationToCRM()
+updateProjectStatusInCRM()
+
+For now, these functions can console.log the payload and include a TODO comment:
+TODO: Replace with GoHighLevel webhook endpoint.
+
+Each submission should prepare a clean JSON payload.
+
+Example payload for game selection:
+{
+  source: "post_payment_onboarding",
+  stage: "game_selected",
+  clientName: "",
+  email: "",
+  phone: "",
+  selectedGameType: "",
+  templateName: "",
+  timestamp: ""
+}
+
+Example payload for customization:
+{
+  source: "post_payment_onboarding",
+  stage: "customization_submitted",
+  clientName: "",
+  email: "",
+  phone: "",
+  appName: "",
+  brandName: "",
+  preferredColors: "",
+  targetAudience: "",
+  appDescription: "",
+  monetizationPreference: "",
+  notesForDevelopmentTeam: "",
+  timestamp: ""
+}
+
+==================================================
+SOURCE TRACKING
+==================================================
+
+Keep tracking source from public flows:
+
+/start = Ads / Cold Traffic
+/representative = Representative / Bought Lead
+
+Save source in localStorage.
+
+Carry the source into:
+/apply
+/book-call
+/onboarding/game-selection
+/onboarding/customization
+/onboarding/dashboard
+
+==================================================
+DEV TEST BUTTON
+==================================================
+
+On /onboarding/access, add small text:
+
+Developer/Test Access
+
+This should not be promoted publicly.
+
+==================================================
+IMPORTANT UX RULE
+==================================================
+
+Hidden onboarding pages should look polished and real.
+
+They should feel like a client portal:
+- premium dashboard UI
+- step progress indicator
+- app launch status
+- clean forms
+- mobile-friendly
+
+But they should remain hidden from public navigation.
+
+==================================================
+FINAL GOAL
+==================================================
+
+The dev should be able to connect GoHighLevel webhooks to:
+- lead capture form
+- apply qualification form
+- booking page
+- game selection form
+- customization form
+- dashboard status updates
+
+Do not expose onboarding pages publicly in navigation.
+Only allow access through /onboarding/access or post-payment redirect.

@@ -1,250 +1,251 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Clock, Loader2, LifeBuoy, Gamepad2, Palette, BarChart3, Store, CalendarClock, ListChecks, ArrowRight, Play } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import {
+  CheckCircle2, Clock, Circle, Gamepad2, Palette,
+  BarChart3, Store, Rocket, Layers, TestTube2, LifeBuoy, User,
+} from "lucide-react";
+import { updateProjectStatusInCRM } from "@/lib/crm";
 
-const STATUS_CARDS = [
-  { label: "Game Type", value: "Selected", icon: Gamepad2, status: "complete" },
-  { label: "Branding", value: "In Review", icon: Palette, status: "active" },
-  { label: "Monetization", value: "Pending", icon: BarChart3, status: "pending" },
-  { label: "App Store", value: "Not Started", icon: Store, status: "pending" },
-  { label: "Timeline", value: "8–12 weeks", icon: CalendarClock, status: "info" },
-  { label: "Checklist", value: "2 of 7 Done", icon: ListChecks, status: "info" },
+interface TimelineStage {
+  label: string;
+  icon: React.ElementType;
+  status: "complete" | "active" | "pending";
+}
+
+const buildTimeline = (hasGameSelection: boolean, hasCustomization: boolean): TimelineStage[] => [
+  { label: "Intake Received",          icon: CheckCircle2,  status: "complete" },
+  { label: "Game Selected",            icon: Gamepad2,      status: hasGameSelection ? "complete" : "pending" },
+  { label: "Branding Submitted",       icon: Palette,       status: hasCustomization ? "complete" : hasGameSelection ? "active" : "pending" },
+  { label: "Monetization Setup Pending", icon: BarChart3,   status: hasCustomization ? "active" : "pending" },
+  { label: "Development Queued",       icon: Layers,        status: "pending" },
+  { label: "Testing",                  icon: TestTube2,     status: "pending" },
+  { label: "App Store Preparation",    icon: Store,         status: "pending" },
+  { label: "Launch Support",           icon: Rocket,        status: "pending" },
 ];
 
-const TIMELINE = [
-  { stage: "Intake Received", status: "complete", note: "Your project has been queued.", date: "Completed 3 days ago" },
-  { stage: "Game Customization", status: "in-progress", note: "Team is working on your game build.", date: "In Progress" },
-  { stage: "Monetization Setup", status: "pending", note: "", date: "Est. 2 weeks" },
-  { stage: "Testing & QA", status: "pending", note: "", date: "Est. 3 weeks" },
-  { stage: "Client Review", status: "pending", note: "", date: "Est. 4-5 weeks" },
-  { stage: "App Store Submission", status: "pending", note: "", date: "Est. 6-8 weeks" },
-  { stage: "Launch Support", status: "pending", note: "", date: "Est. 8-10 weeks" },
-];
+function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="rounded-xl p-4" style={{ background: "hsl(226 32% 8%)", border: "1px solid hsl(224 22% 13%)" }}>
+      <p style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "hsl(218 16% 38%)", marginBottom: 6 }}>{label}</p>
+      <p style={{ fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em", lineHeight: 1.2, color: "hsl(220 20% 90%)" }}>{value || "—"}</p>
+      {sub && <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "hsl(218 16% 40%)", marginTop: 3, fontWeight: 300 }}>{sub}</p>}
+    </div>
+  );
+}
 
 export default function Dashboard() {
+  const [clientName, setClientName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [source, setSource] = useState("");
+  const [gameSelection, setGameSelection] = useState<{ selectedGameType: string; gameCategory: string; templateName: string } | null>(null);
+  const [customization, setCustomization] = useState<{ appName: string; brandName: string; monetizationPreference: string } | null>(null);
+
+  useEffect(() => {
+    const lead = JSON.parse(localStorage.getItem("as_lead") || "{}");
+    const application = JSON.parse(localStorage.getItem("as_application") || "{}");
+    const game = JSON.parse(localStorage.getItem("as_game_selection") || "null");
+    const custom = JSON.parse(localStorage.getItem("as_customization") || "null");
+    const src = localStorage.getItem("as_source") || "Direct";
+
+    const name = application.name || lead.name || "";
+    const em = application.email || lead.email || "";
+    const ph = application.phone || lead.phone || "";
+
+    setClientName(name);
+    setEmail(em);
+    setPhone(ph);
+    setSource(src);
+    setGameSelection(game);
+    setCustomization(custom);
+
+    updateProjectStatusInCRM({
+      clientName: name,
+      email: em,
+      stage: custom ? "customization_submitted" : game ? "game_selected" : "intake_received",
+      status: "dashboard_viewed",
+      source: src,
+    });
+  }, []);
+
+  const timeline = buildTimeline(!!gameSelection, !!customization);
+  const completedCount = timeline.filter(t => t.status === "complete").length;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="min-h-[calc(100vh-4rem)] py-12 relative"
-    >
-      <div className="absolute top-0 right-0 w-1/2 h-96 bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="container mx-auto px-4 max-w-6xl relative z-10">
+    <div className="min-h-screen py-12 relative overflow-hidden">
+      <div className="absolute inset-0 grid-bg opacity-18" />
+      <div className="absolute top-0 right-0 w-[500px] h-[400px] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at center, hsl(217 85% 58% / 0.06) 0%, transparent 65%)", filter: "blur(90px)" }} />
+
+      <div className="container mx-auto px-4 max-w-5xl relative z-10">
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <p className="text-primary text-sm font-bold tracking-widest uppercase mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse"/>
-              Client Portal
-            </p>
-            <h1 className="text-4xl md:text-5xl font-bold">Launch Dashboard</h1>
-            <p className="text-muted-foreground text-base mt-3">Track the progress of your custom mobile game build.</p>
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "hsl(142 76% 55%)" }} />
+            <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(142 76% 55%)" }}>
+              Client Portal — Live
+            </span>
           </div>
-          <Button
-            variant="outline"
-            className="border-white/10 hover:bg-white/[0.05] hover:border-white/20 shrink-0 h-12 px-6 rounded-xl"
-            data-testid="button-support-ticket"
-          >
-            <LifeBuoy className="w-5 h-5 mr-2 text-primary" />
-            Submit Support Ticket
-          </Button>
-        </div>
-
-        {/* Status Cards */}
-        <motion.div
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12"
-          initial="hidden"
-          animate="visible"
-          variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.06 } } }}
-        >
-          {STATUS_CARDS.map((card) => (
-            <motion.div
-              key={card.label}
-              variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}
-              data-testid={`status-card-${card.label.toLowerCase().replace(/\s/g, "-")}`}
-            >
-              <div className={cn(
-                "glass rounded-2xl p-5 flex flex-col justify-between h-28 border-2 transition-all",
-                card.status === "active" ? "border-primary/40 bg-primary/5 shadow-[0_0_20px_-5px_hsl(217_91%_60%_/_0.2)] animate-pulse shadow-primary/20" : 
-                card.status === "complete" ? "border-emerald-500/20 bg-emerald-500/5" :
-                "border-white/5"
-              )}
-              style={card.status === "active" ? { animationDuration: '3s' } : {}}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">{card.label}</span>
-                  <card.icon className={cn(
-                    "w-5 h-5",
-                    card.status === "complete" ? "text-emerald-400" :
-                    card.status === "active" ? "text-primary" :
-                    card.status === "info" ? "text-accent" :
-                    "text-muted-foreground/40"
-                  )} />
-                </div>
-                <span className={cn(
-                  "text-lg font-bold leading-tight",
-                  card.status === "complete" ? "text-emerald-400" :
-                  card.status === "active" ? "text-primary" :
-                  card.status === "info" ? "text-foreground" :
-                  "text-muted-foreground"
-                )}>
-                  {card.value}
-                </span>
-              </div>
-            </motion.div>
-          ))}
+          <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 8 }}>
+            {clientName ? `Welcome back, ${clientName.split(" ")[0]}.` : "App Launch Dashboard"}
+          </h1>
+          <p style={{ fontFamily: "'Inter'", fontSize: 14, color: "hsl(218 16% 48%)", fontWeight: 300 }}>
+            {completedCount} of {timeline.length} launch stages complete.
+          </p>
         </motion.div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6">
 
-          {/* Timeline */}
-          <div className="lg:col-span-2 glass rounded-3xl p-8 md:p-12 border-2 border-white/5 shadow-xl">
-            <h2 className="text-2xl font-bold mb-10 flex items-center gap-3">
-              Development Roadmap
-            </h2>
+          {/* Left — stats + timeline */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
 
-            <div className="relative ml-2">
-              <div className="absolute left-[23px] top-6 bottom-6 w-1 bg-gradient-to-b from-primary/80 via-primary/20 to-white/[0.06] rounded-full" />
+            {/* Client stats */}
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <StatCard label="Client Name" value={clientName || "Not set"} />
+                <StatCard label="Game Type" value={gameSelection?.selectedGameType || "Pending"} sub={gameSelection?.gameCategory} />
+                <StatCard label="App Name" value={customization?.appName || "Pending"} />
+                <StatCard label="Brand Name" value={customization?.brandName || "Pending"} />
+                <StatCard label="Monetization" value={customization?.monetizationPreference || "Pending"} />
+                <StatCard label="Source" value={source || "Direct"} />
+              </div>
+            </motion.div>
 
-              <div className="space-y-10">
-                {TIMELINE.map((item, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.07 }}
-                    className="flex gap-6 items-start relative group"
-                    data-testid={`timeline-stage-${i}`}
-                  >
-                    <div className="relative z-10 shrink-0 mt-1">
-                      {item.status === "complete" && (
-                        <div className="w-12 h-12 rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center shadow-[0_0_15px_-3px_hsl(142_71%_45%_/_0.5)]">
-                          <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+            {/* Timeline */}
+            <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
+              className="rounded-2xl p-6" style={{ background: "hsl(226 32% 8%)", border: "1px solid hsl(224 22% 13%)" }}>
+              <p style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(218 16% 38%)", marginBottom: 20 }}>
+                App Launch Timeline
+              </p>
+
+              <div className="flex flex-col gap-0">
+                {timeline.map((stage, i) => {
+                  const Icon = stage.icon;
+                  const isLast = i === timeline.length - 1;
+                  return (
+                    <div key={stage.label} className="flex gap-4">
+                      {/* Line + icon */}
+                      <div className="flex flex-col items-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10`}
+                          style={{
+                            background: stage.status === "complete" ? "hsl(142 76% 55% / 0.12)" : stage.status === "active" ? "hsl(35 90% 55% / 0.12)" : "hsl(226 28% 7%)",
+                            border: `1.5px solid ${stage.status === "complete" ? "hsl(142 76% 55% / 0.4)" : stage.status === "active" ? "hsl(35 90% 55% / 0.4)" : "hsl(224 22% 14%)"}`,
+                          }}>
+                          <Icon className="w-3.5 h-3.5" style={{
+                            color: stage.status === "complete" ? "hsl(142 76% 55%)" : stage.status === "active" ? "hsl(35 90% 62%)" : "hsl(218 16% 32%)"
+                          }} />
                         </div>
-                      )}
-                      {item.status === "in-progress" && (
-                        <div className="w-12 h-12 rounded-full border-2 border-primary flex items-center justify-center relative bg-primary/10 shadow-[0_0_20px_-3px_hsl(217_91%_60%_/_0.6)]">
-                          <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                        </div>
-                      )}
-                      {item.status === "pending" && (
-                        <div className="w-12 h-12 rounded-full border-2 border-white/10 bg-background flex items-center justify-center group-hover:border-white/20 transition-colors">
-                          <Clock className="w-5 h-5 text-muted-foreground/30" />
-                        </div>
-                      )}
-                    </div>
+                        {!isLast && <div className="w-px flex-1 mt-1 mb-1" style={{ background: stage.status === "complete" ? "hsl(142 76% 55% / 0.2)" : "hsl(224 22% 12%)" }} />}
+                      </div>
 
-                    <div className="flex-1 pt-1.5 bg-white/[0.02] rounded-2xl p-4 border border-white/5 group-hover:bg-white/[0.04] transition-colors">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className={cn("text-lg font-bold flex items-center gap-3", item.status === "pending" ? "text-muted-foreground/60" : "text-foreground")}>
-                            <span className="text-xs font-black text-muted-foreground/40 mt-0.5">{(i + 1).toString().padStart(2, '0')}</span>
-                            {item.stage}
-                          </h3>
-                          {item.note && (
-                            <p className={cn("text-sm mt-1.5 font-medium", item.status === "complete" ? "text-emerald-400/80" : "text-primary/90")}>
-                              {item.note}
-                            </p>
+                      {/* Label */}
+                      <div className="pb-5 pt-1.5 flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p style={{
+                            fontFamily: "'Inter'",
+                            fontSize: 13.5,
+                            fontWeight: stage.status === "pending" ? 300 : 500,
+                            color: stage.status === "complete" ? "hsl(220 20% 82%)" : stage.status === "active" ? "hsl(35 90% 65%)" : "hsl(218 16% 36%)"
+                          }}>
+                            {stage.label}
+                          </p>
+                          {stage.status === "complete" && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(142 76% 55% / 0.1)", color: "hsl(142 76% 55%)", border: "1px solid hsl(142 76% 55% / 0.25)" }}>
+                              Complete
+                            </span>
+                          )}
+                          {stage.status === "active" && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(35 90% 55% / 0.12)", color: "hsl(35 90% 62%)", border: "1px solid hsl(35 90% 55% / 0.28)" }}>
+                              In Progress
+                            </span>
                           )}
                         </div>
-                        <span className={cn(
-                          "text-xs font-bold px-2.5 py-1 rounded-md whitespace-nowrap",
-                          item.status === "complete" ? "bg-emerald-500/10 text-emerald-400" :
-                          item.status === "in-progress" ? "bg-primary/10 text-primary" :
-                          "bg-white/5 text-muted-foreground/60"
-                        )}>
-                          {item.date}
-                        </span>
                       </div>
                     </div>
-                  </motion.div>
-                ))}
+                  );
+                })}
               </div>
-            </div>
+            </motion.div>
           </div>
 
-          {/* Right Panel */}
-          <div className="lg:col-span-1 flex flex-col gap-6">
+          {/* Right — progress + contact */}
+          <div className="flex flex-col gap-4">
 
-            {/* SaaS Widget Style Stats */}
-            <div className="glass rounded-3xl p-8 border-2 border-white/5 shadow-xl relative overflow-hidden">
-               <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
-              <h3 className="text-sm font-bold mb-6 text-muted-foreground uppercase tracking-wider flex items-center justify-between">
-                Project Metrics
-                <BarChart3 className="w-4 h-4" />
-              </h3>
-              
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-background/50 rounded-2xl p-4 border border-white/5">
-                  <div className="text-2xl font-bold text-foreground">3</div>
-                  <div className="text-xs text-muted-foreground mt-1 font-medium">Days Elapsed</div>
-                </div>
-                <div className="bg-background/50 rounded-2xl p-4 border border-white/5">
-                  <div className="text-2xl font-bold text-foreground">0</div>
-                  <div className="text-xs text-muted-foreground mt-1 font-medium">Open Tickets</div>
-                </div>
-              </div>
+            {/* Progress ring */}
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              className="rounded-2xl p-6 text-center" style={{ background: "hsl(226 32% 8%)", border: "1px solid hsl(224 22% 13%)" }}>
+              <p style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(218 16% 36%)", marginBottom: 16 }}>
+                Launch Progress
+              </p>
 
-              <div className="bg-background/50 rounded-2xl p-5 border border-white/5 mb-6">
-                <div className="flex justify-between items-end mb-2">
-                   <div>
-                     <div className="text-xs text-muted-foreground font-medium mb-1">Revisions Used</div>
-                     <div className="text-xl font-bold">0 / 3</div>
-                   </div>
-                   {/* Sparkline decoration */}
-                   <svg width="60" height="24" viewBox="0 0 60 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-primary/40">
-                      <path d="M2 22L15 12L25 18L40 6L58 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                   </svg>
-                </div>
-              </div>
-
-              {/* Next Action CTA */}
-              <div className="bg-primary/10 rounded-2xl p-5 border border-primary/20 mt-2">
-                <div className="flex items-start gap-3">
-                   <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                     <Play className="w-4 h-4 text-primary ml-0.5" />
-                   </div>
-                   <div>
-                     <h4 className="text-sm font-bold text-primary mb-1">Next Action Required</h4>
-                     <p className="text-xs text-foreground/80 leading-relaxed mb-3">Upload your brand assets to proceed to monetization setup.</p>
-                     <Button size="sm" className="h-8 text-xs font-bold w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                        Upload Assets <ArrowRight className="w-3 h-3 ml-1" />
-                     </Button>
-                   </div>
+              <div className="relative flex items-center justify-center mb-4">
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="hsl(224 22% 12%)" strokeWidth="6" />
+                  <circle cx="50" cy="50" r="38" fill="none"
+                    stroke="url(#prog)" strokeWidth="6"
+                    strokeLinecap="round"
+                    strokeDasharray={`${2 * Math.PI * 38}`}
+                    strokeDashoffset={`${2 * Math.PI * 38 * (1 - completedCount / timeline.length)}`}
+                    transform="rotate(-90 50 50)"
+                    style={{ transition: "stroke-dashoffset 1s ease" }}
+                  />
+                  <defs>
+                    <linearGradient id="prog" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="hsl(38 95% 54%)" />
+                      <stop offset="100%" stopColor="hsl(24 90% 50%)" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span style={{ fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em" }}>
+                    {Math.round((completedCount / timeline.length) * 100)}%
+                  </span>
                 </div>
               </div>
 
-            </div>
+              <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 44%)", fontWeight: 300 }}>
+                {completedCount} of {timeline.length} stages
+              </p>
+            </motion.div>
 
-            {/* Current Phase Widget */}
-            <div className="glass rounded-3xl p-8 border-2 border-white/5 shadow-xl">
-              <h3 className="text-sm font-bold mb-6 text-muted-foreground uppercase tracking-wider">Active Phase</h3>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center shadow-inner">
-                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                </div>
-                <div>
-                  <p className="font-bold text-base">Game Customization</p>
-                  <p className="text-sm text-primary font-medium mt-0.5">In Progress</p>
-                </div>
+            {/* Contact info */}
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}
+              className="rounded-2xl p-5" style={{ background: "hsl(226 32% 8%)", border: "1px solid hsl(224 22% 13%)" }}>
+              <div className="flex items-center gap-2 mb-4">
+                <User className="w-3.5 h-3.5" style={{ color: "hsl(218 16% 38%)" }} />
+                <p style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "hsl(218 16% 38%)" }}>
+                  Client Info
+                </p>
               </div>
-              <div className="h-2 w-full bg-background rounded-full overflow-hidden border border-white/5">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-primary to-accent rounded-full shadow-[0_0_10px_hsl(217_91%_60%_/_0.5)]"
-                  initial={{ width: 0 }}
-                  animate={{ width: "28%" }}
-                  transition={{ duration: 1.5, delay: 0.3, ease: "easeOut" }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-3 font-medium text-right">Stage 2 of 7 — 28%</p>
-            </div>
+              {[
+                { label: "Name", value: clientName },
+                { label: "Email", value: email },
+                { label: "Phone", value: phone },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex flex-col gap-0.5 mb-3 last:mb-0">
+                  <p style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(218 16% 34%)", fontWeight: 500, letterSpacing: "0.04em", textTransform: "uppercase" }}>{label}</p>
+                  <p style={{ fontFamily: "'Inter'", fontSize: 13, color: value ? "hsl(218 16% 60%)" : "hsl(218 16% 28%)", fontWeight: 300 }}>{value || "Not provided"}</p>
+                </div>
+              ))}
+            </motion.div>
 
+            {/* Support note */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }}
+              className="rounded-2xl p-5" style={{ background: "hsl(226 28% 6%)", border: "1px solid hsl(224 22% 11%)" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <LifeBuoy className="w-3.5 h-3.5" style={{ color: "hsl(217 85% 60%)" }} />
+                <p style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, color: "hsl(217 85% 65%)" }}>
+                  App Squad Support
+                </p>
+              </div>
+              <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.65, color: "hsl(218 16% 38%)", fontWeight: 300 }}>
+                Your team will reach out to confirm next steps and collect any remaining materials before development begins.
+              </p>
+            </motion.div>
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

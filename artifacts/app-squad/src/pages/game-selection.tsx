@@ -2,118 +2,163 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import {
-  Puzzle,
-  Type,
-  Dices,
-  Car,
-  Map,
-  BookOpen,
-  Gamepad2,
-  HelpCircle,
-  ArrowRight,
-  Flame,
+  Puzzle, Type, Dices, Car, Map, BookOpen,
+  Gamepad2, HelpCircle, ArrowRight, Flame, CheckCircle2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { sendGameSelectionToCRM } from "@/lib/crm";
 
 const GAMES = [
-  { id: "puzzle", name: "Puzzle Match Game", icon: Puzzle, audience: "Brain training fans", monetization: "Ads + IAP", color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20", glow: "hover:shadow-[0_0_30px_hsl(96_100%_70%_/_0.2)]", popular: true },
-  { id: "word", name: "Word Game", icon: Type, audience: "Casual players", monetization: "Ads + Premium", color: "text-cyan-400", bg: "bg-cyan-500/10 border-cyan-500/20", glow: "hover:shadow-[0_0_30px_hsl(188_100%_70%_/_0.2)]" },
-  { id: "slots", name: "Casino Slots Game", icon: Dices, audience: "Entertainment", monetization: "IAP + Ads", color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20", glow: "hover:shadow-[0_0_30px_hsl(270_100%_70%_/_0.2)]" },
-  { id: "racing", name: "Racing Game", icon: Car, audience: "Action fans", monetization: "Ads + IAP", color: "text-orange-400", bg: "bg-orange-500/10 border-orange-500/20", glow: "hover:shadow-[0_0_30px_hsl(30_100%_70%_/_0.2)]" },
-  { id: "adventure", name: "Adventure Game", icon: Map, audience: "Story lovers", monetization: "IAP + Subscriptions", color: "text-green-400", bg: "bg-green-500/10 border-green-500/20", glow: "hover:shadow-[0_0_30px_hsl(140_100%_70%_/_0.2)]" },
-  { id: "kids", name: "Kids Educational Game", icon: BookOpen, audience: "Parents and schools", monetization: "Premium + IAP", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20", glow: "hover:shadow-[0_0_30px_hsl(50_100%_70%_/_0.2)]" },
-  { id: "arcade", name: "Arcade Game", icon: Gamepad2, audience: "High-score chasers", monetization: "Ads + IAP", color: "text-pink-400", bg: "bg-pink-500/10 border-pink-500/20", glow: "hover:shadow-[0_0_30px_hsl(330_100%_70%_/_0.2)]", popular: true },
-  { id: "trivia", name: "Trivia Game", icon: HelpCircle, audience: "Knowledge seekers", monetization: "Ads + Premium", color: "text-indigo-400", bg: "bg-indigo-500/10 border-indigo-500/20", glow: "hover:shadow-[0_0_30px_hsl(230_100%_70%_/_0.2)]" },
+  { id: "puzzle", name: "Puzzle Match", category: "Puzzle", template: "Puzzle Match Pro", icon: Puzzle, audience: "Brain training fans", monetization: "Ads + IAP", color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20", glow: "hover:shadow-[0_0_30px_hsl(217_100%_70%_/_0.15)]", popular: true },
+  { id: "word", name: "Word Game", category: "Word", template: "Word Builder Pro", icon: Type, audience: "Casual players", monetization: "Ads + Premium", color: "text-cyan-400", bg: "bg-cyan-500/10 border-cyan-500/20", glow: "hover:shadow-[0_0_30px_hsl(188_100%_70%_/_0.15)]" },
+  { id: "slots", name: "Casino Slots", category: "Casino", template: "Spin & Win Pro", icon: Dices, audience: "Entertainment", monetization: "IAP + Ads", color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20", glow: "hover:shadow-[0_0_30px_hsl(270_100%_70%_/_0.15)]" },
+  { id: "racing", name: "Racing Game", category: "Racing", template: "Speed Rush Pro", icon: Car, audience: "Action fans", monetization: "Ads + IAP", color: "text-orange-400", bg: "bg-orange-500/10 border-orange-500/20", glow: "hover:shadow-[0_0_30px_hsl(30_100%_70%_/_0.15)]" },
+  { id: "adventure", name: "Adventure Game", category: "Adventure", template: "Quest World Pro", icon: Map, audience: "Story lovers", monetization: "IAP + Subscriptions", color: "text-green-400", bg: "bg-green-500/10 border-green-500/20", glow: "hover:shadow-[0_0_30px_hsl(140_100%_70%_/_0.15)]" },
+  { id: "kids", name: "Kids Education", category: "Educational", template: "Learn & Play Pro", icon: BookOpen, audience: "Parents and schools", monetization: "Premium + IAP", color: "text-yellow-400", bg: "bg-yellow-500/10 border-yellow-500/20", glow: "hover:shadow-[0_0_30px_hsl(50_100%_70%_/_0.15)]" },
+  { id: "arcade", name: "Arcade Game", category: "Arcade", template: "Arcade Blast Pro", icon: Gamepad2, audience: "High-score chasers", monetization: "Ads + IAP", color: "text-pink-400", bg: "bg-pink-500/10 border-pink-500/20", glow: "hover:shadow-[0_0_30px_hsl(330_100%_70%_/_0.15)]", popular: true },
+  { id: "trivia", name: "Trivia Game", category: "Trivia", template: "Brain Trivia Pro", icon: HelpCircle, audience: "Knowledge seekers", monetization: "Ads + Premium", color: "text-indigo-400", bg: "bg-indigo-500/10 border-indigo-500/20", glow: "hover:shadow-[0_0_30px_hsl(230_100%_70%_/_0.15)]" },
 ];
 
+const STEPS = ["Game Selected", "Customization", "Dashboard"];
+
 export default function GameSelection() {
-  const [, setLocation] = useLocation();
+  const [, navigate] = useLocation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const selectedGame = GAMES.find(g => g.id === selectedId);
+
+  const handleSave = () => {
+    if (!selectedGame) return;
+
+    const lead = JSON.parse(localStorage.getItem("as_lead") || "{}");
+    const application = JSON.parse(localStorage.getItem("as_application") || "{}");
+    const source = localStorage.getItem("as_source") || "Direct";
+    const clientName = application.name || lead.name || "";
+    const email = application.email || lead.email || "";
+    const phone = application.phone || lead.phone || "";
+
+    const gameData = {
+      selectedGameType: selectedGame.name,
+      gameCategory: selectedGame.category,
+      templateName: selectedGame.template,
+    };
+
+    localStorage.setItem("as_game_selection", JSON.stringify(gameData));
+
+    sendGameSelectionToCRM({
+      clientName,
+      email,
+      phone,
+      selectedGameType: gameData.selectedGameType,
+      gameCategory: gameData.gameCategory,
+      templateName: gameData.templateName,
+      source,
+    });
+
+    navigate("/onboarding/customization");
+    window.scrollTo({ top: 0 });
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="min-h-[calc(100vh-4rem)] py-16 md:py-24 relative overflow-hidden"
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_40%_at_50%_10%,hsl(217_91%_60%_/_0.05)_0%,transparent_60%)] pointer-events-none" />
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="text-center mb-16 max-w-3xl mx-auto">
-          <span className="inline-block text-primary font-semibold tracking-widest uppercase text-xs mb-5 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 shadow-[0_0_15px_-3px_hsl(217_91%_60%_/_0.2)]">
-            Client Portal Phase 1
-          </span>
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">Choose Your Game Engine</h1>
-          <p className="text-muted-foreground text-lg md:text-xl leading-relaxed">
-            Select a proven game framework to serve as the foundation. In the next step, you'll customize the branding, colors, and assets to make it uniquely yours.
+    <div className="min-h-screen py-12 relative overflow-hidden">
+      <div className="absolute inset-0 grid-bg opacity-20" />
+      <div className="absolute top-0 right-0 w-[500px] h-[350px] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at center, hsl(217 85% 58% / 0.07) 0%, transparent 65%)", filter: "blur(80px)" }} />
+
+      <div className="container mx-auto px-4 max-w-6xl relative z-10">
+
+        {/* Step progress */}
+        <div className="flex items-center justify-center gap-0 mb-12">
+          {STEPS.map((s, i) => (
+            <div key={s} className="flex items-center">
+              <div className="flex flex-col items-center">
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all",
+                  i === 0
+                    ? "text-white" : "text-muted-foreground border border-white/10"
+                )}
+                  style={i === 0 ? { background: "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))" } : {}}>
+                  {i === 0 ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                </div>
+                <span style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: i === 0 ? 600 : 400, color: i === 0 ? "hsl(35 90% 62%)" : "hsl(218 16% 36%)", marginTop: 5, whiteSpace: "nowrap" }}>{s}</span>
+              </div>
+              {i < STEPS.length - 1 && (
+                <div className="w-16 h-px mx-2 mb-5" style={{ background: i === 0 ? "hsl(35 90% 55% / 0.4)" : "hsl(224 22% 14%)" }} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Header */}
+        <div className="text-center mb-12 max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-5"
+            style={{ background: "hsl(217 85% 58% / 0.08)", border: "1px solid hsl(217 85% 58% / 0.2)" }}>
+            <Gamepad2 className="w-3.5 h-3.5" style={{ color: "hsl(217 85% 68%)" }} />
+            <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(217 85% 70%)" }}>
+              Client Portal — Step 1
+            </span>
+          </div>
+          <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 14 }}>
+            Select Your Game Template
+          </h1>
+          <p style={{ fontFamily: "'Inter'", fontSize: 14, lineHeight: 1.75, color: "hsl(218 16% 50%)", fontWeight: 300 }}>
+            Choose a proven game framework as the foundation. In the next step you'll customize the branding, colors, and identity to make it uniquely yours.
           </p>
         </div>
 
+        {/* Game grid */}
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10"
           initial="hidden"
           animate="visible"
-          variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.07 } } }}
+          variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.06 } } }}
         >
           {GAMES.map((game) => {
             const isSelected = selectedId === game.id;
             return (
-              <motion.div
-                key={game.id}
-                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                className="h-full"
-              >
+              <motion.div key={game.id} variants={{ hidden: { opacity: 0, y: 18 }, visible: { opacity: 1, y: 0 } }}
+                whileHover={{ y: -5, transition: { duration: 0.18 } }}>
                 <div
-                  className={cn(
-                    "h-full glass rounded-3xl p-8 cursor-pointer transition-all duration-300 relative overflow-hidden group border-2 flex flex-col",
-                    isSelected
-                      ? "border-primary bg-primary/[0.08] shadow-[0_0_40px_-10px_hsl(217_91%_60%_/_0.5)]"
-                      : cn("border-white/10 hover:bg-white/[0.04]", game.glow)
-                  )}
                   onClick={() => setSelectedId(game.id)}
-                  data-testid={`card-game-${game.id}`}
+                  className={cn(
+                    "h-full rounded-2xl p-6 cursor-pointer transition-all duration-250 relative overflow-hidden flex flex-col border",
+                    isSelected
+                      ? "border-[hsl(35_90%_55%)] bg-[hsl(35_90%_55%_/_0.06)] shadow-[0_0_40px_-10px_hsl(35_90%_55%_/_0.35)]"
+                      : cn("border-white/[0.07] hover:bg-white/[0.03]", game.glow)
+                  )}
+                  style={{ background: isSelected ? "hsl(226 32% 8%)" : "hsl(226 32% 7%)" }}
                 >
-                  {/* Subtle inner gradient based on game color when selected */}
-                  {isSelected && (
-                     <div className={cn("absolute inset-0 opacity-20 pointer-events-none bg-gradient-to-br from-current to-transparent", game.color)} style={{ color: 'currentColor'}} />
-                  )}
-
                   {game.popular && (
-                    <div className="absolute top-4 right-4 bg-orange-500/20 text-orange-400 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border border-orange-500/30 flex items-center gap-1 z-10">
-                      <Flame className="w-3 h-3" />
-                      Popular
+                    <div className="absolute top-3.5 right-3.5 flex items-center gap-1 px-2 py-1 rounded-full"
+                      style={{ background: "hsl(35 90% 55% / 0.15)", border: "1px solid hsl(35 90% 55% / 0.25)" }}>
+                      <Flame className="w-2.5 h-2.5" style={{ color: "hsl(35 90% 62%)" }} />
+                      <span style={{ fontFamily: "'Inter'", fontSize: 9, fontWeight: 700, letterSpacing: "0.06em", color: "hsl(35 90% 65%)", textTransform: "uppercase" }}>Popular</span>
                     </div>
                   )}
 
-                  <div className="mb-6 relative z-10">
-                    <div className={cn("w-14 h-14 rounded-2xl border-2 flex items-center justify-center transition-all group-hover:scale-110", game.bg)}>
-                      <game.icon className={cn("w-7 h-7", game.color)} />
+                  <div className={cn("w-12 h-12 rounded-xl border-2 flex items-center justify-center mb-5", game.bg)}>
+                    <game.icon className={cn("w-5.5 h-5.5", game.color)} />
+                  </div>
+
+                  <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em", marginBottom: 12 }}>{game.name}</h3>
+
+                  <div className="flex flex-col gap-2 flex-1 mb-5">
+                    <div className="px-3 py-2.5 rounded-lg" style={{ background: "hsl(226 28% 5%)", border: "1px solid hsl(224 22% 11%)" }}>
+                      <p style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(218 16% 38%)", marginBottom: 2 }}>Best for</p>
+                      <p style={{ fontFamily: "'Inter'", fontSize: 12, fontWeight: 500, color: "hsl(218 16% 62%)" }}>{game.audience}</p>
+                    </div>
+                    <div className="px-3 py-2.5 rounded-lg" style={{ background: "hsl(226 28% 5%)", border: "1px solid hsl(224 22% 11%)" }}>
+                      <p style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(218 16% 38%)", marginBottom: 2 }}>Monetization</p>
+                      <p className={cn("text-xs font-semibold", game.color)}>{game.monetization}</p>
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-xl mb-4 leading-tight relative z-10">{game.name}</h3>
-
-                  <div className="space-y-3 mb-8 relative z-10 flex-1">
-                    <div className="text-sm bg-black/20 rounded-lg p-3 border border-white/5">
-                      <span className="text-muted-foreground block text-xs mb-1">Best for</span>
-                      <span className="text-foreground font-medium">{game.audience}</span>
-                    </div>
-                    <div className="text-sm bg-black/20 rounded-lg p-3 border border-white/5">
-                      <span className="text-muted-foreground block text-xs mb-1">Monetization</span>
-                      <span className={cn("font-medium", game.color)}>{game.monetization}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-auto pt-5 border-t border-white/[0.08] flex items-center justify-between relative z-10">
-                    <span className={cn("text-sm font-bold transition-colors", isSelected ? "text-primary" : "text-muted-foreground group-hover:text-foreground")}>
-                      {isSelected ? "Selected Engine" : "Select Engine"}
+                  <div className="flex items-center justify-between pt-4" style={{ borderTop: "1px solid hsl(224 22% 10%)" }}>
+                    <span style={{ fontFamily: "'Inter'", fontSize: 12, fontWeight: 600, color: isSelected ? "hsl(35 90% 62%)" : "hsl(218 16% 40%)" }}>
+                      {isSelected ? "Selected" : "Select Template"}
                     </span>
-                    <div className={cn(
-                      "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                      isSelected ? "border-primary bg-primary" : "border-white/20 group-hover:border-white/40"
-                    )}>
-                      {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary-foreground" />}
+                    <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all", isSelected ? "border-[hsl(35_90%_55%)] bg-[hsl(35_90%_55%)]" : "border-white/20")}>
+                      {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
                   </div>
                 </div>
@@ -122,19 +167,19 @@ export default function GameSelection() {
           })}
         </motion.div>
 
+        {/* CTA */}
         <div className="flex justify-center">
-          <Button
-            size="lg"
-            className="btn-primary h-13 px-10 text-base font-semibold rounded-xl text-white disabled:opacity-25 disabled:shadow-none"
+          <button
             disabled={!selectedId}
-            onClick={() => setLocation("/customize")}
-            data-testid="button-continue-customize"
+            onClick={handleSave}
+            className="btn-gold h-13 py-4 px-10 text-[15px] font-semibold rounded-xl flex items-center gap-2.5 text-white"
+            style={{ opacity: selectedId ? 1 : 0.32, cursor: selectedId ? "pointer" : "not-allowed" }}
           >
-            Continue to Customization Step
-            <ArrowRight className="ml-2 w-5 h-5" />
-          </Button>
+            Save Game Selection
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
