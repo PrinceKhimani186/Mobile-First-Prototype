@@ -37,7 +37,7 @@ export default function ScheduledLeads() {
           </div>
 
           <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 700, letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 14 }}>
-            Already Spoke With An App Specialist?
+            Already Spoke With A Representative?
           </h1>
           <p style={{ fontFamily: "'Inter'", fontSize: 14, lineHeight: 1.75, color: "hsl(218 16% 55%)", fontWeight: 300 }}>
             Complete your qualification form and schedule your app launch strategy call so our team can review your goals, game interests, budget range, and timeline.

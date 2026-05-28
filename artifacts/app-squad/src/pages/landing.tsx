@@ -504,7 +504,7 @@ export default function Landing() {
                 </Link>
                 <Link href="/scheduled-leads">
                   <button className="btn-ghost h-14 px-8 text-base font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full sm:w-auto justify-center">
-                    Already Spoke With A Specialist?
+                    Already Spoke With A Representative?
                     <ArrowRight className="w-5 h-5" />
                   </button>
                 </Link>
@@ -777,7 +777,7 @@ export default function Landing() {
                   </div>
                   <h3 className="text-2xl font-bold mb-3 leading-tight">Continue Your Application Process</h3>
                   <p className="text-muted-foreground leading-relaxed text-sm mb-6">
-                    If one of our app specialists already contacted you, continue directly to qualification and schedule your app launch strategy call.
+                    If one of our app representatives already contacted you, continue directly to qualification and schedule your app launch strategy call.
                   </p>
                   <div className="text-xs text-muted-foreground/50 mb-6 font-medium tracking-wide uppercase">
                     Qualification → Book Call
@@ -917,7 +917,7 @@ export default function Landing() {
               </Link>
               <Link href="/scheduled-leads">
                 <button className="btn-ghost h-13 py-4 px-8 text-base font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full sm:w-auto justify-center">
-                  Already Spoke With A Specialist?
+                  Already Spoke With A Representative?
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </Link>

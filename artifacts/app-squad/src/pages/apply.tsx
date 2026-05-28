@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, CheckCircle2, Shield } from "lucide-react";
 import { useLocation } from "wouter";
@@ -78,11 +78,18 @@ const pageVariants = {
 
 export default function Apply() {
   const [, navigate] = useLocation();
-  const [step, setStep] = useState(0);
+
+  const savedLead = (() => {
+    try { return JSON.parse(localStorage.getItem("as_lead") || "null"); } catch { return null; }
+  })();
+  const leadAlreadyCaptured = !!(savedLead?.name && savedLead?.email && savedLead?.phone);
+
+  const [step, setStep] = useState(leadAlreadyCaptured ? 1 : 0);
   const [dir, setDir] = useState(1);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+
+  const [name, setName] = useState(savedLead?.name || "");
+  const [email, setEmail] = useState(savedLead?.email || "");
+  const [phone, setPhone] = useState(savedLead?.phone || "");
   const [goal, setGoal] = useState("");
   const [game, setGame] = useState("");
   const [budget, setBudget] = useState("");
@@ -90,7 +97,15 @@ export default function Apply() {
   const [agreed, setAgreed] = useState(false);
 
   const goNext = () => { setDir(1); setStep(s => s + 1); };
-  const goPrev = () => { setDir(-1); setStep(s => s - 1); };
+  const goPrev = () => {
+    if (leadAlreadyCaptured && step === 1) {
+      navigate("/presentation");
+      window.scrollTo({ top: 0 });
+    } else {
+      setDir(-1);
+      setStep(s => s - 1);
+    }
+  };
 
   const handleSubmit = () => {
     localStorage.setItem("as_application", JSON.stringify({ name, email, phone, goal, game, budget, timeline }));

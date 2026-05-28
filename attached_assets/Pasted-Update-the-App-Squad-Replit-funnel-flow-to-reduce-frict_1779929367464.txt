@@ -1,0 +1,153 @@
+Update the App Squad Replit funnel flow to reduce friction and improve front-end wording.
+
+==================================================
+FIX #1 — REMOVE DOUBLE OPT-IN
+=============================
+
+Current incorrect flow:
+
+Homepage
+→ Opt-in Form
+→ Presentation Video
+→ SECOND Opt-in Form
+→ Apply Flow
+
+This creates unnecessary friction.
+
+==================================================
+NEW CORRECT FLOW
+================
+
+Homepage
+→ Opt-in Form
+→ App Ownership Presentation
+→ Apply Flow
+→ Book Call
+
+NO second opt-in form after the presentation video.
+
+==================================================
+PRESENTATION PAGE CTA FIX
+=========================
+
+Current CTA:
+Apply For An App Launch Strategy Call
+
+Current issue:
+This button routes users to another lead form.
+
+==================================================
+CHANGE THIS
+===========
+
+The button should route DIRECTLY TO:
+
+/apply
+
+NOT:
+another opt-in form.
+
+The lead was already captured before the presentation.
+
+==================================================
+FIX #2 — CHANGE WORDING
+=======================
+
+Current wording:
+Already Spoke With A Specialist?
+
+Replace with:
+Already Spoke With A Representative?
+
+This wording feels:
+
+* more natural
+* more premium
+* more conversational
+* less corporate/internal
+
+==================================================
+UPDATE THESE AREAS
+==================
+
+Replace:
+Already Spoke With A Specialist?
+
+WITH:
+Already Spoke With A Representative?
+
+Update:
+
+* hero secondary CTA
+* route cards
+* navigation wording
+* any repeated references
+
+==================================================
+NAVIGATION CLEANUP
+==================
+
+Keep public navigation minimal and premium.
+
+Use:
+
+* Home
+* Presentation
+* Apply
+* Book Call
+
+Do NOT place:
+Already Spoke With A Representative?
+
+inside the top navigation menu.
+
+Instead:
+make it a secondary hero CTA button/link only.
+
+==================================================
+HERO CTA STRUCTURE
+==================
+
+PRIMARY CTA:
+Watch The App Ownership Presentation
+
+SECONDARY CTA:
+Already Spoke With A Representative?
+
+Style:
+
+* smaller glass-style secondary button
+* lower visual weight than primary CTA
+
+==================================================
+FLOW REMINDER
+=============
+
+Ads / Cold Traffic:
+Opt-in → Presentation → Apply → Book Call
+
+Appointment Setter / Bought Leads:
+Already Spoke With A Representative?
+→ Apply → Book Call
+
+==================================================
+IMPORTANT
+=========
+
+Do NOT redesign the site.
+
+Only:
+
+* reduce friction
+* simplify flow
+* improve wording
+* improve UX clarity
+
+Keep:
+
+* premium SaaS/AI look
+* warm gold/orange CTA buttons
+* cinematic visuals
+* mobile-first layout
+* modern typography
+* dark tech aesthetic
