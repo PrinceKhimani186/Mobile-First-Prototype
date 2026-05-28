@@ -1,0 +1,192 @@
+Update the App Squad representative/setter flow to create a smoother high-conversion appointment setter experience.
+
+IMPORTANT:
+The representative flow should feel DIFFERENT from the cold traffic flow.
+
+Cold traffic requires:
+education + warming up.
+
+Representative/setter leads already:
+
+* spoke to a human
+* expect a sales process
+* already have momentum
+
+So the representative flow should NOT feel like a long funnel or educational webinar.
+
+==================================================
+ROUTE
+=====
+
+Update:
+/representative
+
+==================================================
+REMOVE
+======
+
+Do NOT require:
+
+* long presentation step
+* separate presentation page
+* extra opt-in
+* unnecessary educational flow
+
+Representative leads should move quickly.
+
+==================================================
+NEW FLOW
+========
+
+Representative Flow:
+
+Representative Call
+→ /representative
+→ Short Embedded Reinforcement Video
+→ Qualification Form
+→ Book Strategy Call
+
+==================================================
+PAGE STRUCTURE
+==============
+
+Headline:
+Continue Your App Launch Application
+
+Subheadline:
+Watch this quick overview before completing your application and scheduling your App Launch Strategy Call.
+
+==================================================
+EMBEDDED VIDEO SECTION
+======================
+
+Directly on the /representative page:
+embed a short video section.
+
+Do NOT route users away to another presentation page.
+
+Video section title:
+Quick App Ownership Overview
+
+Video length note:
+45–60 seconds
+
+==================================================
+VIDEO PURPOSE
+=============
+
+This is NOT a full educational presentation.
+
+The video should:
+
+* reinforce excitement
+* reinforce ownership vision
+* make the process feel real
+* increase emotional buy-in
+* prepare them for the closer call
+
+The video should feel:
+
+* cinematic
+* fast paced
+* emotional
+* premium
+* startup-tech
+
+NOT:
+
+* webinar
+* training
+* guru funnel
+* long explanation
+
+==================================================
+VIDEO CTA
+=========
+
+Directly below the video:
+
+Primary CTA:
+Continue To Qualification
+
+Button route:
+/apply
+
+==================================================
+VISUAL DIRECTION
+================
+
+The representative page should feel:
+
+* smoother
+* faster
+* more exclusive
+* lower friction
+
+Use:
+
+* cinematic dashboard visuals
+* game templates
+* app ecosystem graphics
+* glowing UI
+* premium typography
+* warm gold/orange CTA buttons
+
+==================================================
+SMALL TRUST SECTION
+===================
+
+Below video:
+add 3 small trust cards:
+
+1.
+
+Guided App Launch Process
+
+2.
+
+Customizable Game Templates
+
+3.
+
+Monetization Preparation Support
+
+==================================================
+IMPORTANT UX RULE
+=================
+
+Do NOT force representative leads through:
+
+* another opt-in
+* another presentation page
+* unnecessary steps
+
+Representative leads should feel:
+pre-qualified and already moving forward.
+
+==================================================
+SOURCE TRACKING
+===============
+
+Continue saving:
+source = Representative / Bought Lead
+
+Store source in localStorage and pass through:
+
+* /apply
+* /book-call
+* CRM webhook payloads
+
+==================================================
+FINAL GOAL
+==========
+
+The representative route should now feel like:
+
+“Continue your application process”
+
+NOT:
+
+“Start over and watch a long funnel.”
+
+The goal is to preserve emotional momentum created by the appointment setter while still reinforcing the App Squad vision before the closer call.
