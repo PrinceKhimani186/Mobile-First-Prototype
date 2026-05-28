@@ -48,10 +48,10 @@ export default function Presentation() {
             </span>
           </div>
           <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 14 }}>
-            See How The App Launch Process Works
+            Watch The App Ownership Presentation
           </h1>
           <p style={{ fontFamily: "'Inter'", fontSize: 15, lineHeight: 1.7, color: "hsl(218 16% 55%)", fontWeight: 300, maxWidth: 560, margin: "0 auto" }}>
-            This short presentation explains how mobile game apps are customized, branded, prepared for monetization, and launched through App Squad's guided onboarding process.
+            See how App Squad's guided launch process moves from game template selection to customization, monetization preparation, and app launch support.
           </p>
         </FadeUp>
 

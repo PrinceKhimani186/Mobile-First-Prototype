@@ -1,0 +1,197 @@
+Update App Squad so we have two separate dedicated entry pages and do not show both paths to the same visitor.
+
+Do not redesign from scratch. Keep the current premium App Squad design.
+
+Create two separate landing page routes:
+
+1. /start
+For ads and cold traffic.
+
+2. /representative
+For leads who already spoke with an App Squad representative.
+
+==================================================
+PAGE 1: ADS / COLD TRAFFIC LANDING PAGE
+==================================================
+
+Route:
+/start
+
+This page should NOT show the “Already Spoke With A Representative?” option.
+
+Headline:
+Explore The Mobile App Economy
+
+Subheadline:
+Discover how branded mobile game apps are customized, prepared for monetization, and launched through App Squad’s guided app launch process.
+
+Primary CTA:
+Watch The App Ownership Presentation
+
+Page purpose:
+Capture lead information before showing the presentation.
+
+Lead capture fields:
+- First Name
+- Email
+- Phone
+
+CTA after form:
+Continue To Presentation
+
+After submission:
+Route to /presentation
+
+Do not show the appointment setter path on this page.
+
+==================================================
+PAGE 2: REPRESENTATIVE / BOUGHT LEAD PAGE
+==================================================
+
+Route:
+/representative
+
+This page is only for leads contacted by appointment setters.
+
+This page should NOT show the cold traffic opt-in path.
+
+Headline:
+Continue Your App Launch Application
+
+Subheadline:
+If you recently spoke with an App Squad representative, complete your qualification form so our team can prepare for your App Launch Strategy Call.
+
+Primary CTA:
+Continue To Qualification
+
+After CTA:
+Route directly to /apply
+
+Optional small trust text:
+This helps our team understand your goals, budget range, game interest, and launch timeline before your strategy call.
+
+Do not show the App Ownership Presentation as the required first step on this page.
+
+==================================================
+MAIN HOMEPAGE
+==================================================
+
+The homepage can still show both paths for general visitors, but paid ads and setter links should NOT go to the homepage.
+
+Homepage route:
+/home or /
+
+Hero headline:
+Explore The Mobile App Economy
+
+Primary CTA:
+Watch The App Ownership Presentation → /start
+
+Secondary CTA:
+Already Spoke With A Representative? → /representative
+
+==================================================
+PRESENTATION PAGE
+==================================================
+
+Route:
+/presentation
+
+This page is only reached after the ads/cold traffic lead capture form.
+
+Headline:
+Watch The App Ownership Presentation
+
+Subheadline:
+See how App Squad’s guided launch process moves from game template selection to customization, monetization preparation, and app launch support.
+
+Video placeholder:
+App Ownership Presentation
+
+CTA:
+Apply For An App Launch Strategy Call
+
+Button route:
+/apply
+
+Important:
+Do NOT send users to another opt-in form after the presentation.
+They already submitted their contact information on /start.
+
+==================================================
+QUALIFICATION FORM
+==================================================
+
+Route:
+/apply
+
+Used by both flows.
+
+Ads flow:
+Start → Presentation → Apply
+
+Representative flow:
+Representative → Apply
+
+Form fields:
+- Full Name
+- Email
+- Phone
+- Goal
+- Game Interest
+- Budget Range
+- Timeline
+- Understanding checkbox for no income/app approval guarantees
+
+CTA:
+Continue To Book Call
+
+After submission:
+Route to /book-call
+
+==================================================
+BOOK CALL PAGE
+==================================================
+
+Route:
+/book-call
+
+Headline:
+Book Your App Launch Strategy Call
+
+Subheadline:
+On this call, our team will review your goals, game interests, budget range, timeline, and the best app launch path for your situation.
+
+Add Calendly placeholder.
+
+==================================================
+TRACK SOURCE
+==================================================
+
+Add hidden source tracking:
+
+If visitor enters through /start:
+source = Ads / Cold Traffic
+
+If visitor enters through /representative:
+source = Representative / Bought Lead
+
+Save source in localStorage and pass it with the apply form data.
+
+==================================================
+IMPORTANT
+==================================================
+
+Do not show both buttons on /start.
+
+Do not show both buttons on /representative.
+
+Only the homepage can show both paths.
+
+Final campaign URLs:
+
+Ads should use:
+/start
+
+Appointment setters should use:
+/representative

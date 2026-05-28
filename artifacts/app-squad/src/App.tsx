@@ -8,6 +8,7 @@ import Landing from "@/pages/landing";
 import Start from "@/pages/start";
 import Presentation from "@/pages/presentation";
 import ScheduledLeads from "@/pages/scheduled-leads";
+import Representative from "@/pages/representative";
 import Apply from "@/pages/apply";
 import BookCall from "@/pages/book-call";
 import Enrollment from "@/pages/enrollment";
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/start" component={Start} />
       <Route path="/presentation" component={Presentation} />
       <Route path="/scheduled-leads" component={ScheduledLeads} />
+      <Route path="/representative" component={Representative} />
       <Route path="/apply" component={Apply} />
       <Route path="/book-call" component={BookCall} />
       {/* Hidden post-enrollment */}

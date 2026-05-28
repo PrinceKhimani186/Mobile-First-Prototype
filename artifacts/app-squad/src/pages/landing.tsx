@@ -502,7 +502,7 @@ export default function Landing() {
                     <PlayCircle className="w-5 h-5" />
                   </button>
                 </Link>
-                <Link href="/scheduled-leads">
+                <Link href="/representative">
                   <button className="btn-ghost h-14 px-8 text-base font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full sm:w-auto justify-center">
                     Already Spoke With A Representative?
                     <ArrowRight className="w-5 h-5" />
@@ -769,7 +769,7 @@ export default function Landing() {
               transition={{ delay: 0.16 }}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
             >
-              <Link href="/scheduled-leads">
+              <Link href="/representative">
                 <div className="glass rounded-3xl p-8 h-full group cursor-pointer border border-white/[0.06] hover:border-primary/35 transition-all duration-300 hover:shadow-[0_0_40px_-10px_hsl(217_85%_58%_/_0.2)]">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-5 text-xs font-semibold"
                     style={{ background: "hsl(217 85% 58% / 0.1)", border: "1px solid hsl(217 85% 58% / 0.25)", color: "hsl(217 85% 70%)" }}>
@@ -915,7 +915,7 @@ export default function Landing() {
                   <PlayCircle className="w-5 h-5" />
                 </button>
               </Link>
-              <Link href="/scheduled-leads">
+              <Link href="/representative">
                 <button className="btn-ghost h-13 py-4 px-8 text-base font-medium rounded-xl text-foreground/80 flex items-center gap-2 w-full sm:w-auto justify-center">
                   Already Spoke With A Representative?
                   <ArrowRight className="w-4 h-4" />

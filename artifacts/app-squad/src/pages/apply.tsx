@@ -108,7 +108,8 @@ export default function Apply() {
   };
 
   const handleSubmit = () => {
-    localStorage.setItem("as_application", JSON.stringify({ name, email, phone, goal, game, budget, timeline }));
+    const source = localStorage.getItem("as_source") || "Direct";
+    localStorage.setItem("as_application", JSON.stringify({ name, email, phone, goal, game, budget, timeline, source }));
     navigate("/book-call");
     window.scrollTo({ top: 0 });
   };
