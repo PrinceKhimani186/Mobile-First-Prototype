@@ -461,13 +461,36 @@ export default function Landing() {
 
             {/* ── Left: Copy ── */}
             <div className="max-w-2xl">
+
+              {/* ── Floating logo above headline ── */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0, duration: 0.7, ease: "easeOut" }}
+                className="mb-8 flex items-start"
+              >
+                <div className="relative inline-block">
+                  {/* Ambient glow behind logo */}
+                  <div className="absolute inset-0 rounded-full blur-[40px]"
+                    style={{ background: "radial-gradient(ellipse at center, rgba(79,140,255,0.22) 0%, rgba(104,164,255,0.08) 60%, transparent 100%)", transform: "scale(1.8)" }} />
+                  <motion.img
+                    src="/logo.png"
+                    alt="App Squad"
+                    className="relative h-20 w-auto object-contain logo-glow"
+                    animate={{ y: [0, -3, 0] }}
+                    transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                </div>
+              </motion.div>
+
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wide mb-8 shadow-[0_0_15px_-3px_hsl(217_91%_60%_/_0.2)]"
+                transition={{ delay: 0.06 }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold tracking-wide mb-7"
+                style={{ background: "rgba(79,140,255,0.08)", borderColor: "rgba(79,140,255,0.22)", color: "#68A4FF" }}
               >
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#4F8CFF" }} />
                 The Mobile App Economy
               </motion.div>
 
@@ -475,17 +498,23 @@ export default function Landing() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.05] tracking-tight mb-6"
+                style={{
+                  fontSize: "clamp(34px, 5vw, 64px)",
+                  fontWeight: 800,
+                  letterSpacing: "-1px",
+                  lineHeight: 1.04,
+                  marginBottom: 24,
+                }}
               >
                 Explore The<br />
-                <span className="gradient-text block mt-2">Mobile App Economy</span>
+                <span className="gradient-text block mt-1">Mobile App Economy</span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-xl"
+                style={{ fontSize: "clamp(16px, 2vw, 20px)", lineHeight: 1.7, color: "#C8CDD7", marginBottom: 36, maxWidth: 520, fontWeight: 300 }}
               >
                 Discover how branded mobile game apps are customized, prepared for monetization, and launched through App Squad's guided app launch process.
               </motion.p>
@@ -726,7 +755,7 @@ export default function Landing() {
             viewport={{ once: true }}
             className="text-center mb-10"
           >
-            <p className="text-sm font-semibold tracking-widest uppercase mb-3" style={{ color: "hsl(35 90% 60%)" }}>Choose Your Path</p>
+            <p className="text-sm font-semibold tracking-widest uppercase mb-3 text-silver">Choose Your Path</p>
             <h2 className="text-3xl md:text-4xl font-bold mb-3">Where Would You Like To Start?</h2>
             <p className="text-muted-foreground">Choose the path that fits how you found us.</p>
           </motion.div>
@@ -743,7 +772,7 @@ export default function Landing() {
               <Link href="/start">
                 <div className="glass rounded-3xl p-8 h-full group cursor-pointer border border-white/[0.06] hover:border-[hsl(35_90%_55%_/_0.35)] transition-all duration-300 hover:shadow-[0_0_40px_-10px_hsl(35_90%_55%_/_0.25)]">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-5 text-xs font-semibold"
-                    style={{ background: "hsl(35 90% 55% / 0.1)", border: "1px solid hsl(35 90% 55% / 0.25)", color: "hsl(35 90% 65%)" }}>
+                    style={{ background: "rgba(79,140,255,0.08)", border: "1px solid rgba(79,140,255,0.22)", color: "#68A4FF" }}>
                     New Here?
                   </div>
                   <h3 className="text-2xl font-bold mb-3 leading-tight">Watch The App Ownership Presentation</h3>
@@ -772,7 +801,7 @@ export default function Landing() {
               <Link href="/representative">
                 <div className="glass rounded-3xl p-8 h-full group cursor-pointer border border-white/[0.06] hover:border-primary/35 transition-all duration-300 hover:shadow-[0_0_40px_-10px_hsl(217_85%_58%_/_0.2)]">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-5 text-xs font-semibold"
-                    style={{ background: "hsl(217 85% 58% / 0.1)", border: "1px solid hsl(217 85% 58% / 0.25)", color: "hsl(217 85% 70%)" }}>
+                    style={{ background: "rgba(122,141,255,0.08)", border: "1px solid rgba(122,141,255,0.22)", color: "#7A8DFF" }}>
                     Already Contacted?
                   </div>
                   <h3 className="text-2xl font-bold mb-3 leading-tight">Continue Your Application Process</h3>
@@ -903,7 +932,7 @@ export default function Landing() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_100%,hsl(217_85%_50%_/_0.07)_0%,transparent_70%)]" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto glass rounded-[2.5rem] p-12 md:p-16 text-center border border-white/[0.08] shadow-[0_0_60px_-20px_hsl(217_85%_50%_/_0.15),0_1px_0_0_hsl(220_20%_97%_/_0.05)_inset]">
-            <p className="text-xs font-semibold tracking-widest uppercase mb-5" style={{ color: "hsl(35 90% 60%)" }}>Get Started</p>
+            <p className="text-xs font-semibold tracking-widest uppercase mb-5 text-silver">Get Started</p>
             <h2 className="text-4xl md:text-5xl font-bold mb-5 leading-tight">Ready To Explore<br />Your App Idea?</h2>
             <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto leading-relaxed">
               See how App Squad helps entrepreneurs launch custom-branded mobile game apps through a guided app launch process.

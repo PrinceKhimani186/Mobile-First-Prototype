@@ -60,55 +60,56 @@
 }
 
 :root, .dark {
-  /* Deeper midnight base — more black than blue */
-  --background: 228 42% 4%;
-  --foreground: 220 20% 97%;
+  /* ── Core palette ── #0B0F14 base, #121821 secondary, #171E29 cards */
+  --background: 213 30% 6%;
+  --foreground: 216 33% 97%;
 
-  /* Electric blue — used sparingly as focal accent */
-  --primary: 217 85% 58%;
-  --primary-foreground: 228 42% 4%;
+  /* Highlight Blue #4F8CFF — primary brand accent */
+  --primary: 217 100% 65%;
+  --primary-foreground: 213 30% 6%;
 
-  /* Cards sit 4-5 stops above background */
-  --card: 226 32% 8%;
-  --card-foreground: 220 20% 97%;
-  --card-border: 224 22% 14%;
+  /* Card #171E29 */
+  --card: 214 28% 13%;
+  --card-foreground: 216 33% 97%;
+  --card-border: 216 22% 19%;
 
-  --border: 224 22% 13%;
-  --muted: 226 28% 11%;
-  --muted-foreground: 218 16% 52%;
+  --border: 216 22% 17%;
+  --muted: 213 28% 11%;
+  --muted-foreground: 218 14% 56%;
 
-  /* Cyan accent used for secondary highlights */
-  --accent: 198 82% 50%;
-  --accent-foreground: 228 42% 4%;
+  /* Glow Blue #68A4FF / Optional #7A8DFF */
+  --accent: 214 100% 71%;
+  --accent-foreground: 213 30% 6%;
 
-  --secondary: 226 28% 10%;
-  --secondary-foreground: 220 20% 97%;
+  /* Secondary bg #121821 */
+  --secondary: 213 28% 10%;
+  --secondary-foreground: 216 33% 97%;
 
-  --popover: 226 32% 8%;
-  --popover-foreground: 220 20% 97%;
-  --popover-border: 224 22% 14%;
+  --popover: 214 28% 13%;
+  --popover-foreground: 216 33% 97%;
+  --popover-border: 216 22% 19%;
 
-  --input: 226 26% 14%;
-  --ring: 217 85% 58%;
+  --input: 214 24% 17%;
+  --ring: 217 100% 65%;
 
   --destructive: 0 68% 50%;
-  --destructive-foreground: 220 20% 97%;
+  --destructive-foreground: 216 33% 97%;
 
-  --sidebar: 228 42% 3%;
-  --sidebar-foreground: 220 20% 97%;
-  --sidebar-border: 224 22% 12%;
-  --sidebar-primary: 217 85% 58%;
-  --sidebar-primary-foreground: 228 42% 4%;
-  --sidebar-accent: 226 28% 10%;
-  --sidebar-accent-foreground: 220 20% 97%;
-  --sidebar-ring: 217 85% 58%;
+  --sidebar: 213 30% 5%;
+  --sidebar-foreground: 216 33% 97%;
+  --sidebar-border: 216 22% 15%;
+  --sidebar-primary: 217 100% 65%;
+  --sidebar-primary-foreground: 213 30% 6%;
+  --sidebar-accent: 213 28% 10%;
+  --sidebar-accent-foreground: 216 33% 97%;
+  --sidebar-ring: 217 100% 65%;
 
-  /* Chart tones — blue, indigo, violet, cyan, emerald */
-  --chart-1: 217 85% 58%;
-  --chart-2: 198 82% 50%;
-  --chart-3: 255 75% 65%;
+  /* Chart tones */
+  --chart-1: 217 100% 65%;
+  --chart-2: 214 100% 71%;
+  --chart-3: 233 100% 74%;
   --chart-4: 172 70% 44%;
-  --chart-5: 238 78% 66%;
+  --chart-5: 145 65% 50%;
 
   --app-font-sans: 'Inter', sans-serif;
   --app-font-display: 'Space Grotesk', sans-serif;
@@ -122,9 +123,8 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    /* Barely-there top glow — cinematic, not generic SaaS */
     background-image:
-      radial-gradient(ellipse 90% 40% at 50% -5%, hsl(217 85% 50% / 0.07) 0%, transparent 70%);
+      radial-gradient(ellipse 80% 35% at 50% -5%, hsl(217 100% 65% / 0.06) 0%, transparent 65%);
   }
 
   h1, h2, h3 {
@@ -132,47 +132,48 @@
   }
 }
 
-/* ─── Glass surface ─────────────────────────────────────────── */
+/* ─── Glass surface — spec: rgba(.04) / blur(12px) / border rgba(.08) ── */
 .glass {
-  background: hsl(226 32% 8% / 0.55);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid hsl(224 22% 14% / 0.7);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* ─── Glows — electric blue, used sparingly ─────────────────── */
+/* ─── Glows — highlight blue #4F8CFF ────────────────────────── */
 .glow-blue {
-  box-shadow: 0 0 36px -8px hsl(217 85% 58% / 0.55);
+  box-shadow: 0 0 36px -8px hsl(217 100% 65% / 0.5);
 }
 .glow-blue-sm {
-  box-shadow: 0 0 18px -5px hsl(217 85% 58% / 0.4);
+  box-shadow: 0 0 18px -5px hsl(217 100% 65% / 0.35);
 }
-/* Focused directional glow — for hero phone mockup */
 .glow-hero {
   box-shadow:
-    0 0 80px -20px hsl(217 85% 58% / 0.45),
-    0 0 140px -40px hsl(255 70% 60% / 0.2);
+    0 0 80px -20px hsl(217 100% 65% / 0.4),
+    0 0 140px -40px hsl(233 100% 74% / 0.18);
 }
 
-/* ─── CTA button — gradient + glow ──────────────────────────── */
+/* ─── CTA button — blue gradient ────────────────────────────── */
 .btn-primary {
-  background: linear-gradient(135deg, hsl(217 85% 56%) 0%, hsl(235 78% 58%) 100%);
-  box-shadow: 0 0 0 0 hsl(217 85% 58% / 0);
+  background: linear-gradient(135deg, hsl(217 100% 62%) 0%, hsl(233 100% 68%) 100%);
+  box-shadow: 0 0 0 0 hsl(217 100% 65% / 0);
   transition: box-shadow 0.25s ease, transform 0.15s ease;
+  border-radius: 14px;
 }
 .btn-primary:hover {
-  box-shadow: 0 0 32px -6px hsl(217 85% 58% / 0.6), 0 4px 20px -4px hsl(235 78% 58% / 0.4);
+  box-shadow: 0 0 28px -6px hsl(217 100% 65% / 0.55), 0 4px 18px -4px hsl(233 100% 68% / 0.4);
   transform: translateY(-1px);
 }
 
-/* Gold/orange CTA — primary funnel button */
+/* Orange CTA — ONLY for primary funnel CTAs, spec: #FF8A00 → #FFB547 */
 .btn-gold {
-  background: linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%);
-  box-shadow: 0 0 0 0 hsl(35 90% 55% / 0);
+  background: linear-gradient(135deg, #FF8A00 0%, #FFB547 100%);
+  box-shadow: 0 0 0 0 rgba(255, 138, 0, 0);
   transition: box-shadow 0.25s ease, transform 0.15s ease;
+  border-radius: 14px;
 }
 .btn-gold:hover {
-  box-shadow: 0 0 32px -6px hsl(35 90% 55% / 0.65), 0 4px 20px -4px hsl(24 90% 50% / 0.45);
+  box-shadow: 0 0 28px -6px rgba(255, 138, 0, 0.55), 0 4px 18px -4px rgba(255, 181, 71, 0.4);
   transform: translateY(-1px);
 }
 .btn-gold:active { transform: translateY(0); }
@@ -188,32 +189,42 @@
   border-color: hsl(220 20% 97% / 0.22);
 }
 
-/* ─── Headline gradient — white → ice blue → indigo ─────────── */
+/* ─── Headline gradient — white → highlight blue → accent ───── */
 .gradient-text {
   background: linear-gradient(
     135deg,
-    hsl(220 20% 98%)   0%,
-    hsl(210 60% 82%)  40%,
-    hsl(217 85% 70%)  70%,
-    hsl(240 70% 72%) 100%
+    #F5F7FA   0%,
+    #C8CDD7  30%,
+    #68A4FF  65%,
+    #7A8DFF 100%
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ─── Subtle grid — very low opacity ────────────────────────── */
+/* ─── Subtle grid ────────────────────────────────────────────── */
 .grid-bg {
   background-image:
-    linear-gradient(hsl(224 22% 14% / 0.22) 1px, transparent 1px),
-    linear-gradient(90deg, hsl(224 22% 14% / 0.22) 1px, transparent 1px);
+    linear-gradient(rgba(79, 140, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79, 140, 255, 0.045) 1px, transparent 1px);
   background-size: 64px 64px;
 }
 
 /* ─── Section separators ─────────────────────────────────────── */
 .section-fade-top {
-  background: linear-gradient(to bottom, hsl(228 42% 4%) 0%, transparent 100%);
+  background: linear-gradient(to bottom, #0B0F14 0%, transparent 100%);
 }
 .section-fade-bottom {
-  background: linear-gradient(to top, hsl(228 42% 4%) 0%, transparent 100%);
+  background: linear-gradient(to top, #0B0F14 0%, transparent 100%);
+}
+
+/* ─── Logo hero glow ─────────────────────────────────────────── */
+.logo-glow {
+  filter: drop-shadow(0 0 32px rgba(79, 140, 255, 0.28)) drop-shadow(0 0 8px rgba(200, 205, 215, 0.15));
+}
+
+/* ─── Metallic silver text accent ───────────────────────────── */
+.text-silver {
+  color: #C8CDD7;
 }

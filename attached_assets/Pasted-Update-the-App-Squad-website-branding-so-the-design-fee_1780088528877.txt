@@ -1,0 +1,196 @@
+Update the App Squad website branding so the design feels built around the App Squad logo.
+
+Do NOT redesign the logo.
+
+The goal is to make the logo feel native to the website.
+
+==================================================
+BRAND DIRECTION
+==================================================
+
+The App Squad logo communicates:
+
+- premium technology
+- software company
+- futuristic growth
+- app ecosystem
+- innovation
+- scalability
+- enterprise startup
+
+The website should visually support this identity.
+
+Avoid:
+- generic orange funnel look
+- business opportunity look
+- internet marketing look
+- excessive gold
+- aggressive sales page aesthetics
+
+The site should feel like:
+Apple + Stripe + Linear + Notion + modern SaaS.
+
+==================================================
+COLOR SYSTEM
+==================================================
+
+Primary Background:
+#0B0F14
+
+Secondary Background:
+#121821
+
+Card Background:
+#171E29
+
+Accent Silver:
+#C8CDD7
+
+Accent White:
+#F5F7FA
+
+Highlight Blue:
+#4F8CFF
+
+Glow Blue:
+#68A4FF
+
+Optional Accent:
+#7A8DFF
+
+Use orange ONLY for CTA buttons.
+
+Reduce orange usage throughout the site by 70%.
+
+==================================================
+LOGO SECTION
+==================================================
+
+Place logo on a subtle dark gradient background.
+
+Add soft ambient glow behind logo.
+
+Add slight floating animation:
+2-3 pixel vertical movement.
+
+Add subtle metallic lighting effect.
+
+Do NOT rotate logo.
+
+Do NOT over-animate logo.
+
+Keep professional.
+
+==================================================
+TYPOGRAPHY
+==================================================
+
+Upgrade typography hierarchy.
+
+Hero headline:
+
+font-weight: 800
+letter spacing: -1px
+
+Hero size:
+64px desktop
+42px tablet
+34px mobile
+
+Subheadline:
+20-22px
+high readability
+
+Body copy:
+18px
+
+Use:
+Inter
+or
+SF Pro style typography
+
+==================================================
+VISUAL STYLE
+==================================================
+
+Add:
+
+- app ecosystem graphics
+- futuristic dashboards
+- floating analytics cards
+- mobile phones
+- UI mockups
+- app icons
+- monetization visuals
+- subtle particle effects
+
+Remove empty placeholder feeling.
+
+Every section should have supporting visuals.
+
+==================================================
+HERO SECTION
+==================================================
+
+Add logo above headline.
+
+Logo should appear as:
+
+[APP SQUAD LOGO]
+
+Explore The Mobile App Economy
+
+Discover how branded mobile game apps are customized, prepared for monetization, and launched through App Squad's guided app launch process.
+
+CTA:
+Watch The App Ownership Presentation
+
+==================================================
+BUTTON DESIGN
+==================================================
+
+Primary CTA:
+
+Background:
+Linear gradient
+
+#FF8A00
+to
+#FFB547
+
+Hover:
+slight glow
+
+Border radius:
+14px
+
+==================================================
+CARDS
+==================================================
+
+Use glassmorphism cards:
+
+background:
+rgba(255,255,255,.04)
+
+backdrop blur:
+12px
+
+border:
+1px solid rgba(255,255,255,.08)
+
+soft shadow
+
+==================================================
+OVERALL FEEL
+==================================================
+
+The website should feel like:
+
+A premium technology company that helps customers launch mobile game apps.
+
+NOT:
+
+A business opportunity funnel.
+
+The logo should now feel completely integrated into the website's visual identity.
