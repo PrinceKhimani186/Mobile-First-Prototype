@@ -185,7 +185,7 @@ export default function PartnerProgram() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      <div className="absolute inset-0 grid-bg opacity-20" />
+      <div className="absolute inset-0 grid-bg opacity-20 pointer-events-none" />
 
       {/* ══════════════════════════════════════════
           HERO
