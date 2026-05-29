@@ -1,0 +1,289 @@
+Update the App Squad website with the following conversion-focused improvements.
+
+IMPORTANT:
+Do NOT redesign the site.
+Do NOT change the current branding direction.
+Do NOT remove any existing funnel logic.
+
+The goal is to increase trust, engagement, and conversions while keeping the premium technology company feel.
+
+==================================================
+IMPROVEMENT #1
+LARGER LOGO PRESENCE
+====================
+
+Increase logo size by approximately 35%.
+
+Move logo slightly higher within hero section.
+
+Add:
+
+* soft ambient glow behind logo
+* subtle floating animation
+* premium metallic reflection effect
+* improved spacing between logo and headline
+
+Animation:
+slow vertical movement
+2-3 pixels only
+
+Do NOT rotate logo.
+
+Do NOT make it flashy.
+
+The logo should feel like a software company brand.
+
+==================================================
+IMPROVEMENT #2
+APP MARKET INTELLIGENCE SECTION
+===============================
+
+Add a new section directly below the hero section.
+
+Section title:
+Inside The Mobile App Economy
+
+Subheadline:
+Millions of people engage with mobile games and digital products every day across a wide range of categories.
+
+Create premium stat cards for:
+
+Puzzle Games
+Example:
+Candy Crush
+
+Word Games
+Example:
+Wordscapes
+
+Strategy Games
+Example:
+Clash of Clans
+
+Arcade Games
+Example:
+Subway Surfers
+
+Casino Style Entertainment Apps
+Example:
+Slots Era
+
+Social Games
+Example:
+Coin Master
+
+Important:
+
+Do NOT show revenue claims.
+
+Do NOT show earnings promises.
+
+Do NOT suggest customer results.
+
+Position these as examples of popular categories within the mobile app ecosystem.
+
+Add modern icons and app-style visuals.
+
+==================================================
+IMPROVEMENT #3
+ANIMATED PHONE MOCKUPS
+======================
+
+The phone mockup should automatically rotate every 4-5 seconds.
+
+Create smooth transitions between:
+
+1.
+
+Puzzle Game
+
+2.
+
+Word Game
+
+3.
+
+Casino Style Entertainment Game
+
+4.
+
+Trivia Game
+
+5.
+
+Arcade Game
+
+Each transition should:
+
+* slide smoothly
+* animate app icon
+* animate game screen
+* update app title
+
+Add subtle glow effects.
+
+Make the phone feel alive.
+
+==================================================
+IMPROVEMENT #4
+HOW THE PROCESS WORKS
+=====================
+
+Add a new section:
+
+Section Title:
+How The App Launch Process Works
+
+Create a modern 7-step timeline.
+
+Step 1
+Watch App Ownership Presentation
+
+Step 2
+Complete Application
+
+Step 3
+Book Strategy Call
+
+Step 4
+Choose Launch Package
+
+Step 5
+Select Your Game Template
+
+Step 6
+Customize Your App
+
+Step 7
+Launch Your Digital Product
+
+Use:
+
+* premium icons
+* connecting timeline
+* hover animations
+
+This section should reduce confusion and increase trust.
+
+==================================================
+IMPROVEMENT #5
+TRUST SECTION
+=============
+
+Add a trust section below the timeline.
+
+Title:
+What App Squad Helps With
+
+Create cards:
+
+Custom Game App Development
+
+Brand Customization
+
+Monetization Preparation
+
+App Store Publishing Assistance
+
+Launch Guidance
+
+Ongoing Support
+
+Add subtle animations and modern card styling.
+
+==================================================
+IMPROVEMENT #6
+SOURCE-SPECIFIC VISITOR EXPERIENCE
+==================================
+
+Keep both routes.
+
+BUT improve messaging.
+
+==================================================
+START ROUTE
+===========
+
+/start
+
+Only show:
+
+Watch The App Ownership Presentation
+
+Do NOT display:
+
+Already Spoke With A Representative
+
+This page is only for cold traffic.
+
+==================================================
+REPRESENTATIVE ROUTE
+====================
+
+/representative
+
+Only show:
+
+Continue Your App Launch Application
+
+Embed the short representative reinforcement video.
+
+Do NOT show:
+
+Watch The App Ownership Presentation
+
+This page is only for appointment setter leads.
+
+==================================================
+IMPROVEMENT #7
+CTA ENHANCEMENT
+===============
+
+Upgrade all CTA buttons.
+
+Primary CTA:
+
+Background:
+linear-gradient(
+#FF8A00,
+#FFB547
+)
+
+Hover:
+
+* scale 1.03
+* glow effect
+
+Shadow:
+soft orange glow
+
+Border Radius:
+14px
+
+==================================================
+IMPROVEMENT #8
+FINAL HERO SUBHEADLINE
+======================
+
+Replace current hero subheadline with:
+
+Discover how branded mobile game apps are customized, prepared for monetization, and launched through App Squad’s guided app launch process.
+
+==================================================
+FINAL GOAL
+==========
+
+The website should feel like:
+
+* premium software company
+* mobile app launch company
+* startup ecosystem
+* technology brand
+
+NOT:
+
+* coaching funnel
+* webinar funnel
+* business opportunity landing page
+
+The experience should increase trust, create curiosity, and guide visitors naturally into the application process.

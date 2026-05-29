@@ -4,19 +4,18 @@ import {
   PlayCircle, ArrowRight, Apple, Activity, Target,
   TrendingUp, Star, Layers, Code2, Rocket, Smartphone,
   BarChart3, DollarSign, Palette, ShoppingBag, Puzzle,
-  Sparkles, Zap, Download, Shield
+  Sparkles, Zap, Download, Shield, Gamepad2, BookOpen,
+  CalendarCheck, Package, Globe, Headphones, Users,
 } from "lucide-react";
 import { Link } from "wouter";
 
 /* ─── Phone screen definitions ─── */
 const SCREENS = [
-  { id: "puzzle",   label: "Puzzle Match",     color: "hsl(217 85% 55%)" },
-  { id: "casino",   label: "Slots Game",        color: "hsl(280 70% 55%)" },
-  { id: "kids",     label: "Kids Learning",     color: "hsl(155 60% 45%)" },
-  { id: "analytics",label: "App Analytics",    color: "hsl(217 85% 58%)" },
-  { id: "revenue",  label: "Monetization",      color: "hsl(35 90% 55%)"  },
-  { id: "branding", label: "Branding Studio",   color: "hsl(320 60% 55%)" },
-  { id: "store",    label: "App Store",         color: "hsl(197 82% 50%)" },
+  { id: "puzzle",  label: "Puzzle Game",  color: "hsl(217 100% 65%)" },
+  { id: "word",    label: "Word Game",    color: "hsl(142 65% 48%)"  },
+  { id: "casino",  label: "Casino Style", color: "hsl(280 70% 60%)"  },
+  { id: "trivia",  label: "Trivia Game",  color: "hsl(35 100% 58%)"  },
+  { id: "arcade",  label: "Arcade Game",  color: "hsl(197 85% 55%)"  },
 ];
 
 /* ─── Individual screens ─── */
@@ -120,44 +119,130 @@ function CasinoScreen() {
   );
 }
 
-function KidsScreen() {
+function WordGameScreen() {
+  const tiles = ["W","O","R","D","S","C","A","P","E","S"];
+  const found = ["WORDS", "CAPE"];
   return (
     <div className="flex flex-col h-full px-4 pt-3 pb-4 gap-3">
       <div className="text-center">
-        <div className="text-lg font-bold text-white">Learning Stars ⭐</div>
-        <div className="text-[11px] text-emerald-400">Level 3 · Grade 2</div>
+        <div className="text-lg font-bold text-white">Word Craft</div>
+        <div className="text-[11px]" style={{ color: "hsl(142 65% 55%)" }}>Level 47 · Today's Challenge</div>
       </div>
-      {/* Progress stars */}
-      <div className="flex justify-center gap-2">
-        {[1,2,3,4,5].map(i => (
-          <Star key={i} className={`w-7 h-7 ${i <= 3 ? "text-yellow-400 fill-yellow-400" : "text-white/20"}`} />
-        ))}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="grid grid-cols-5 gap-1.5">
+          {tiles.map((l, i) => (
+            <motion.div key={i}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: i * 0.04, ease: "backOut" }}
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black text-white"
+              style={{ background: i % 2 === 0 ? "hsl(142 65% 48% / 0.15)" : "hsl(217 100% 65% / 0.1)", border: `1px solid ${i % 2 === 0 ? "hsl(142 65% 48% / 0.3)" : "hsl(217 100% 65% / 0.2)"}` }}>
+              {l}
+            </motion.div>
+          ))}
+        </div>
       </div>
-      {/* Question card */}
-      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 text-center">
-        <div className="text-2xl font-bold text-white mb-1">🍎 + 🍎 = ?</div>
-        <div className="text-white/50 text-xs">Choose the right answer</div>
+      <div>
+        <div className="text-[10px] text-white/40 mb-1.5">Found: {found.length} / 8</div>
+        <div className="flex gap-2">
+          {found.map(w => (
+            <div key={w} className="px-3 py-1 rounded-lg text-[11px] font-bold"
+              style={{ background: "hsl(142 65% 48% / 0.15)", border: "1px solid hsl(142 65% 48% / 0.3)", color: "hsl(142 65% 65%)" }}>
+              {w}
+            </div>
+          ))}
+        </div>
       </div>
-      {/* Answer grid */}
-      <div className="grid grid-cols-2 gap-2 flex-1">
-        {["1","2","3","4"].map((n, i) => (
-          <motion.div
-            key={n}
-            className={`rounded-2xl border flex items-center justify-center text-2xl font-bold cursor-pointer transition-all
-              ${i === 1 ? "bg-emerald-500/20 border-emerald-400/60 text-emerald-300 shadow-[0_0_15px_-3px_hsl(155_60%_45%_/_0.5)]" : "bg-white/5 border-white/10 text-white/60"}`}
-            whileTap={{ scale: 0.96 }}
-          >
-            {n}
+      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+        <motion.div className="h-full rounded-full" style={{ background: "hsl(142 65% 48%)" }}
+          initial={{ width: "0%" }} animate={{ width: "25%" }} transition={{ duration: 1 }} />
+      </div>
+    </div>
+  );
+}
+
+function TriviaGameScreen() {
+  const answers = [
+    { text: "iOS App Store", correct: true },
+    { text: "PlayStation Store", correct: false },
+    { text: "Steam", correct: false },
+    { text: "Xbox Marketplace", correct: false },
+  ];
+  return (
+    <div className="flex flex-col h-full px-4 pt-3 pb-4 gap-2.5">
+      <div className="flex items-center justify-between">
+        <div className="text-base font-bold text-white">Trivia Quest</div>
+        <div className="px-2.5 py-1 rounded-lg text-[10px] font-semibold"
+          style={{ background: "hsl(35 100% 58% / 0.15)", border: "1px solid hsl(35 100% 58% / 0.3)", color: "hsl(35 100% 68%)" }}>
+          Q 7/10
+        </div>
+      </div>
+      <div className="p-3 rounded-xl text-center"
+        style={{ background: "hsl(217 100% 65% / 0.06)", border: "1px solid hsl(217 100% 65% / 0.14)" }}>
+        <div className="text-[12px] font-semibold text-white/90 leading-snug">Where are mobile apps downloaded on iPhone?</div>
+      </div>
+      <div className="flex flex-col gap-1.5 flex-1">
+        {answers.map((a, i) => (
+          <motion.div key={i}
+            initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+            style={{ background: a.correct ? "hsl(142 65% 48% / 0.12)" : "rgba(255,255,255,0.03)", border: `1px solid ${a.correct ? "hsl(142 65% 48% / 0.35)" : "rgba(255,255,255,0.07)"}` }}>
+            <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[9px] font-bold"
+              style={{ background: a.correct ? "hsl(142 65% 48%)" : "rgba(255,255,255,0.06)", color: a.correct ? "white" : "hsl(218 14% 52%)" }}>
+              {String.fromCharCode(65 + i)}
+            </div>
+            <span style={{ fontSize: 11, color: a.correct ? "hsl(142 65% 70%)" : "hsl(218 14% 56%)", fontWeight: a.correct ? 600 : 300 }}>{a.text}</span>
           </motion.div>
         ))}
       </div>
-      <div className="h-2 bg-emerald-500/20 rounded-full overflow-hidden">
-        <motion.div
-          className="h-full bg-emerald-500 rounded-full"
-          initial={{ width: "0%" }}
-          animate={{ width: "45%" }}
-          transition={{ duration: 1 }}
-        />
+      <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <span className="text-[11px] text-white/40">Score:</span>
+        <span className="text-[13px] font-bold text-white ml-auto">6,200 pts</span>
+      </div>
+    </div>
+  );
+}
+
+function ArcadeGameScreen() {
+  return (
+    <div className="flex flex-col h-full px-4 pt-3 pb-4 gap-3">
+      <div className="flex items-center justify-between">
+        <div className="text-base font-bold text-white">City Dash</div>
+        <div className="text-right">
+          <div className="text-[10px] text-white/40">HI-SCORE</div>
+          <div className="text-sm font-bold" style={{ color: "hsl(197 85% 60%)" }}>28,450</div>
+        </div>
+      </div>
+      <div className="flex-1 relative rounded-2xl overflow-hidden"
+        style={{ background: "hsl(213 40% 5%)", border: "1px solid hsl(197 85% 55% / 0.2)" }}>
+        {[0,1,2].map(i => (
+          <motion.div key={i} className="absolute inset-x-0 h-px"
+            style={{ top: `${25 + i * 25}%`, background: "linear-gradient(90deg, transparent, hsl(197 85% 55% / 0.3), transparent)" }}
+            animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.5 }} />
+        ))}
+        <motion.div animate={{ y: [0, -7, 0] }} transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-5 left-1/2 -translate-x-1/2 w-9 h-9 rounded-xl flex items-center justify-center text-base"
+          style={{ background: "linear-gradient(135deg, hsl(197 85% 55%), hsl(217 100% 65%))", boxShadow: "0 0 14px hsl(197 85% 55% / 0.45)" }}>
+          🏃
+        </motion.div>
+        {[15, 55, 80].map((left, i) => (
+          <motion.div key={i} className="absolute top-3 w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+            style={{ left: `${left}%`, background: "hsl(0 72% 50% / 0.18)", border: "1px solid hsl(0 72% 50% / 0.3)" }}
+            animate={{ y: ["0%", "400%"] }} transition={{ duration: 1.8 + i * 0.4, repeat: Infinity, ease: "linear", delay: i * 0.6 }}>
+            🚧
+          </motion.div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="flex-1 py-2 rounded-xl text-center"
+          style={{ background: "hsl(197 85% 55% / 0.1)", border: "1px solid hsl(197 85% 55% / 0.25)" }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "hsl(197 85% 65%)" }}>SCORE: 14,280</span>
+        </div>
+        <motion.div whileTap={{ scale: 0.95 }}
+          className="w-11 h-9 rounded-xl flex items-center justify-center"
+          style={{ background: "linear-gradient(135deg, hsl(197 85% 55%), hsl(217 100% 65%))" }}>
+          <span className="text-sm font-bold text-white">▶</span>
+        </motion.div>
       </div>
     </div>
   );
@@ -368,8 +453,7 @@ function StoreScreen() {
 }
 
 const SCREEN_COMPONENTS = [
-  PuzzleScreen, CasinoScreen, KidsScreen, AnalyticsScreen,
-  RevenueScreen, BrandingScreen, StoreScreen,
+  PuzzleScreen, WordGameScreen, CasinoScreen, TriviaGameScreen, ArcadeGameScreen,
 ];
 
 /* ─── Sparkle particle ─── */
@@ -439,7 +523,7 @@ export default function Landing() {
   useEffect(() => {
     const id = setInterval(() => {
       setScreenIdx(i => (i + 1) % SCREEN_COMPONENTS.length);
-    }, 3200);
+    }, 4500);
     return () => clearInterval(id);
   }, []);
 
@@ -476,7 +560,7 @@ export default function Landing() {
                   <motion.img
                     src="/logo.png"
                     alt="App Squad"
-                    className="relative h-20 w-auto object-contain logo-glow"
+                    className="relative h-28 w-auto object-contain logo-glow"
                     animate={{ y: [0, -3, 0] }}
                     transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
                   />
@@ -608,7 +692,7 @@ export default function Landing() {
                         exit={{ opacity: 0, y: -4 }}
                         className="px-3 py-1 rounded-full bg-white/[0.06] border border-white/[0.08] text-[10px] text-white/40 font-medium"
                       >
-                        {SCREENS[screenIdx].label}
+                        {SCREENS[screenIdx % SCREENS.length]?.label}
                       </motion.div>
                     </div>
 
@@ -742,6 +826,48 @@ export default function Landing() {
               </FloatingCard>
 
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ APP MARKET INTELLIGENCE ═══════════ */}
+      <section className="py-20 border-b border-white/[0.06] relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse 70% 50% at 50% 50%, rgba(79,140,255,0.04) 0%, transparent 70%)" }} />
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-center max-w-2xl mx-auto mb-12">
+            <p className="text-sm font-semibold tracking-widest uppercase mb-3 text-silver">Mobile App Ecosystem</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ letterSpacing: "-0.025em" }}>Inside The Mobile App Economy</h2>
+            <p className="text-muted-foreground leading-relaxed">Millions of people engage with mobile games and digital products every day across a wide range of categories.</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+            {[
+              { icon: Puzzle, label: "Puzzle Games", example: "e.g. Candy Crush Saga", desc: "Match-based puzzle games are among the most widely played mobile game categories globally.", color: "#4F8CFF", bg: "rgba(79,140,255,0.08)", border: "rgba(79,140,255,0.18)" },
+              { icon: BookOpen, label: "Word Games", example: "e.g. Wordscapes", desc: "Word and spelling games draw consistent daily engagement from players of all ages.", color: "#68A4FF", bg: "rgba(104,164,255,0.08)", border: "rgba(104,164,255,0.18)" },
+              { icon: Gamepad2, label: "Strategy Games", example: "e.g. Clash of Clans", desc: "Strategy and base-building games are known for deep engagement and in-app purchase activity.", color: "#7A8DFF", bg: "rgba(122,141,255,0.08)", border: "rgba(122,141,255,0.18)" },
+              { icon: Zap, label: "Arcade Games", example: "e.g. Subway Surfers", desc: "Fast-paced arcade runners and action games attract broad audiences across demographics.", color: "hsl(142 65% 55%)", bg: "hsl(142 65% 48% / 0.08)", border: "hsl(142 65% 48% / 0.2)" },
+              { icon: Star, label: "Casino Style Entertainment", example: "e.g. Slots Era", desc: "Casino-style entertainment apps are a well-established category in both app stores.", color: "hsl(35 100% 62%)", bg: "hsl(35 100% 58% / 0.08)", border: "hsl(35 100% 58% / 0.2)" },
+              { icon: Users, label: "Social Games", example: "e.g. Coin Master", desc: "Social games combine gameplay with friend sharing and community engagement mechanics.", color: "hsl(280 70% 65%)", bg: "hsl(280 70% 60% / 0.08)", border: "hsl(280 70% 60% / 0.2)" },
+            ].map(({ icon: Icon, label, example, desc, color, bg, border }, i) => (
+              <motion.div key={label}
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.07 }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}>
+                <div className="glass rounded-2xl p-6 h-full border border-white/[0.06] hover:border-white/[0.12] transition-all duration-300"
+                  style={{ boxShadow: `0 0 0 0 transparent` }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                    style={{ background: bg, border: `1px solid ${border}` }}>
+                    <Icon className="w-5 h-5" style={{ color }} />
+                  </div>
+                  <p style={{ fontFamily: "'Space Grotesk'", fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em", marginBottom: 3 }}>{label}</p>
+                  <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "#C8CDD7", opacity: 0.5, marginBottom: 10, fontWeight: 400 }}>{example}</p>
+                  <p style={{ fontFamily: "'Inter'", fontSize: 12.5, lineHeight: 1.65, color: "hsl(218 14% 52%)", fontWeight: 300 }}>{desc}</p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -880,50 +1006,98 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ═══════════ HOW IT WORKS ═══════════ */}
-      <section className="py-32 relative overflow-hidden grid-bg">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,hsl(217_91%_60%_/_0.08)_0%,transparent_70%)]" />
+      {/* ═══════════ 7-STEP PROCESS ═══════════ */}
+      <section className="py-28 relative overflow-hidden grid-bg">
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse 60% 45% at 50% 50%, rgba(79,140,255,0.06) 0%, transparent 70%)" }} />
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center max-w-xl mx-auto mb-20">
-            <p className="text-primary text-sm font-semibold tracking-widest uppercase mb-4">The Process</p>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">From Idea to App Store</h2>
-            <p className="text-muted-foreground text-lg">Four structured steps that take you from concept to published game.</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-center max-w-xl mx-auto mb-16">
+            <p className="text-sm font-semibold tracking-widest uppercase mb-4 text-silver">The Process</p>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ letterSpacing: "-0.03em" }}>How The App Launch Process Works</h2>
+            <p className="text-muted-foreground text-lg">Seven structured steps designed to take you from concept to a published app in the App Store and Google Play.</p>
+          </motion.div>
 
-          <div className="relative grid lg:grid-cols-4 gap-12 lg:gap-8 max-w-5xl mx-auto">
-            <div className="absolute top-10 left-[12.5%] right-[12.5%] h-1 bg-gradient-to-r from-primary via-accent to-purple-500 rounded-full hidden lg:block opacity-50 overflow-hidden">
-              <motion.div
-                className="h-full w-1/3 bg-white/50 blur-sm"
-                animate={{ x: ["-100%", "300%"] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              />
-            </div>
+          <div className="max-w-2xl mx-auto">
             {[
-              { step: "01", title: "Watch The Presentation", desc: "See how the app launch process works in a short overview presentation.", icon: PlayCircle },
-              { step: "02", title: "Apply", desc: "Complete the qualification form and tell us about your goals and timeline.", icon: Smartphone },
-              { step: "03", title: "Book A Strategy Call", desc: "Our team reviews your application and walks through the best launch path for you.", icon: Layers },
-              { step: "04", title: "Launch Your App", desc: "We guide you from game template selection to App Store and Google Play launch.", icon: Rocket },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+              { n: "01", icon: PlayCircle,    title: "Watch App Ownership Presentation",  desc: "Get a clear overview of how the App Squad app launch process works and what's included.",                       cta: true },
+              { n: "02", icon: Smartphone,    title: "Complete Your Application",          desc: "Tell us about your goals, timeline, and the type of app you're looking to launch.",                             cta: false },
+              { n: "03", icon: CalendarCheck, title: "Book Your Strategy Call",            desc: "Our team reviews your application and schedules your App Launch Strategy Call.",                                 cta: false },
+              { n: "04", icon: Package,       title: "Choose Your Launch Package",         desc: "Select the app launch package that aligns with your goals and budget.",                                         cta: false },
+              { n: "05", icon: Gamepad2,      title: "Select Your Game Template",          desc: "Browse and choose from our library of branded mobile game templates.",                                          cta: false },
+              { n: "06", icon: Palette,       title: "Customize Your App",                 desc: "Apply your branding, colors, name, and identity to make the app distinctly yours.",                             cta: false },
+              { n: "07", icon: Globe,         title: "Launch Your Digital Product",        desc: "We prepare your app for submission to the Apple App Store and Google Play Store.",                               cta: false },
+            ].map((step, i) => (
+              <motion.div key={i}
+                initial={{ opacity: 0, x: -16 }}
+                whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="relative flex flex-col items-center text-center group"
-                data-testid={`step-${item.step}`}
-              >
-                <div className="relative w-20 h-20 rounded-2xl glass border-2 border-white/20 flex items-center justify-center mb-6 group-hover:border-primary/60 group-hover:bg-primary/10 group-hover:shadow-[0_0_25px_-5px_hsl(217_91%_60%_/_0.5)] transition-all z-10 bg-card">
-                  <item.icon className="w-8 h-8 text-primary" />
-                  <span className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center ring-4 ring-background shadow-lg">
-                    {i + 1}
-                  </span>
+                transition={{ delay: i * 0.07, duration: 0.45, ease: "easeOut" }}
+                whileHover={{ x: 5, transition: { duration: 0.18 } }}
+                className="relative flex gap-5 mb-5 last:mb-0 group"
+                data-testid={`step-${step.n}`}>
+                {/* Connecting line */}
+                {i < 6 && (
+                  <div className="absolute left-[19px] top-[44px] bottom-[-20px] w-px pointer-events-none"
+                    style={{ background: "linear-gradient(to bottom, rgba(79,140,255,0.25), rgba(79,140,255,0.04))" }} />
+                )}
+                {/* Icon circle */}
+                <div className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center z-10 transition-all duration-300 group-hover:scale-110"
+                  style={{
+                    background: step.cta ? "linear-gradient(135deg, #FF8A00, #FFB547)" : "rgba(79,140,255,0.1)",
+                    border: step.cta ? "none" : "1px solid rgba(79,140,255,0.22)",
+                    boxShadow: step.cta ? "0 4px 16px rgba(255,138,0,0.3)" : "none",
+                  }}>
+                  <step.icon className="w-4 h-4" style={{ color: step.cta ? "white" : "#4F8CFF" }} />
                 </div>
-                <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                <p className="text-muted-foreground text-base leading-relaxed">{item.desc}</p>
+                {/* Card */}
+                <div className="flex-1 glass rounded-2xl px-5 py-4 transition-all duration-300 group-hover:border-white/[0.14] group-hover:shadow-[0_0_20px_-8px_rgba(79,140,255,0.18)]">
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.09em", color: "#4F8CFF", textTransform: "uppercase" }}>Step {step.n}</span>
+                  <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em", margin: "4px 0 5px" }}>{step.title}</h3>
+                  <p style={{ fontFamily: "'Inter'", fontSize: 13, lineHeight: 1.65, color: "hsl(218 14% 50%)", fontWeight: 300 }}>{step.desc}</p>
+                </div>
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ═══════════ WHAT APP SQUAD HELPS WITH ═══════════ */}
+      <section className="py-24 border-b border-white/[0.06] relative">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-center max-w-xl mx-auto mb-14">
+            <p className="text-sm font-semibold tracking-widest uppercase mb-3 text-silver">Our Role</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ letterSpacing: "-0.025em" }}>What App Squad Helps With</h2>
+          </motion.div>
+          <motion.div
+            initial="hidden" whileInView="visible" viewport={{ once: true }}
+            variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } }}
+            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            {[
+              { icon: Code2,    title: "Custom Game App Development",   desc: "Branded mobile game apps built on proven templates, customized for your identity.",        color: "#4F8CFF",  bg: "rgba(79,140,255,0.08)",  border: "rgba(79,140,255,0.18)" },
+              { icon: Palette,  title: "Brand Customization",           desc: "Name, colors, icons, splash screens, and visual identity applied to your app.",            color: "#68A4FF",  bg: "rgba(104,164,255,0.08)", border: "rgba(104,164,255,0.18)" },
+              { icon: BarChart3,title: "Monetization Preparation",      desc: "Ad networks, in-app purchases, and revenue streams configured and ready for launch.",      color: "#7A8DFF",  bg: "rgba(122,141,255,0.08)", border: "rgba(122,141,255,0.18)" },
+              { icon: Globe,    title: "App Store Publishing Assistance",desc: "Guidance and support preparing your app for Apple App Store and Google Play submission.",  color: "hsl(142 65% 55%)", bg: "hsl(142 65% 48% / 0.08)", border: "hsl(142 65% 48% / 0.2)" },
+              { icon: Rocket,   title: "Launch Guidance",               desc: "Step-by-step launch support so you understand every stage of the process.",                color: "hsl(35 100% 62%)",  bg: "hsl(35 100% 58% / 0.08)", border: "hsl(35 100% 58% / 0.2)" },
+              { icon: Headphones,title:"Ongoing Support",               desc: "Post-launch access to our team for questions, updates, and continued app development.",    color: "hsl(280 70% 65%)", bg: "hsl(280 70% 60% / 0.08)", border: "hsl(280 70% 60% / 0.2)" },
+            ].map(({ icon: Icon, title, desc, color, bg, border }, i) => (
+              <motion.div key={title}
+                variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+                whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+                <div className="glass rounded-2xl p-6 h-full border border-white/[0.06] hover:border-white/[0.14] transition-all duration-300 group">
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110"
+                    style={{ background: bg, border: `1px solid ${border}` }}>
+                    <Icon className="w-5 h-5" style={{ color }} />
+                  </div>
+                  <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: 14, fontWeight: 700, letterSpacing: "-0.01em", marginBottom: 8 }}>{title}</h3>
+                  <p style={{ fontFamily: "'Inter'", fontSize: 13, lineHeight: 1.65, color: "hsl(218 14% 50%)", fontWeight: 300 }}>{desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 

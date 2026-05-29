@@ -174,7 +174,7 @@
 }
 .btn-gold:hover {
   box-shadow: 0 0 28px -6px rgba(255, 138, 0, 0.55), 0 4px 18px -4px rgba(255, 181, 71, 0.4);
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.03);
 }
 .btn-gold:active { transform: translateY(0); }
 
