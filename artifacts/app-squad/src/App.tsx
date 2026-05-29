@@ -12,6 +12,7 @@ import Representative from "@/pages/representative";
 import Apply from "@/pages/apply";
 import BookCall from "@/pages/book-call";
 import Enrollment from "@/pages/enrollment";
+import PartnerProgram from "@/pages/partner-program";
 import OnboardingAccess from "@/pages/onboarding-access";
 import GameSelection from "@/pages/game-selection";
 import Customize from "@/pages/customize";
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/representative" component={Representative} />
       <Route path="/apply" component={Apply} />
       <Route path="/book-call" component={BookCall} />
+      <Route path="/partner-program" component={PartnerProgram} />
       {/* Hidden post-enrollment */}
       <Route path="/enrollment" component={Enrollment} />
       <Route path="/onboarding/access" component={OnboardingAccess} />

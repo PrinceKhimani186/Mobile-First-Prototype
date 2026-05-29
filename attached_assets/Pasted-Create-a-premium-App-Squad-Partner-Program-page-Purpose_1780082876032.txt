@@ -1,0 +1,193 @@
+Create a premium App Squad Partner Program page.
+
+Purpose:
+Recruit affiliates, referral partners, creators, appointment setters, and business opportunity promoters who want to refer qualified leads to App Squad.
+
+Do NOT position this as “guaranteed income.”
+Do NOT make earnings promises.
+Do NOT say affiliates or customers will make money.
+
+Position it as:
+A referral partner program for people who want to help others discover mobile app ownership and earn commissions on qualified closed sales.
+
+Page route:
+/partner-program
+
+Navigation label:
+Partner Program
+
+Design:
+Keep the existing App Squad premium dark tech design.
+Use warm gold/orange CTA buttons.
+Use modern SaaS/startup typography.
+Use app ecosystem visuals, phone mockups, and clean partner cards.
+
+Hero Section:
+
+Headline:
+Become An App Squad Partner
+
+Subheadline:
+Refer aspiring entrepreneurs interested in mobile game app ownership and earn commissions when qualified referrals become App Squad clients.
+
+Primary CTA:
+Apply To Become A Partner
+
+Secondary CTA:
+How It Works
+
+Add small disclaimer:
+Commissions are paid only on qualified closed sales. No earnings are guaranteed.
+
+Section 2:
+Who This Is For
+
+Create cards:
+- Affiliate Marketers
+- Business Opportunity Promoters
+- Content Creators
+- Appointment Setters
+- Community Builders
+- Coaches & Consultants
+- App/Tech Influencers
+- Digital Product Educators
+
+Section 3:
+How The Partner Program Works
+
+Step cards:
+
+1. Apply
+Submit your information and tell us how you plan to promote App Squad.
+
+2. Get Approved
+Approved partners receive tracking links, approved messaging, and program rules.
+
+3. Refer Leads
+Share App Squad with people interested in mobile app ownership or digital product launches.
+
+4. We Close
+App Squad handles qualification, strategy calls, agreements, onboarding, and fulfillment.
+
+5. Earn Commission
+Partners earn commissions on verified closed sales according to the approved payout structure.
+
+Section 4:
+What You Can Promote
+
+Cards:
+- App Ownership Presentation
+- App Launch Strategy Call
+- Mobile Game App Templates
+- Guided App Launch Process
+- Custom-Branded Game Apps
+- Monetization Preparation Support
+
+Section 5:
+Commission Structure Placeholder
+
+Headline:
+Partner Commission Opportunities
+
+Create 3 commission cards:
+
+Starter Launch Referral
+Commission:
+To Be Announced / Approved Partner Terms
+
+Growth Launch Referral
+Commission:
+To Be Announced / Approved Partner Terms
+
+App Empire Referral
+Commission:
+To Be Announced / Approved Partner Terms
+
+Add note:
+Exact commission rates, payout timelines, and qualification rules are provided after partner approval.
+
+Section 6:
+Partner Rules
+
+Include rules:
+- No false income claims
+- No promises of app revenue
+- No guarantees of downloads, approvals, rankings, or profits
+- No misleading testimonials
+- No spam
+- No unauthorized paid ads using App Squad brand terms
+- Must use approved marketing language
+- Must clearly disclose affiliate/partner relationship
+- Must follow FTC disclosure rules
+- Commission paid only on verified closed sales
+- Chargebacks/refunds may affect commission eligibility
+
+Section 7:
+Approved Messaging Examples
+
+Add examples:
+
+Approved:
+“App Squad helps customers explore branded mobile game app ownership through a guided launch process.”
+
+Approved:
+“App Squad provides custom mobile game app development, monetization preparation, and publishing assistance.”
+
+Not Approved:
+“You are guaranteed to make money with your app.”
+
+Not Approved:
+“Turn $5,000 into hundreds of thousands.”
+
+Section 8:
+Partner Application Form
+
+Fields:
+- Full Name
+- Email
+- Phone
+- Company / Brand Name
+- Website or Social Link
+- Promotion Method
+- Audience Type
+- Estimated Monthly Lead Volume
+- Do you run paid ads?
+- Have you promoted business opportunities before?
+- Why do you want to partner with App Squad?
+
+Checkbox:
+I agree not to make income claims, earnings guarantees, app approval guarantees, download guarantees, ranking guarantees, or misleading representations when promoting App Squad.
+
+CTA:
+Submit Partner Application
+
+Section 9:
+Disclaimer
+
+Text:
+App Squad does not guarantee earnings, downloads, rankings, app approvals, ad revenue, in-app purchase revenue, profits, customer results, affiliate earnings, or return on investment. Partner commissions are paid only according to approved partner terms and qualified closed sales. Partners must clearly disclose their relationship with App Squad when promoting the program.
+
+CRM Prep:
+Create placeholder function:
+sendPartnerApplicationToCRM()
+
+Payload should include:
+- source: partner_program
+- partnerName
+- email
+- phone
+- company
+- website
+- promotionMethod
+- audienceType
+- estimatedLeadVolume
+- paidAdsExperience
+- bizOppExperience
+- reasonForPartnering
+- timestamp
+
+Add TODO comment:
+Replace with GoHighLevel webhook endpoint.
+
+Final goal:
+The page should feel premium, compliant, and attractive to serious referral partners, not like a hype affiliate scheme.

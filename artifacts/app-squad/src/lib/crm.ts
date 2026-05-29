@@ -100,6 +100,39 @@ export function sendCustomizationToCRM(payload: {
   console.log("[CRM] sendCustomizationToCRM:", JSON.stringify(data, null, 2));
 }
 
+export function sendPartnerApplicationToCRM(payload: {
+  partnerName: string;
+  email: string;
+  phone: string;
+  company: string;
+  website: string;
+  promotionMethod: string;
+  audienceType: string;
+  estimatedLeadVolume: string;
+  paidAdsExperience: string;
+  bizOppExperience: string;
+  reasonForPartnering: string;
+}) {
+  // TODO: Replace with GoHighLevel webhook endpoint
+  const data = {
+    source: "partner_program",
+    stage: "partner_application_submitted",
+    partnerName: payload.partnerName,
+    email: payload.email,
+    phone: payload.phone,
+    company: payload.company,
+    website: payload.website,
+    promotionMethod: payload.promotionMethod,
+    audienceType: payload.audienceType,
+    estimatedLeadVolume: payload.estimatedLeadVolume,
+    paidAdsExperience: payload.paidAdsExperience,
+    bizOppExperience: payload.bizOppExperience,
+    reasonForPartnering: payload.reasonForPartnering,
+    timestamp: new Date().toISOString(),
+  };
+  console.log("[CRM] sendPartnerApplicationToCRM:", JSON.stringify(data, null, 2));
+}
+
 export function updateProjectStatusInCRM(payload: {
   clientName: string;
   email: string;
