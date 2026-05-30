@@ -1,0 +1,203 @@
+Update the App Squad website messaging and positioning.
+
+IMPORTANT:
+
+Do NOT redesign the website.
+
+Do NOT change the funnel structure.
+
+Do NOT change routes.
+
+Do NOT remove mobile game app references.
+
+The goal is to elevate the positioning from:
+
+"Mobile Game Development"
+
+to
+
+"Digital Product Ownership Through Mobile Apps."
+
+==================================================
+HERO SECTION
+============
+
+Replace current hero headline with:
+
+The Digital Economy Isn't Just For Developers Anymore
+
+Replace hero subheadline with:
+
+App Squad helps aspiring entrepreneurs launch branded mobile game apps through a guided process that includes customization, monetization preparation, publishing assistance, and ongoing support.
+
+Add a small supporting statement below the hero:
+
+Most people spend years consuming digital products. A smaller group decides to own one.
+
+Primary CTA:
+Watch The App Ownership Presentation
+
+==================================================
+ADD NEW POSITIONING SECTION
+===========================
+
+Place directly below hero.
+
+Section Title:
+
+Why App Ownership?
+
+Section Subheadline:
+
+Mobile applications have become one of the most widely used digital products in the world. Every day, millions of people engage with games, rewards systems, subscriptions, and digital experiences through mobile apps.
+
+Create three premium cards:
+
+CARD 1
+
+Title:
+Digital Product Ownership
+
+Description:
+Launch a branded mobile app that becomes part of your digital business ecosystem.
+
+CARD 2
+
+Title:
+Guided Launch Process
+
+Description:
+App Squad helps simplify the process through game templates, branding support, monetization preparation, and publishing assistance.
+
+CARD 3
+
+Title:
+Mobile App Economy
+
+Description:
+Mobile applications continue to play a major role in how people engage with digital products around the world.
+
+==================================================
+UPDATE HOW THE PROCESS WORKS SECTION
+====================================
+
+Replace language that focuses only on game development.
+
+Use:
+
+Step 1
+Explore The App Ownership Presentation
+
+Step 2
+Complete Your Application
+
+Step 3
+Book Your Strategy Call
+
+Step 4
+Choose Your Launch Package
+
+Step 5
+Select Your App Template
+
+Step 6
+Customize Your Brand
+
+Step 7
+Launch Your Digital Product
+
+==================================================
+UPDATE TRUST SECTION
+====================
+
+Change section title to:
+
+What App Squad Helps You Build
+
+Cards:
+
+Branded Mobile Applications
+
+Digital Product Launch Support
+
+Custom App Branding
+
+Monetization Preparation
+
+Publishing Assistance
+
+Launch Guidance
+
+==================================================
+ADD NEW FUTURE-FOCUSED SECTION
+==============================
+
+Title:
+
+From Consumer To Creator
+
+Description:
+
+Most people spend their lives downloading apps, using apps, and buying from apps.
+
+App Squad was created for individuals who want to explore the process of launching a branded digital product of their own through a guided mobile app launch system.
+
+This is not about learning to code.
+
+This is not about building software from scratch.
+
+This is about simplifying the path into the mobile app ecosystem.
+
+Add modern visual:
+Consumer → Owner → Launch → Digital Product
+
+==================================================
+CTA SECTION
+===========
+
+Replace any aggressive income language with:
+
+Explore The App Ownership Presentation
+
+Learn how App Squad helps customers navigate the app launch process through customization, monetization preparation, and publishing support.
+
+CTA:
+Watch The App Ownership Presentation
+
+==================================================
+REMOVE OR REDUCE
+================
+
+Reduce emphasis on:
+
+* make money online
+* app profits
+* app earnings
+* passive income
+* financial freedom
+
+Increase emphasis on:
+
+* ownership
+* digital products
+* branding
+* app ecosystem
+* launch process
+* mobile economy
+* guided implementation
+
+==================================================
+FINAL GOAL
+==========
+
+The website should feel like:
+
+A premium technology company helping customers launch branded digital products through mobile applications.
+
+NOT:
+
+A business opportunity funnel selling mobile games.
+
+Visitors should leave with this thought:
+
+"I never realized owning a digital product like a mobile app could actually be possible."
