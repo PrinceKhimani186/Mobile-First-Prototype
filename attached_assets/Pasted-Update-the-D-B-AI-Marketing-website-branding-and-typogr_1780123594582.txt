@@ -1,0 +1,126 @@
+Update the D&B AI Marketing website branding and typography.
+
+Do NOT redesign the site structure.
+
+The goal is to make the brand feel:
+
+* premium
+* exclusive
+* modern
+* creative
+* high-end AI marketing
+
+NOT:
+
+* generic AI agency
+* software company
+* template marketing site
+
+==================================================
+TYPOGRAPHY
+==========
+
+Use:
+
+Headlines:
+Space Grotesk
+
+Fallback:
+Sora
+
+Body:
+Inter
+
+Hero headline weight:
+800
+
+Hero headline size:
+72px desktop
+48px tablet
+38px mobile
+
+Reduce letter spacing.
+
+Increase visual impact.
+
+==================================================
+COLOR SYSTEM
+============
+
+Primary Background:
+#0A0A0A
+
+Secondary Background:
+#111111
+
+Purple Accent:
+#8B5CF6
+
+Magenta Accent:
+#D946EF
+
+Gold CTA:
+#F59E0B
+
+Reduce blue usage by 80%.
+
+==================================================
+HERO UPDATE
+===========
+
+Replace hero headline with:
+
+Stop Competing For Attention.
+Start Dominating It.
+
+Subheadline:
+
+D&B AI Marketing helps brands leverage AI-powered content, video production, creator campaigns, and automation systems to stay visible in a world overwhelmed by content.
+
+CTA:
+Book A Strategy Call
+
+==================================================
+INDUSTRY SHOWCASE
+=================
+
+Create 12 premium industry cards with video placeholders:
+
+Restaurants
+Nightclubs
+Influencers
+Creators
+Mobile Apps
+Podcasts
+Real Estate
+Fitness
+E-Commerce
+Events
+Local Businesses
+Coaches
+
+Each card should have:
+
+* hover animation
+* video preview placeholder
+* CTA
+
+==================================================
+POSITIONING UPDATE
+==================
+
+Replace agency-style language with:
+
+"Your AI Content Department"
+
+"AI-Powered Brand Visibility"
+
+"Content Systems Built For Growth"
+
+"Marketing Designed For The Attention Economy"
+
+==================================================
+FINAL GOAL
+==========
+
+The website should feel like a premium AI growth company helping brands dominate attention, not a generic AI marketing agency.

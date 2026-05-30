@@ -45,7 +45,7 @@ export default function Checkout() {
             </button>
           </div>
 
-          <p style={{ fontFamily: "'DM Sans'", fontSize: 11, color: "hsl(30 8% 30%)", lineHeight: 1.7 }}>
+          <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "hsl(30 8% 30%)", lineHeight: 1.7 }}>
             This page is for qualified clients following a completed strategy call.{" "}
             <button
               onClick={() => { navigate("/apply"); window.scrollTo({ top: 0 }); }}

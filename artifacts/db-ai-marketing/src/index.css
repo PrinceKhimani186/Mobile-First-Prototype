@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -38,45 +38,45 @@
 }
 
 :root {
-  /* ── Deep obsidian / matte black ── */
-  --background: 345 8% 4%;
+  /* ── Pure obsidian / true black ── */
+  --background: 0 0% 4%;
   --foreground: 30 18% 94%;
-  --border: 345 10% 13%;
-  --card: 345 10% 7%;
+  --border: 0 0% 13%;
+  --card: 0 0% 7%;
   --card-foreground: 30 18% 94%;
-  --card-border: 345 10% 11%;
-  --popover: 345 10% 7%;
+  --card-border: 0 0% 11%;
+  --popover: 0 0% 7%;
   --popover-foreground: 30 18% 94%;
-  --popover-border: 345 10% 13%;
+  --popover-border: 0 0% 13%;
 
-  /* ── Deep magenta / crimson primary ── */
-  --primary: 330 65% 52%;
+  /* ── Magenta primary (#D946EF) ── */
+  --primary: 292 85% 61%;
   --primary-foreground: 0 0% 98%;
-  --primary-border: hsl(330 65% 60%);
+  --primary-border: hsl(292 85% 70%);
 
-  /* ── Rich violet accent ── */
-  --accent: 275 55% 52%;
+  /* ── Purple accent (#8B5CF6) ── */
+  --accent: 263 89% 66%;
   --accent-foreground: 0 0% 98%;
 
-  /* ── Warm gold ── */
-  --gold: 36 78% 54%;
+  /* ── Gold CTA (#F59E0B) ── */
+  --gold: 38 92% 50%;
 
-  --secondary: 345 10% 10%;
+  --secondary: 0 0% 10%;
   --secondary-foreground: 30 18% 80%;
-  --muted: 345 8% 8%;
-  --muted-foreground: 345 8% 44%;
-  --input: 345 10% 15%;
-  --ring: 330 65% 52%;
+  --muted: 0 0% 8%;
+  --muted-foreground: 0 0% 44%;
+  --input: 0 0% 15%;
+  --ring: 292 85% 61%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
 
   /* ── Font stack ── */
-  /* Syne: dramatic editorial headlines */
-  --app-font-editorial: 'Syne', 'Space Grotesk', sans-serif;
+  /* Space Grotesk: headline font, Sora fallback */
+  --app-font-editorial: 'Space Grotesk', 'Sora', sans-serif;
   /* Space Grotesk: section headings */
   --app-font-display: 'Space Grotesk', sans-serif;
-  /* DM Sans: premium body copy */
-  --app-font-sans: 'DM Sans', system-ui, sans-serif;
+  /* Inter: body copy */
+  --app-font-sans: 'Inter', system-ui, sans-serif;
 
   --radius: 0.875rem;
 }
@@ -91,18 +91,18 @@
   }
 
   body {
-    background-color: hsl(345 8% 4%);
+    background-color: #0A0A0A;
     color: hsl(30 18% 94%);
-    font-family: 'DM Sans', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.7;
     letter-spacing: -0.01em;
   }
 
-  /* Syne for hero/display — editorial, fashion-forward */
+  /* Space Grotesk for hero/display — premium, modern */
   .font-editorial {
-    font-family: 'Syne', 'Space Grotesk', sans-serif;
-    letter-spacing: -0.03em;
+    font-family: 'Space Grotesk', 'Sora', sans-serif;
+    letter-spacing: -0.025em;
     font-feature-settings: "ss01" on, "ss02" on;
   }
 
@@ -122,10 +122,10 @@
 
   /* ── Obsidian glass ── */
   .glass {
-    background: hsl(345 10% 7% / 0.75);
+    background: hsl(0 0% 7% / 0.78);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid hsl(345 10% 16% / 0.6);
+    border: 1px solid hsl(0 0% 16% / 0.65);
   }
 
   /* ── Hero section: allow text to breathe vertically ── */
@@ -136,18 +136,18 @@
 
   /* ── GRADIENT TEXTS ── */
 
-  /* Hero: cream → rose-pink → magenta → violet */
+  /* Hero: white → magenta → purple */
   .gradient-text {
-    background: linear-gradient(118deg, #f5e6d3 0%, #f0a8c0 28%, #c84b7a 55%, #9333ea 88%);
+    background: linear-gradient(118deg, #ffffff 0%, #D946EF 42%, #8B5CF6 88%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    filter: drop-shadow(0 0 32px hsl(330 65% 52% / 0.18));
+    filter: drop-shadow(0 0 32px hsl(292 85% 61% / 0.2));
   }
 
   /* Gold accent text */
   .gradient-text-gold {
-    background: linear-gradient(118deg, #f9e4b4 0%, #e4a832 50%, #c07a18 100%);
+    background: linear-gradient(118deg, #fde68a 0%, #F59E0B 50%, #d97706 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -155,13 +155,13 @@
 
   /* Section label text — magenta glow */
   .label-text {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.6875rem;
     font-weight: 600;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: hsl(330 65% 65%);
-    text-shadow: 0 0 20px hsl(330 65% 52% / 0.35);
+    color: hsl(292 85% 70%);
+    text-shadow: 0 0 20px hsl(292 85% 61% / 0.35);
   }
 
   /* ── Section headline — cinematic chapter feel ── */
@@ -170,21 +170,21 @@
     font-size: clamp(2.25rem, 4vw, 3.5rem);
     font-weight: 700;
     letter-spacing: -0.03em;
-    line-height: 1.08;
+    line-height: 1.06;
   }
 
   /* ── Hero headline ── */
   .hero-headline {
-    font-family: 'Syne', 'Space Grotesk', sans-serif;
-    font-size: clamp(2.25rem, 5.5vw, 5rem);
+    font-family: 'Space Grotesk', 'Sora', sans-serif;
+    font-size: clamp(2.375rem, 5.5vw, 4.5rem);
     font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1.02;
+    letter-spacing: -0.03em;
+    line-height: 1.0;
   }
 
   /* Body premium */
   .body-premium {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: clamp(1rem, 1.5vw, 1.175rem);
     line-height: 1.8;
     font-weight: 300;
@@ -192,45 +192,45 @@
     letter-spacing: 0em;
   }
 
-  /* ── PRIMARY CTA — magenta/crimson ── */
+  /* ── PRIMARY CTA — magenta ── */
   .btn-primary {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 600;
-    letter-spacing: 0.02em;
-    background: linear-gradient(135deg, hsl(340 72% 46%) 0%, hsl(310 60% 40%) 100%);
+    letter-spacing: 0.01em;
+    background: linear-gradient(135deg, hsl(292 85% 50%) 0%, hsl(263 89% 55%) 100%);
     box-shadow:
-      0 0 28px -6px hsl(330 65% 52% / 0.5),
+      0 0 28px -6px hsl(292 85% 61% / 0.5),
       0 1px 0 0 hsl(0 0% 100% / 0.12) inset,
-      0 -1px 0 0 hsl(330 65% 30% / 0.4) inset;
+      0 -1px 0 0 hsl(292 85% 30% / 0.4) inset;
     transition: all 0.25s ease;
     cursor: pointer;
     color: white;
   }
   .btn-primary:hover {
     box-shadow:
-      0 0 44px -6px hsl(330 65% 52% / 0.7),
-      0 0 80px -20px hsl(330 65% 52% / 0.35),
+      0 0 44px -6px hsl(292 85% 61% / 0.7),
+      0 0 80px -20px hsl(263 89% 55% / 0.35),
       0 1px 0 0 hsl(0 0% 100% / 0.16) inset;
     transform: translateY(-1px);
   }
   .btn-primary:active { transform: translateY(0); }
 
-  /* ── SECONDARY CTA — dark glass + rose-gold ── */
+  /* ── SECONDARY CTA — dark glass + gold border ── */
   .btn-ghost {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 500;
-    letter-spacing: 0.015em;
-    background: hsl(345 10% 8% / 0.7);
-    border: 1px solid hsl(36 78% 54% / 0.25);
+    letter-spacing: 0.01em;
+    background: hsl(0 0% 8% / 0.7);
+    border: 1px solid hsl(38 92% 50% / 0.25);
     backdrop-filter: blur(12px);
     color: hsl(30 18% 78%);
     transition: all 0.25s ease;
     cursor: pointer;
   }
   .btn-ghost:hover {
-    background: hsl(345 10% 11% / 0.85);
-    border-color: hsl(36 78% 54% / 0.5);
-    box-shadow: 0 0 20px -8px hsl(36 78% 54% / 0.4);
+    background: hsl(0 0% 11% / 0.85);
+    border-color: hsl(38 92% 50% / 0.5);
+    box-shadow: 0 0 20px -8px hsl(38 92% 50% / 0.4);
     color: hsl(30 18% 92%);
   }
 

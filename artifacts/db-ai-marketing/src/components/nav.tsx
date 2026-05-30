@@ -66,9 +66,9 @@ export function Nav() {
             style={{ background: "linear-gradient(135deg, hsl(340 72% 46%), hsl(300 60% 42%))", boxShadow: "0 0 16px -4px hsl(330 65% 52% / 0.5)" }}>
             <Zap className="w-4 h-4 text-white" />
           </div>
-          <span style={{ fontFamily: "'Syne'", fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em" }}>
+          <span style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em" }}>
             D<span style={{ color: "hsl(330 65% 60%)" }}>&amp;</span>B
-            <span style={{ fontFamily: "'DM Sans'", fontWeight: 400, fontSize: 14, color: "hsl(30 8% 45%)", marginLeft: 4 }}>AI Marketing</span>
+            <span style={{ fontFamily: "'Inter'", fontWeight: 400, fontSize: 14, color: "hsl(30 8% 45%)", marginLeft: 4 }}>AI Marketing</span>
           </span>
         </button>
 
@@ -80,7 +80,7 @@ export function Nav() {
               onClick={() => handleLink(link)}
               className="px-3.5 py-2 rounded-xl text-[13px] font-medium transition-all cursor-pointer"
               style={{
-                fontFamily: "'DM Sans'",
+                fontFamily: "'Inter'",
                 fontWeight: isActive(link) ? 600 : 400,
                 background: isActive(link) ? magentaGlow : "transparent",
                 border: isActive(link) ? `1px solid ${magentaBorder}` : "1px solid transparent",
@@ -131,7 +131,7 @@ export function Nav() {
                   onClick={() => handleLink(link)}
                   className="block px-4 py-3 rounded-xl text-[13px] font-medium transition-all text-left cursor-pointer"
                   style={{
-                    fontFamily: "'DM Sans'",
+                    fontFamily: "'Inter'",
                     fontWeight: isActive(link) ? 600 : 400,
                     background: isActive(link) ? magentaGlow : "transparent",
                     color: isActive(link) ? "hsl(330 65% 68%)" : "hsl(30 8% 52%)",

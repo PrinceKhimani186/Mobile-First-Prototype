@@ -82,7 +82,7 @@ export default function StrategyCall() {
                       </div>
                       <div>
                         <h3 className="mb-1" style={{ fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em" }}>{c.title}</h3>
-                        <p style={{ fontFamily: "'DM Sans'", fontSize: 13, lineHeight: 1.7, color: "hsl(30 8% 46%)", fontWeight: 300 }}>{c.desc}</p>
+                        <p style={{ fontFamily: "'Inter'", fontSize: 13, lineHeight: 1.7, color: "hsl(30 8% 46%)", fontWeight: 300 }}>{c.desc}</p>
                       </div>
                     </div>
                   </FadeUp>
@@ -98,7 +98,7 @@ export default function StrategyCall() {
                   {TRUST_ITEMS.map(item => (
                     <li key={item} className="flex items-center gap-3">
                       <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "hsl(330 65% 60%)" }} />
-                      <span style={{ fontFamily: "'DM Sans'", fontSize: 13, color: "hsl(30 12% 62%)", fontWeight: 300 }}>{item}</span>
+                      <span style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(30 12% 62%)", fontWeight: 300 }}>{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -109,7 +109,7 @@ export default function StrategyCall() {
             <FadeUp delay={0.5}>
               <div className="flex gap-3 p-4 rounded-xl" style={{ background: "hsl(345 10% 6%)", border: "1px solid hsl(345 10% 10%)" }}>
                 <Shield className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(30 10% 40%)" }} />
-                <p style={{ fontFamily: "'DM Sans'", fontSize: 11.5, lineHeight: 1.7, color: "hsl(30 8% 38%)", fontWeight: 300 }}>
+                <p style={{ fontFamily: "'Inter'", fontSize: 11.5, lineHeight: 1.7, color: "hsl(30 8% 38%)", fontWeight: 300 }}>
                   D&amp;B AI Marketing Co. does not guarantee revenue, followers, views, conversions, bookings, app installs, or business results. Results depend on offer, audience, consistency, distribution, market demand, and other factors.
                 </p>
               </div>
@@ -132,7 +132,7 @@ export default function StrategyCall() {
                     <h3 className="mb-2" style={{ fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em" }}>
                       Schedule My Strategy Call
                     </h3>
-                    <p style={{ fontFamily: "'DM Sans'", fontSize: 13, lineHeight: 1.75, color: "hsl(30 8% 42%)", fontWeight: 300 }}>
+                    <p style={{ fontFamily: "'Inter'", fontSize: 13, lineHeight: 1.75, color: "hsl(30 8% 42%)", fontWeight: 300 }}>
                       Your booking widget will appear here once Calendly is connected.
                     </p>
                   </div>
@@ -140,12 +140,12 @@ export default function StrategyCall() {
                   {/* Calendly placeholder */}
                   <div className="w-full rounded-xl min-h-[200px] flex items-center justify-center"
                     style={{ background: "hsl(345 10% 5%)", border: "1px dashed hsl(345 10% 15%)" }}>
-                    <p style={{ fontFamily: "'DM Sans'", fontSize: 12, color: "hsl(30 8% 30%)" }}>
+                    <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(30 8% 30%)" }}>
                       Calendly embed goes here
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-5 w-full justify-center" style={{ fontFamily: "'DM Sans'", fontSize: 12, color: "hsl(30 10% 38%)" }}>
+                  <div className="flex items-center gap-5 w-full justify-center" style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(30 10% 38%)" }}>
                     <span className="flex items-center gap-1.5">
                       <Zap className="w-3.5 h-3.5" style={{ color: "hsl(330 55% 58%)" }} />
                       30 minutes
@@ -165,7 +165,7 @@ export default function StrategyCall() {
                   <button
                     onClick={() => { navigate("/apply"); window.scrollTo({ top: 0 }); }}
                     className="text-[12px] transition-colors cursor-pointer"
-                    style={{ fontFamily: "'DM Sans'", color: "hsl(30 8% 32%)" }}
+                    style={{ fontFamily: "'Inter'", color: "hsl(30 8% 32%)" }}
                     onMouseEnter={e => (e.currentTarget.style.color = "hsl(330 55% 58%)")}
                     onMouseLeave={e => (e.currentTarget.style.color = "hsl(30 8% 32%)")}
                   >

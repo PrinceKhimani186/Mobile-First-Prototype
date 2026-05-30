@@ -5,7 +5,7 @@ import { useLocation } from "wouter";
 
 /* ── Shared styles ── */
 const fieldStyle = {
-  fontFamily: "'DM Sans'",
+  fontFamily: "'Inter'",
   fontSize: 14,
   background: "hsl(345 10% 7%)",
   border: "1px solid hsl(345 10% 14%)",
@@ -18,7 +18,7 @@ const fieldStyle = {
 };
 
 const labelStyle = {
-  fontFamily: "'DM Sans'",
+  fontFamily: "'Inter'",
   fontSize: 13,
   fontWeight: 500,
   color: "hsl(30 12% 62%)",
@@ -75,7 +75,7 @@ function ChoiceChip({ label, selected, onClick }: { label: string; selected: boo
       onClick={onClick}
       className="px-4 py-2.5 rounded-xl text-[13px] font-medium transition-all cursor-pointer text-left"
       style={{
-        fontFamily: "'DM Sans'",
+        fontFamily: "'Inter'",
         fontWeight: selected ? 600 : 400,
         background: selected ? "hsl(330 35% 14%)" : "hsl(345 10% 7%)",
         border: `1px solid ${selected ? "hsl(330 50% 30%)" : "hsl(345 10% 14%)"}`,
@@ -94,7 +94,7 @@ function RadioCard({ label, selected, onClick }: { label: string; selected: bool
       onClick={onClick}
       className="px-5 py-3.5 rounded-xl text-[14px] transition-all cursor-pointer text-left w-full flex items-center gap-3"
       style={{
-        fontFamily: "'DM Sans'",
+        fontFamily: "'Inter'",
         fontWeight: selected ? 600 : 400,
         background: selected ? "hsl(330 30% 12%)" : "hsl(345 10% 7%)",
         border: `1px solid ${selected ? "hsl(330 50% 28%)" : "hsl(345 10% 14%)"}`,
@@ -223,7 +223,7 @@ export default function Apply() {
 
     /* Step 1 — Goals */
     <div>
-      <p className="mb-5" style={{ fontFamily: "'DM Sans'", fontSize: 13, color: "hsl(30 10% 52%)", lineHeight: 1.6 }}>
+      <p className="mb-5" style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(30 10% 52%)", lineHeight: 1.6 }}>
         Select all that apply.
       </p>
       <div className="flex flex-wrap gap-2.5">
@@ -253,7 +253,7 @@ export default function Apply() {
 
     /* Step 3 — Budget */
     <div>
-      <p className="mb-5" style={{ fontFamily: "'DM Sans'", fontSize: 13, color: "hsl(30 10% 52%)", lineHeight: 1.6 }}>
+      <p className="mb-5" style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(30 10% 52%)", lineHeight: 1.6 }}>
         This helps us recommend the right package and avoid wasting your time.
       </p>
       <div className="flex flex-col gap-2.5">
@@ -304,7 +304,7 @@ export default function Apply() {
         >
           {agreed && <CheckCircle2 className="w-3 h-3 text-white" strokeWidth={3} />}
         </div>
-        <span style={{ fontFamily: "'DM Sans'", fontSize: 13, color: "hsl(30 8% 50%)", lineHeight: 1.65, fontWeight: 300 }}>
+        <span style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(30 8% 50%)", lineHeight: 1.65, fontWeight: 300 }}>
           I understand D&amp;B AI Marketing Co. provides AI-powered content creation, marketing strategy, and campaign assets, but <strong style={{ color: "hsl(30 12% 62%)", fontWeight: 500 }}>does not guarantee</strong> revenue, followers, views, conversions, bookings, app installs, or business results.
         </span>
       </label>
@@ -368,7 +368,7 @@ export default function Apply() {
                 <div
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
                   style={{
-                    fontFamily: "'Syne'",
+                    fontFamily: "'Space Grotesk'",
                     fontWeight: 700,
                     background: i < step ? "linear-gradient(135deg, hsl(340 72% 46%), hsl(300 60% 44%))" :
                       i === step ? "hsl(330 30% 14%)" : "hsl(345 10% 9%)",
@@ -382,7 +382,7 @@ export default function Apply() {
                 <span
                   className="hidden sm:block text-center"
                   style={{
-                    fontFamily: "'DM Sans'",
+                    fontFamily: "'Inter'",
                     fontSize: 9,
                     letterSpacing: "0.04em",
                     textTransform: "uppercase",
@@ -448,7 +448,7 @@ export default function Apply() {
               disabled={step === 0}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer"
               style={{
-                fontFamily: "'DM Sans'",
+                fontFamily: "'Inter'",
                 fontSize: 13,
                 fontWeight: 500,
                 background: step === 0 ? "transparent" : "hsl(345 10% 9%)",
@@ -461,7 +461,7 @@ export default function Apply() {
               Back
             </button>
 
-            <div style={{ fontFamily: "'DM Sans'", fontSize: 12, color: "hsl(30 8% 35%)" }}>
+            <div style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(30 8% 35%)" }}>
               {step + 1} / {STEPS.length}
             </div>
 
@@ -492,7 +492,7 @@ export default function Apply() {
         {/* Disclaimer */}
         <div className="mt-8 flex gap-3 p-4 rounded-2xl" style={{ background: "hsl(345 10% 6%)", border: "1px solid hsl(345 10% 10%)" }}>
           <Shield className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "hsl(30 8% 36%)" }} />
-          <p style={{ fontFamily: "'DM Sans'", fontSize: 11.5, lineHeight: 1.7, color: "hsl(30 8% 36%)", fontWeight: 300 }}>
+          <p style={{ fontFamily: "'Inter'", fontSize: 11.5, lineHeight: 1.7, color: "hsl(30 8% 36%)", fontWeight: 300 }}>
             Your information is kept confidential and only used to prepare your strategy call. D&amp;B AI Marketing Co. does not guarantee revenue, followers, views, conversions, bookings, app installs, or business results.
           </p>
         </div>

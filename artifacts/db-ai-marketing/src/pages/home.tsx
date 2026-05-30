@@ -69,27 +69,27 @@ function Sparkline({ values, color }: { values: number[]; color: string }) {
 }
 
 const VIDEOS = [
-  { id: 1, category: "Restaurant Marketing", icon: Utensils, desc: "Cinematic food stories, social reels, and menu promos designed to make audiences crave.", thumbGrad: "from-[hsl(20_60%_18%)] via-[hsl(15_50%_12%)] to-[hsl(345_30%_8%)]", glow: "hsl(20 80% 55%)", glowAlpha: "hsl(20 80% 55% / 0.22)", tag: "Food & Bev" },
-  { id: 2, category: "Nightclub & Lounge Marketing", icon: PartyPopper, desc: "Luxury nightlife campaigns, VIP event visuals, DJ and venue atmosphere content.", thumbGrad: "from-[hsl(285_50%_16%)] via-[hsl(310_40%_11%)] to-[hsl(345_30%_8%)]", glow: "hsl(300 60% 58%)", glowAlpha: "hsl(300 60% 58% / 0.22)", tag: "Nightlife" },
-  { id: 3, category: "Influencer Branding", icon: Star, desc: "Personal brand campaigns, cinematic intros, content that builds cultural authority.", thumbGrad: "from-[hsl(330_55%_18%)] via-[hsl(340_40%_12%)] to-[hsl(345_30%_8%)]", glow: "hsl(330 65% 60%)", glowAlpha: "hsl(330 65% 60% / 0.22)", tag: "Creator" },
-  { id: 4, category: "Creator Content Systems", icon: Tv, desc: "Short-form pipelines for creators — hooks, reels, and series built to scale reach.", thumbGrad: "from-[hsl(260_45%_18%)] via-[hsl(275_35%_12%)] to-[hsl(345_30%_8%)]", glow: "hsl(270 55% 58%)", glowAlpha: "hsl(270 55% 58% / 0.22)", tag: "Short-Form" },
-  { id: 5, category: "Mobile Game App Marketing", icon: Smartphone, desc: "Game trailers, app promos, and gameplay ads that convert at scale.", thumbGrad: "from-[hsl(345_55%_16%)] via-[hsl(335_40%_11%)] to-[hsl(345_30%_8%)]", glow: "hsl(345 70% 55%)", glowAlpha: "hsl(345 70% 55% / 0.22)", tag: "Gaming" },
-  { id: 6, category: "App Marketing", icon: Rocket, desc: "Launch campaigns, app store videos, and feature showcases for modern brands.", thumbGrad: "from-[hsl(310_40%_16%)] via-[hsl(300_30%_11%)] to-[hsl(345_30%_8%)]", glow: "hsl(310 55% 55%)", glowAlpha: "hsl(310 55% 55% / 0.22)", tag: "Apps" },
-  { id: 7, category: "Luxury Brand Campaigns", icon: Crown, desc: "Premium cinematic ads that position luxury products as culture-defining.", thumbGrad: "from-[hsl(36_60%_16%)] via-[hsl(30_45%_11%)] to-[hsl(345_30%_8%)]", glow: "hsl(36 78% 54%)", glowAlpha: "hsl(36 78% 54% / 0.22)", tag: "Luxury" },
-  { id: 8, category: "Real Estate Marketing", icon: HomeIcon, desc: "Cinematic property showcases, AI walkthroughs, luxury listing visual stories.", thumbGrad: "from-[hsl(340_45%_16%)] via-[hsl(330_35%_11%)] to-[hsl(345_30%_8%)]", glow: "hsl(340 55% 52%)", glowAlpha: "hsl(340 55% 52% / 0.22)", tag: "Real Estate" },
-  { id: 9, category: "Fitness & Gym Campaigns", icon: Dumbbell, desc: "Transformation content, gym promos, and motivational campaigns that move people.", thumbGrad: "from-[hsl(350_55%_16%)] via-[hsl(340_40%_11%)] to-[hsl(345_30%_8%)]", glow: "hsl(350 72% 52%)", glowAlpha: "hsl(350 72% 52% / 0.22)", tag: "Fitness" },
-  { id: 10, category: "Podcast & Media Branding", icon: Mic, desc: "Podcast visual identity, social clips, media content built for cultural moments.", thumbGrad: "from-[hsl(275_45%_16%)] via-[hsl(290_35%_11%)] to-[hsl(345_30%_8%)]", glow: "hsl(280 55% 58%)", glowAlpha: "hsl(280 55% 58% / 0.22)", tag: "Media" },
-  { id: 11, category: "AI Product Commercials", icon: Brain, desc: "Futuristic AI-generated product ads — cinematic, premium, culturally ahead.", thumbGrad: "from-[hsl(320_45%_16%)] via-[hsl(310_35%_11%)] to-[hsl(345_30%_8%)]", glow: "hsl(315 60% 55%)", glowAlpha: "hsl(315 60% 55% / 0.22)", tag: "AI / Tech" },
-  { id: 12, category: "Event Promotion Campaigns", icon: Music, desc: "Concerts, festivals, launch parties — visual campaigns that create anticipation.", thumbGrad: "from-[hsl(300_50%_16%)] via-[hsl(315_38%_11%)] to-[hsl(345_30%_8%)]", glow: "hsl(305 60% 55%)", glowAlpha: "hsl(305 60% 55% / 0.22)", tag: "Events" },
+  { id: 1,  category: "Restaurants",      icon: Utensils,    desc: "Cinematic food stories, menu promos, and social reels that make audiences crave your brand.",          thumbGrad: "from-[hsl(20_60%_18%)] via-[hsl(15_50%_12%)] to-[hsl(0_0%_5%)]",   glow: "hsl(20 80% 55%)",   glowAlpha: "hsl(20 80% 55% / 0.22)",  tag: "Food & Bev"    },
+  { id: 2,  category: "Nightclubs",       icon: PartyPopper, desc: "Luxury nightlife campaigns, VIP event visuals, and venue atmosphere content that fills rooms.",         thumbGrad: "from-[hsl(285_50%_16%)] via-[hsl(292_40%_11%)] to-[hsl(0_0%_5%)]",  glow: "hsl(292 70% 58%)",  glowAlpha: "hsl(292 70% 58% / 0.22)", tag: "Nightlife"     },
+  { id: 3,  category: "Influencers",      icon: Star,        desc: "Personal brand campaigns, cinematic intros, and content that builds cultural authority and reach.",      thumbGrad: "from-[hsl(292_55%_18%)] via-[hsl(280_40%_12%)] to-[hsl(0_0%_5%)]",  glow: "hsl(292 85% 62%)",  glowAlpha: "hsl(292 85% 62% / 0.22)", tag: "Personal Brand" },
+  { id: 4,  category: "Creators",         icon: Tv,          desc: "Short-form pipelines, hooks, reels, and content series built to grow your audience at scale.",           thumbGrad: "from-[hsl(263_45%_18%)] via-[hsl(275_35%_12%)] to-[hsl(0_0%_5%)]",  glow: "hsl(263 70% 60%)",  glowAlpha: "hsl(263 70% 60% / 0.22)", tag: "Short-Form"    },
+  { id: 5,  category: "Mobile Apps",      icon: Smartphone,  desc: "App launch campaigns, store preview videos, and in-feed ads that drive downloads and brand awareness.",   thumbGrad: "from-[hsl(292_55%_16%)] via-[hsl(263_40%_11%)] to-[hsl(0_0%_5%)]",  glow: "hsl(280 75% 58%)",  glowAlpha: "hsl(280 75% 58% / 0.22)", tag: "Apps"          },
+  { id: 6,  category: "Podcasts",         icon: Mic,         desc: "Podcast visual identity, audiogram clips, and media content built for cultural moments.",                 thumbGrad: "from-[hsl(263_45%_16%)] via-[hsl(280_35%_11%)] to-[hsl(0_0%_5%)]",  glow: "hsl(263 60% 60%)",  glowAlpha: "hsl(263 60% 60% / 0.22)", tag: "Media"         },
+  { id: 7,  category: "Real Estate",      icon: HomeIcon,    desc: "Cinematic property showcases, AI walkthroughs, and luxury listing visual stories that close deals.",     thumbGrad: "from-[hsl(292_45%_16%)] via-[hsl(280_35%_11%)] to-[hsl(0_0%_5%)]",  glow: "hsl(292 60% 55%)",  glowAlpha: "hsl(292 60% 55% / 0.22)", tag: "Real Estate"   },
+  { id: 8,  category: "Fitness",          icon: Dumbbell,    desc: "Transformation content, gym promos, and motivational campaigns that inspire action.",                     thumbGrad: "from-[hsl(38_60%_16%)] via-[hsl(30_45%_11%)] to-[hsl(0_0%_5%)]",   glow: "hsl(38 78% 54%)",   glowAlpha: "hsl(38 78% 54% / 0.22)",  tag: "Fitness"       },
+  { id: 9,  category: "E-Commerce",       icon: Rocket,      desc: "Product launch videos, lifestyle ads, and brand campaigns designed to convert browsers into buyers.",     thumbGrad: "from-[hsl(292_50%_16%)] via-[hsl(310_35%_11%)] to-[hsl(0_0%_5%)]",  glow: "hsl(310 65% 58%)",  glowAlpha: "hsl(310 65% 58% / 0.22)", tag: "E-Commerce"    },
+  { id: 10, category: "Events",           icon: Music,       desc: "Concerts, festivals, and launch parties — visual campaigns that build anticipation and sell tickets.",    thumbGrad: "from-[hsl(263_50%_16%)] via-[hsl(292_38%_11%)] to-[hsl(0_0%_5%)]",  glow: "hsl(275 65% 58%)",  glowAlpha: "hsl(275 65% 58% / 0.22)", tag: "Events"        },
+  { id: 11, category: "Local Businesses", icon: Globe,       desc: "Community-first content that builds brand recognition, drives foot traffic, and grows loyal audiences.", thumbGrad: "from-[hsl(292_45%_16%)] via-[hsl(263_35%_11%)] to-[hsl(0_0%_5%)]",  glow: "hsl(292 70% 55%)",  glowAlpha: "hsl(292 70% 55% / 0.22)", tag: "Local"         },
+  { id: 12, category: "Coaches",          icon: Brain,       desc: "Authority-building content, offer showcases, and campaign systems that attract high-quality clients.",    thumbGrad: "from-[hsl(38_55%_16%)] via-[hsl(292_35%_11%)] to-[hsl(0_0%_5%)]",  glow: "hsl(38 92% 50%)",   glowAlpha: "hsl(38 92% 50% / 0.22)",  tag: "Coaching"      },
 ];
 
 const WHY_CARDS = [
-  { icon: Flame, title: "Built For Attention", desc: "We create content designed to stop the scroll and make people feel something.", color: "hsl(36 78% 54%)", bg: "hsl(36 40% 10%)", border: "hsl(36 40% 20%)" },
-  { icon: Brain, title: "AI-Powered Creative Systems", desc: "We combine AI visuals, cinematic editing, hooks, and brand psychology.", color: "hsl(330 65% 60%)", bg: "hsl(330 40% 12%)", border: "hsl(330 40% 22%)" },
-  { icon: Crown, title: "Premium Visual Identity", desc: "We help brands look more modern, exclusive, and culturally relevant.", color: "hsl(36 78% 54%)", bg: "hsl(36 30% 10%)", border: "hsl(36 30% 20%)" },
-  { icon: Globe, title: "Multi-Industry Campaigns", desc: "Restaurants, clubs, influencers, apps, events, creators, and luxury brands.", color: "hsl(270 55% 62%)", bg: "hsl(270 30% 11%)", border: "hsl(270 30% 20%)" },
-  { icon: Instagram, title: "Social-First Content", desc: "Built for TikTok, Instagram Reels, YouTube Shorts, Facebook, and digital ads.", color: "hsl(330 65% 60%)", bg: "hsl(330 30% 11%)", border: "hsl(330 30% 22%)" },
-  { icon: Target, title: "Strategy Before Content", desc: "We don't just create videos. We build campaigns around your audience, offer, and goals.", color: "hsl(300 55% 58%)", bg: "hsl(290 30% 11%)", border: "hsl(290 30% 20%)" },
+  { icon: Flame,     title: "Built To Dominate Attention",    desc: "We create content engineered to stop the scroll, trigger emotion, and make your brand impossible to ignore.",     color: "hsl(38 92% 54%)",  bg: "hsl(38 40% 9%)",  border: "hsl(38 40% 18%)"  },
+  { icon: Brain,     title: "AI-Powered Content Systems",     desc: "We combine AI visuals, cinematic editing, viral hooks, and brand psychology into one seamless creative system.",    color: "hsl(292 85% 65%)", bg: "hsl(292 30% 11%)", border: "hsl(292 30% 20%)" },
+  { icon: Crown,     title: "Premium Visual Identity",        desc: "We position your brand to look more exclusive, modern, and culturally relevant than your competition.",             color: "hsl(38 92% 54%)",  bg: "hsl(38 30% 9%)",  border: "hsl(38 30% 18%)"  },
+  { icon: Globe,     title: "Every Industry. One System.",    desc: "Restaurants, nightclubs, coaches, e-commerce, apps, events, creators — we build content that fits your world.",    color: "hsl(263 89% 68%)", bg: "hsl(263 30% 11%)", border: "hsl(263 30% 20%)" },
+  { icon: Instagram, title: "Social-First, Platform-Ready",  desc: "Every asset is built for TikTok, Instagram Reels, YouTube Shorts, and paid social — formatted to perform.",        color: "hsl(292 85% 65%)", bg: "hsl(292 30% 11%)", border: "hsl(292 30% 22%)" },
+  { icon: Target,    title: "Strategy Before Every Frame",   desc: "We build campaigns around your audience, offer, and goals — not just aesthetics. Strategy drives everything.",      color: "hsl(263 89% 68%)", bg: "hsl(263 30% 11%)", border: "hsl(263 30% 20%)" },
 ];
 
 const SERVICES = [
@@ -218,20 +218,20 @@ export default function Home() {
                 style={{ background: "hsl(330 65% 52% / 0.1)", border: "1px solid hsl(330 65% 52% / 0.25)" }}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-[hsl(330_65%_62%)] animate-pulse" />
-                <span className="label-text" style={{ color: "hsl(330 65% 68%)" }}>AI Marketing Agency</span>
+                <span className="label-text" style={{ color: "hsl(292 85% 72%)" }}>AI-Powered Brand Visibility</span>
               </motion.div>
 
               <div className="hero-headline mb-6 md:mb-7 overflow-visible" style={{ perspective: "600px" }}>
                 <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.08 }}>
-                  <AnimatedHeadline text="AI Marketing" className="text-[hsl(30_18%_94%)] block" delay={0.1} />
-                  <AnimatedHeadline text="Built For The" className="text-[hsl(30_18%_94%)] block" delay={0.22} />
+                  <AnimatedHeadline text="Stop Competing" className="text-[hsl(30_18%_94%)] block" delay={0.1} />
+                  <AnimatedHeadline text="For Attention." className="text-[hsl(30_18%_94%)] block" delay={0.2} />
                   <motion.span
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.44, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
                     className="gradient-text block"
                   >
-                    Attention Economy
+                    Start Dominating It.
                   </motion.span>
                 </motion.span>
               </div>
@@ -242,7 +242,7 @@ export default function Home() {
                 transition={{ delay: 0.56 }}
                 className="body-premium mb-8 max-w-[520px]"
               >
-                D&amp;B AI Marketing Co. helps restaurants, clubs, influencers, creators, app companies, and modern brands create cinematic AI-powered content designed to capture attention and drive visibility.
+                D&amp;B AI Marketing helps brands leverage AI-powered content, video production, creator campaigns, and automation systems to stay visible in a world overwhelmed by content.
               </motion.p>
 
               <motion.div
@@ -252,7 +252,7 @@ export default function Home() {
                 className="flex flex-col sm:flex-row gap-3.5 mb-5"
               >
                 <button onClick={goApply} className="btn-primary h-14 px-8 text-[15px] rounded-xl flex items-center gap-3 justify-center">
-                  Apply For Strategy Call
+                  Book A Strategy Call
                   <Calendar className="w-4 h-4 opacity-80" />
                 </button>
                 <button onClick={() => scrollTo("showcase")} className="btn-ghost h-14 px-8 text-[15px] rounded-xl flex items-center gap-3 justify-center">
@@ -266,7 +266,7 @@ export default function Home() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.78 }}
                 className="mb-8"
-                style={{ fontFamily: "'DM Sans'", fontSize: 12, letterSpacing: "0.01em", color: "hsl(330 40% 52%)", fontStyle: "italic" }}
+                style={{ fontFamily: "'Inter'", fontSize: 12, letterSpacing: "0.01em", color: "hsl(330 40% 52%)", fontStyle: "italic" }}
               >
                 12-month creative partnerships available for qualified brands.
               </motion.p>
@@ -302,7 +302,7 @@ export default function Home() {
                 <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid hsl(345 10% 10%)" }}>
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ background: "hsl(330 65% 52%)", boxShadow: "0 0 8px hsl(330 65% 52% / 0.55)" }} />
-                    <span style={{ fontFamily: "'DM Sans'", fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", color: "hsl(30 10% 45%)" }}>Campaign Analytics</span>
+                    <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", color: "hsl(30 10% 45%)" }}>Campaign Analytics</span>
                   </div>
                   <div className="flex gap-1.5">
                     {["hsl(0_60%_55%)", "hsl(36_70%_52%)", "hsl(140_55%_45%)"].map(c => (
@@ -318,17 +318,17 @@ export default function Home() {
                     { label: "Conversions", val: "14.2K", delta: "+29%", color: "hsl(275 55% 64%)" },
                   ].map((k, i) => (
                     <div key={k.label} className="px-5 py-4" style={{ borderRight: i < 2 ? "1px solid hsl(345 10% 10%)" : undefined }}>
-                      <div style={{ fontFamily: "'DM Sans'", fontSize: 10, letterSpacing: "0.06em", color: "hsl(30 10% 38%)", marginBottom: 4 }}>{k.label}</div>
-                      <div style={{ fontFamily: "'Syne'", fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: k.color }}>{k.val}</div>
-                      <div style={{ fontFamily: "'DM Sans'", fontSize: 10, color: "hsl(140 55% 48%)", marginTop: 2 }}>↑ {k.delta}</div>
+                      <div style={{ fontFamily: "'Inter'", fontSize: 10, letterSpacing: "0.06em", color: "hsl(30 10% 38%)", marginBottom: 4 }}>{k.label}</div>
+                      <div style={{ fontFamily: "'Space Grotesk'", fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em", color: k.color }}>{k.val}</div>
+                      <div style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(140 55% 48%)", marginTop: 2 }}>↑ {k.delta}</div>
                     </div>
                   ))}
                 </div>
 
                 <div className="px-6 py-5">
                   <div className="flex justify-between items-center mb-4">
-                    <span style={{ fontFamily: "'DM Sans'", fontSize: 11, fontWeight: 500, letterSpacing: "0.06em", color: "hsl(30 10% 48%)" }}>30-Day Reach</span>
-                    <span style={{ fontFamily: "'DM Sans'", fontSize: 11, fontWeight: 500, color: "hsl(330 65% 62%)" }}>All Platforms</span>
+                    <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 500, letterSpacing: "0.06em", color: "hsl(30 10% 48%)" }}>30-Day Reach</span>
+                    <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 500, color: "hsl(330 65% 62%)" }}>All Platforms</span>
                   </div>
                   <div className="flex items-end gap-1.5 h-24">
                     {[30, 48, 38, 62, 50, 74, 58, 82, 70, 92, 78, 100, 84, 96].map((h, i) => (
@@ -341,7 +341,7 @@ export default function Home() {
                 </div>
 
                 <div className="px-6 pb-6">
-                  <div style={{ fontFamily: "'DM Sans'", fontSize: 11, fontWeight: 500, letterSpacing: "0.06em", color: "hsl(30 10% 42%)", marginBottom: 12 }}>Active Campaigns</div>
+                  <div style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 500, letterSpacing: "0.06em", color: "hsl(30 10% 42%)", marginBottom: 12 }}>Active Campaigns</div>
                   <div className="flex flex-col gap-3">
                     {[
                       { name: "Luxury Brand Launch", platform: "IG + TikTok", pct: 88, color: "hsl(330 65% 55%)" },
@@ -351,7 +351,7 @@ export default function Home() {
                       <div key={c.name} className="flex items-center gap-3">
                         <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: c.color }} />
                         <div className="flex-1 min-w-0">
-                          <div className="flex justify-between mb-1" style={{ fontFamily: "'DM Sans'", fontSize: 11 }}>
+                          <div className="flex justify-between mb-1" style={{ fontFamily: "'Inter'", fontSize: 11 }}>
                             <span className="truncate" style={{ color: "hsl(30 15% 68%)" }}>{c.name}</span>
                             <span className="shrink-0 ml-2" style={{ color: "hsl(30 10% 38%)" }}>{c.pct}%</span>
                           </div>
@@ -361,7 +361,7 @@ export default function Home() {
                               transition={{ delay: 1, duration: 0.9, ease: "easeOut" }} />
                           </div>
                         </div>
-                        <span style={{ fontFamily: "'DM Sans'", fontSize: 10, color: "hsl(30 10% 35%)" }}>{c.platform}</span>
+                        <span style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(30 10% 35%)" }}>{c.platform}</span>
                       </div>
                     ))}
                   </div>
@@ -374,19 +374,19 @@ export default function Home() {
                     <TrendingUp className="w-4 h-4" style={{ color: "hsl(330 65% 62%)" }} />
                   </div>
                   <div>
-                    <div style={{ fontFamily: "'DM Sans'", fontSize: 10, letterSpacing: "0.05em", color: "hsl(30 10% 42%)" }}>Avg Engagement</div>
-                    <div style={{ fontFamily: "'Syne'", fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em" }}>+340%</div>
+                    <div style={{ fontFamily: "'Inter'", fontSize: 10, letterSpacing: "0.05em", color: "hsl(30 10% 42%)" }}>Avg Engagement</div>
+                    <div style={{ fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em" }}>+340%</div>
                   </div>
                 </div>
               </FloatCard>
 
               <FloatCard className="top-1/2 -right-16 -translate-y-1/2 px-4 py-3 min-w-[154px]" floatY={10} delay={1.2}>
                 <div className="flex flex-col gap-1.5">
-                  <div className="flex justify-between" style={{ fontFamily: "'DM Sans'", fontSize: 10 }}>
+                  <div className="flex justify-between" style={{ fontFamily: "'Inter'", fontSize: 10 }}>
                     <span style={{ color: "hsl(30 10% 42%)" }}>Monthly Views</span>
                     <span style={{ color: "hsl(140 55% 48%)", fontWeight: 600 }}>↑ 31%</span>
                   </div>
-                  <div style={{ fontFamily: "'Syne'", fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em" }}>18.4M</div>
+                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em" }}>18.4M</div>
                   <Sparkline values={[18, 32, 26, 50, 44, 68, 58, 88]} color="hsl(330 65% 55%)" />
                 </div>
               </FloatCard>
@@ -398,7 +398,7 @@ export default function Home() {
                   </div>
                   <div>
                     <div style={{ fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600 }}>Cinematic AI</div>
-                    <div style={{ fontFamily: "'DM Sans'", fontSize: 10, color: "hsl(30 10% 42%)" }}>Premium quality</div>
+                    <div style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(30 10% 42%)" }}>Premium quality</div>
                   </div>
                 </div>
               </FloatCard>
@@ -406,14 +406,14 @@ export default function Home() {
               <FloatCard className="bottom-20 -right-10 px-3.5 py-2.5" floatY={6} delay={1.8}>
                 <div className="flex items-center gap-2">
                   <Heart className="w-3.5 h-3.5" style={{ color: "hsl(330 65% 60%)" }} />
-                  <span style={{ fontFamily: "'DM Sans'", fontSize: 12, fontWeight: 500 }}>Stop-Scroll Content</span>
+                  <span style={{ fontFamily: "'Inter'", fontSize: 12, fontWeight: 500 }}>Stop-Scroll Content</span>
                 </div>
               </FloatCard>
 
               <FloatCard className="top-40 -right-10 px-3.5 py-2.5" floatY={7} delay={0.9}>
                 <div className="flex items-center gap-2">
                   <Crown className="w-3.5 h-3.5" style={{ color: "hsl(36 78% 54%)" }} />
-                  <span style={{ fontFamily: "'DM Sans'", fontSize: 12, fontWeight: 500 }}>Luxury Positioning</span>
+                  <span style={{ fontFamily: "'Inter'", fontSize: 12, fontWeight: 500 }}>Luxury Positioning</span>
                 </div>
               </FloatCard>
             </motion.div>
@@ -426,10 +426,10 @@ export default function Home() {
         <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 80% 40% at 50% 50%, hsl(330 55% 30% / 0.055) 0%, transparent 70%)" }} />
         <div className="container mx-auto px-5 md:px-8 max-w-7xl relative z-10">
           <FadeUp className="text-center mb-16 md:mb-20">
-            <p className="label-text mb-5">Portfolio</p>
-            <h2 className="section-headline mb-5"><AnimatedHeadline text="AI Campaign Showcase" delay={0.05} /></h2>
+            <p className="label-text mb-5">Industries We Serve</p>
+            <h2 className="section-headline mb-5"><AnimatedHeadline text="Choose Your Industry" delay={0.05} /></h2>
             <p className="body-premium max-w-2xl mx-auto">
-              Explore the types of cinematic AI-powered campaigns we create for brands, creators, apps, restaurants, clubs, events, and digital businesses.
+              AI-powered content systems built for brands, creators, businesses, and media — every industry gets a campaign designed to dominate attention.
             </p>
           </FadeUp>
 
@@ -459,7 +459,7 @@ export default function Home() {
                       </div>
                       <div className="absolute top-3 left-3">
                         <span className="px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-[0.06em] uppercase"
-                          style={{ fontFamily: "'DM Sans'", background: "hsl(345 10% 5% / 0.88)", border: "1px solid hsl(345 10% 16%)", color: "hsl(30 10% 55%)" }}>
+                          style={{ fontFamily: "'Inter'", background: "hsl(345 10% 5% / 0.88)", border: "1px solid hsl(345 10% 16%)", color: "hsl(30 10% 55%)" }}>
                           {v.tag}
                         </span>
                       </div>
@@ -470,7 +470,15 @@ export default function Home() {
                         style={{ fontFamily: "'Space Grotesk'", fontSize: 14, fontWeight: 600, letterSpacing: "-0.01em", color: "hsl(30 18% 78%)", lineHeight: 1.3 }}>
                         {v.category}
                       </h3>
-                      <p style={{ fontFamily: "'DM Sans'", fontSize: 12, lineHeight: 1.7, color: "hsl(30 8% 42%)", fontWeight: 300 }}>{v.desc}</p>
+                      <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.7, color: "hsl(30 8% 42%)", fontWeight: 300 }}>{v.desc}</p>
+                      <button onClick={goApply}
+                        className="mt-3 flex items-center gap-1.5 transition-colors"
+                        style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, color: "hsl(292 70% 62%)", letterSpacing: "0.03em" }}
+                        onMouseEnter={e => (e.currentTarget.style.color = "hsl(292 85% 72%)")}
+                        onMouseLeave={e => (e.currentTarget.style.color = "hsl(292 70% 62%)")}>
+                        Get A Campaign
+                        <ArrowRight className="w-3 h-3 opacity-80" />
+                      </button>
                     </div>
                   </div>
                 </FadeUp>
@@ -486,7 +494,8 @@ export default function Home() {
         <div className="container mx-auto px-5 md:px-8 max-w-7xl relative z-10">
           <FadeUp className="text-center mb-16 md:mb-20">
             <p className="label-text mb-5">Why Us</p>
-            <h2 className="section-headline"><AnimatedHeadline text="Why Brands Choose D&B AI Marketing Co." delay={0.05} /></h2>
+            <h2 className="section-headline"><AnimatedHeadline text="Your AI Content Department" delay={0.05} /></h2>
+            <p className="body-premium max-w-xl mx-auto mt-5">Marketing Designed For The Attention Economy</p>
           </FadeUp>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {WHY_CARDS.map((c, i) => {
@@ -502,7 +511,7 @@ export default function Home() {
                       <Icon className="w-5 h-5" style={{ color: c.color }} />
                     </div>
                     <h3 className="mb-3" style={{ fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.25 }}>{c.title}</h3>
-                    <p style={{ fontFamily: "'DM Sans'", fontSize: 14, lineHeight: 1.8, color: "hsl(30 8% 46%)", fontWeight: 300 }}>{c.desc}</p>
+                    <p style={{ fontFamily: "'Inter'", fontSize: 14, lineHeight: 1.8, color: "hsl(30 8% 46%)", fontWeight: 300 }}>{c.desc}</p>
                   </div>
                 </FadeUp>
               );
@@ -516,7 +525,7 @@ export default function Home() {
         <div className="container mx-auto px-5 md:px-8 max-w-7xl">
           <FadeUp className="text-center mb-16 md:mb-20">
             <p className="label-text mb-5">What We Do</p>
-            <h2 className="section-headline"><AnimatedHeadline text="AI Marketing Services" delay={0.05} /></h2>
+            <h2 className="section-headline"><AnimatedHeadline text="Content Systems Built For Growth" delay={0.05} /></h2>
           </FadeUp>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {SERVICES.map((s, i) => {
@@ -559,7 +568,7 @@ export default function Home() {
             <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full"
               style={{ background: "hsl(330 30% 9%)", border: "1px solid hsl(330 40% 18%)" }}>
               <Zap className="w-3.5 h-3.5" style={{ color: "hsl(330 55% 60%)" }} />
-              <span style={{ fontFamily: "'DM Sans'", fontSize: 12, fontWeight: 500, color: "hsl(30 10% 55%)" }}>
+              <span style={{ fontFamily: "'Inter'", fontSize: 12, fontWeight: 500, color: "hsl(30 10% 55%)" }}>
                 Starting investment discussed on strategy call
               </span>
             </div>
@@ -587,13 +596,13 @@ export default function Home() {
                     {/* Header */}
                     <div className="mb-6">
                       <div className="flex items-start justify-between gap-3 mb-3">
-                        <h3 style={{ fontFamily: "'Syne'", fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em" }}>{pkg.name}</h3>
+                        <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: 22, fontWeight: 800, letterSpacing: "-0.03em" }}>{pkg.name}</h3>
                         <span className="px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-[0.06em] uppercase shrink-0"
-                          style={{ fontFamily: "'DM Sans'", background: pkg.tagBg, border: `1px solid ${pkg.borderHover}`, color: pkg.tagColor }}>
+                          style={{ fontFamily: "'Inter'", background: pkg.tagBg, border: `1px solid ${pkg.borderHover}`, color: pkg.tagColor }}>
                           {pkg.tag}
                         </span>
                       </div>
-                      <p style={{ fontFamily: "'DM Sans'", fontSize: 13, lineHeight: 1.7, color: "hsl(30 8% 48%)", fontWeight: 300 }}>
+                      <p style={{ fontFamily: "'Inter'", fontSize: 13, lineHeight: 1.7, color: "hsl(30 8% 48%)", fontWeight: 300 }}>
                         <strong style={{ fontWeight: 500, color: "hsl(30 10% 58%)" }}>Best For:</strong> {pkg.bestFor}
                       </p>
                     </div>
@@ -603,13 +612,13 @@ export default function Home() {
                       {pkg.items.map(item => (
                         <li key={item} className="flex items-start gap-2.5">
                           <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" style={{ color: "hsl(330 55% 58%)" }} />
-                          <span style={{ fontFamily: "'DM Sans'", fontSize: 13, lineHeight: 1.65, color: "hsl(30 8% 52%)", fontWeight: 300 }}>{item}</span>
+                          <span style={{ fontFamily: "'Inter'", fontSize: 13, lineHeight: 1.65, color: "hsl(30 8% 52%)", fontWeight: 300 }}>{item}</span>
                         </li>
                       ))}
                     </ul>
 
                     {/* Price note */}
-                    <p className="mb-5 text-center" style={{ fontFamily: "'DM Sans'", fontSize: 11.5, fontStyle: "italic", color: "hsl(30 8% 36%)", lineHeight: 1.6 }}>
+                    <p className="mb-5 text-center" style={{ fontFamily: "'Inter'", fontSize: 11.5, fontStyle: "italic", color: "hsl(30 8% 36%)", lineHeight: 1.6 }}>
                       Investment reviewed after qualification call
                     </p>
 
@@ -617,7 +626,7 @@ export default function Home() {
                     <button
                       onClick={goApply}
                       className={pkg.featured ? "btn-primary" : "btn-ghost"}
-                      style={{ width: "100%", height: 48, borderRadius: 14, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'DM Sans'", fontWeight: 600 }}
+                      style={{ width: "100%", height: 48, borderRadius: 14, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "'Inter'", fontWeight: 600 }}
                     >
                       {pkg.cta}
                       <ArrowRight className="w-4 h-4 opacity-80" />
@@ -630,7 +639,7 @@ export default function Home() {
 
           {/* Packages disclaimer */}
           <FadeUp delay={0.3} className="mt-10 text-center max-w-2xl mx-auto">
-            <p style={{ fontFamily: "'DM Sans'", fontSize: 12, lineHeight: 1.8, color: "hsl(30 8% 36%)", fontWeight: 300 }}>
+            <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.8, color: "hsl(30 8% 36%)", fontWeight: 300 }}>
               Packages are offered as 12-month creative partnerships. Upfront onboarding/down payment is required to begin production. Exact investment is reviewed after qualification.
             </p>
           </FadeUp>
@@ -648,7 +657,7 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
               <a href="mailto:hello@dbaimarketing.co"
                 className="flex items-center gap-2 transition-colors"
-                style={{ fontFamily: "'DM Sans'", fontSize: 14, color: "hsl(30 8% 48%)" }}
+                style={{ fontFamily: "'Inter'", fontSize: 14, color: "hsl(30 8% 48%)" }}
                 onMouseEnter={e => (e.currentTarget.style.color = "hsl(30 18% 82%)")}
                 onMouseLeave={e => (e.currentTarget.style.color = "hsl(30 8% 48%)")}>
                 <Mail className="w-4 h-4 shrink-0" style={{ color: "hsl(330 55% 58%)" }} />
@@ -657,7 +666,7 @@ export default function Home() {
               <span className="hidden sm:block w-px h-4" style={{ background: "hsl(345 10% 14%)" }} />
               <button onClick={goApply}
                 className="flex items-center gap-2 transition-colors cursor-pointer"
-                style={{ fontFamily: "'DM Sans'", fontSize: 14, color: "hsl(30 8% 48%)" }}
+                style={{ fontFamily: "'Inter'", fontSize: 14, color: "hsl(30 8% 48%)" }}
                 onMouseEnter={e => (e.currentTarget.style.color = "hsl(30 18% 82%)")}
                 onMouseLeave={e => (e.currentTarget.style.color = "hsl(30 8% 48%)")}>
                 <Calendar className="w-4 h-4 shrink-0" style={{ color: "hsl(330 55% 58%)" }} />
@@ -677,16 +686,16 @@ export default function Home() {
                 style={{ background: "linear-gradient(135deg, hsl(340 72% 46%), hsl(300 60% 42%))" }}>
                 <Zap className="w-3.5 h-3.5 text-white" />
               </div>
-              <span style={{ fontFamily: "'Syne'", fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em" }}>
+              <span style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em" }}>
                 D<span style={{ color: "hsl(330 65% 60%)" }}>&amp;</span>B
-                <span style={{ fontFamily: "'DM Sans'", fontWeight: 400, fontSize: 14, color: "hsl(30 8% 40%)", marginLeft: 4 }}>AI Marketing</span>
+                <span style={{ fontFamily: "'Inter'", fontWeight: 400, fontSize: 14, color: "hsl(30 8% 40%)", marginLeft: 4 }}>AI Marketing</span>
               </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-5">
               {[["AI Campaigns", "showcase"], ["Services", "services"], ["Packages", "packages"], ["Contact", "contact"]].map(([label, id]) => (
                 <button key={id} onClick={() => scrollTo(id)} className="transition-colors cursor-pointer"
-                  style={{ fontFamily: "'DM Sans'", fontSize: 12, color: "hsl(30 8% 38%)" }}
+                  style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(30 8% 38%)" }}
                   onMouseEnter={e => (e.currentTarget.style.color = "hsl(30 15% 68%)")}
                   onMouseLeave={e => (e.currentTarget.style.color = "hsl(30 8% 38%)")}>
                   {label}
@@ -709,10 +718,10 @@ export default function Home() {
 
           <div className="mt-8 pt-6" style={{ borderTop: "1px solid hsl(345 10% 7%)" }}>
             <p className="text-center max-w-3xl mx-auto mb-3"
-              style={{ fontFamily: "'DM Sans'", fontSize: 11, lineHeight: 1.75, color: "hsl(30 6% 26%)", fontWeight: 300 }}>
+              style={{ fontFamily: "'Inter'", fontSize: 11, lineHeight: 1.75, color: "hsl(30 6% 26%)", fontWeight: 300 }}>
               D&amp;B AI Marketing Co. creates AI-powered marketing content for businesses and creators. Results depend on audience, platform performance, content quality, and market conditions. We do not guarantee specific reach, engagement, views, conversions, bookings, app installs, or revenue outcomes.
             </p>
-            <p className="text-center" style={{ fontFamily: "'DM Sans'", fontSize: 11, color: "hsl(30 6% 20%)" }}>
+            <p className="text-center" style={{ fontFamily: "'Inter'", fontSize: 11, color: "hsl(30 6% 20%)" }}>
               © 2025 D&amp;B AI Marketing Co. All rights reserved.
             </p>
           </div>
