@@ -1,0 +1,214 @@
+Update the App Squad website hero messaging and supporting copy to strengthen the digital product ownership positioning.
+
+IMPORTANT:
+Do NOT redesign the website.
+Do NOT change the funnel structure.
+Do NOT remove existing routes.
+Do NOT remove the two traffic flows.
+Only update wording, section titles, and supporting copy.
+
+==================================================
+MAIN HERO UPDATE
+================
+
+Replace the current homepage hero headline with:
+
+Own A Digital Product In One Of The World's Largest Industries
+
+Replace the homepage hero subheadline with:
+
+App Squad helps aspiring entrepreneurs launch branded mobile game apps through a guided process that includes customization, monetization preparation, publishing assistance, and ongoing support.
+
+Add this supporting line under the subheadline:
+
+Most people spend years consuming digital products. A smaller group decides to own one.
+
+Primary CTA:
+Watch The App Ownership Presentation
+
+Secondary CTA:
+Already Spoke With A Representative?
+
+==================================================
+POSITIONING UPDATE
+==================
+
+The website should position App Squad as:
+
+A premium app launch company helping customers explore digital product ownership through branded mobile game apps.
+
+NOT:
+
+A generic mobile game development agency.
+NOT a course.
+NOT a webinar.
+NOT a make-money-online funnel.
+
+==================================================
+SECTION TITLE UPDATES
+=====================
+
+Replace:
+Why Mobile Apps?
+
+With:
+Why Digital Product Ownership?
+
+Replace:
+Choose Your Game
+
+With:
+Choose Your Digital Product Category
+
+Replace:
+How The App Launch Process Works
+
+With:
+Your Path To App Ownership
+
+Replace:
+What App Squad Helps With
+
+With:
+What App Squad Helps You Build
+
+==================================================
+SUPPORTING COPY UPDATES
+=======================
+
+Wherever the site talks about “building a game app,” add broader language around:
+
+* digital product ownership
+* branded mobile applications
+* mobile app economy
+* guided launch process
+* monetization preparation
+* publishing assistance
+* long-term digital asset
+
+==================================================
+DIGITAL PRODUCT CATEGORY SECTION
+================================
+
+Update the game template/category section to make it feel bigger than just games.
+
+Section Title:
+Choose Your Digital Product Category
+
+Subheadline:
+Start with a customizable mobile game category and transform it into a branded digital product.
+
+Categories:
+
+* Puzzle Game Apps
+* Word Game Apps
+* Arcade Game Apps
+* Casino-Style Entertainment Apps
+* Trivia Game Apps
+* Kids Educational Apps
+* Racing Game Apps
+* Adventure Game Apps
+
+Keep the visual game cards, but update the copy to reinforce ownership and brand customization.
+
+==================================================
+PROCESS SECTION
+===============
+
+Update process steps to:
+
+Step 1:
+Watch The App Ownership Presentation
+
+Step 2:
+Complete Your Application
+
+Step 3:
+Book Your Strategy Call
+
+Step 4:
+Choose Your Launch Package
+
+Step 5:
+Select Your App Template
+
+Step 6:
+Customize Your Brand
+
+Step 7:
+Launch Your Digital Product
+
+==================================================
+TRUST SECTION
+=============
+
+Update trust/service cards to:
+
+Branded Mobile Applications
+
+Custom App Branding
+
+Game Template Customization
+
+Monetization Preparation
+
+Publishing Assistance
+
+Launch Guidance
+
+Ongoing Support
+
+Client Onboarding Dashboard
+
+==================================================
+ADD SUPPORTING STATEMENT
+========================
+
+Add this short statement somewhere below the hero or near the process section:
+
+This is not about learning to code.
+This is not about building software from scratch.
+This is about simplifying the path into the mobile app economy through a guided launch system.
+
+==================================================
+WORDING RULES
+=============
+
+Reduce or avoid:
+
+* make money online
+* passive income
+* guaranteed earnings
+* get rich
+* cash in
+* profit claims
+* revenue promises
+
+Use more:
+
+* ownership
+* digital product
+* branded app
+* app economy
+* launch process
+* guided implementation
+* app ownership
+* mobile ecosystem
+
+==================================================
+DISCLAIMER REMINDER
+===================
+
+Keep the existing disclaimer language visible on relevant pages:
+
+App Squad does not guarantee earnings, downloads, rankings, app approvals, ad revenue, in-app purchase revenue, profits, or return on investment.
+
+==================================================
+FINAL GOAL
+==========
+
+The visitor should immediately understand:
+
+App Squad helps people explore owning a branded mobile app as a digital product.
+
+The site should feel premium, legitimate, and opportunity-driven without sounding like a hype business opportunity funnel.

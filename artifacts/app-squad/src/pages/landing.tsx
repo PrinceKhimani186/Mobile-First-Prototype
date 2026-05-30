@@ -590,9 +590,9 @@ export default function Landing() {
                   marginBottom: 24,
                 }}
               >
-                The Digital Economy<br />
-                Isn't Just For<br />
-                <span className="gradient-text block mt-1">Developers Anymore</span>
+                Own A Digital Product<br />
+                In One Of The<br />
+                <span className="gradient-text block mt-1">World's Largest Industries</span>
               </motion.h1>
 
               <motion.p
@@ -849,7 +849,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center max-w-3xl mx-auto mb-12">
             <p className="text-sm font-semibold tracking-widest uppercase mb-3 text-silver">The Opportunity</p>
-            <h2 className="text-3xl md:text-4xl font-bold mb-5" style={{ letterSpacing: "-0.025em" }}>Why App Ownership?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-5" style={{ letterSpacing: "-0.025em" }}>Why Digital Product Ownership?</h2>
             <p className="text-muted-foreground leading-relaxed text-lg">Mobile applications have become one of the most widely used digital products in the world. Every day, millions of people engage with games, rewards systems, subscriptions, and digital experiences through mobile apps.</p>
           </motion.div>
 
@@ -901,18 +901,20 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center max-w-2xl mx-auto mb-12">
             <p className="text-sm font-semibold tracking-widest uppercase mb-3 text-silver">Mobile App Ecosystem</p>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ letterSpacing: "-0.025em" }}>Inside The Mobile App Economy</h2>
-            <p className="text-muted-foreground leading-relaxed">Millions of people engage with mobile games and digital products every day across a wide range of categories.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ letterSpacing: "-0.025em" }}>Choose Your Digital Product Category</h2>
+            <p className="text-muted-foreground leading-relaxed">Start with a customizable mobile game category and transform it into a branded digital product.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
             {[
-              { icon: Puzzle, label: "Puzzle Games", example: "e.g. Candy Crush Saga", desc: "Match-based puzzle games are among the most widely played mobile game categories globally.", color: "#4F8CFF", bg: "rgba(79,140,255,0.08)", border: "rgba(79,140,255,0.18)" },
-              { icon: BookOpen, label: "Word Games", example: "e.g. Wordscapes", desc: "Word and spelling games draw consistent daily engagement from players of all ages.", color: "#68A4FF", bg: "rgba(104,164,255,0.08)", border: "rgba(104,164,255,0.18)" },
-              { icon: Gamepad2, label: "Strategy Games", example: "e.g. Clash of Clans", desc: "Strategy and base-building games are known for deep engagement and in-app purchase activity.", color: "#7A8DFF", bg: "rgba(122,141,255,0.08)", border: "rgba(122,141,255,0.18)" },
-              { icon: Zap, label: "Arcade Games", example: "e.g. Subway Surfers", desc: "Fast-paced arcade runners and action games attract broad audiences across demographics.", color: "hsl(142 65% 55%)", bg: "hsl(142 65% 48% / 0.08)", border: "hsl(142 65% 48% / 0.2)" },
-              { icon: Star, label: "Casino Style Entertainment", example: "e.g. Slots Era", desc: "Casino-style entertainment apps are a well-established category in both app stores.", color: "hsl(35 100% 62%)", bg: "hsl(35 100% 58% / 0.08)", border: "hsl(35 100% 58% / 0.2)" },
-              { icon: Users, label: "Social Games", example: "e.g. Coin Master", desc: "Social games combine gameplay with friend sharing and community engagement mechanics.", color: "hsl(280 70% 65%)", bg: "hsl(280 70% 60% / 0.08)", border: "hsl(280 70% 60% / 0.2)" },
+              { icon: Puzzle,    label: "Puzzle Game Apps",                example: "Match & logic gameplay",           desc: "Branded puzzle apps built on proven match-based templates, customized with your identity.",             color: "#4F8CFF", bg: "rgba(79,140,255,0.08)", border: "rgba(79,140,255,0.18)" },
+              { icon: BookOpen, label: "Word Game Apps",                   example: "Word & spelling gameplay",         desc: "Word game digital products that draw consistent daily engagement from players of all ages.",           color: "#68A4FF", bg: "rgba(104,164,255,0.08)", border: "rgba(104,164,255,0.18)" },
+              { icon: Zap,      label: "Arcade Game Apps",                 example: "Fast-paced action gameplay",       desc: "Arcade-style apps with broad demographic reach, fully branded to your digital product identity.",      color: "#7A8DFF", bg: "rgba(122,141,255,0.08)", border: "rgba(122,141,255,0.18)" },
+              { icon: Star,     label: "Casino-Style Entertainment Apps",  example: "Entertainment & slots gameplay",   desc: "Casino-style entertainment is a well-established app category available on both major app stores.",   color: "hsl(142 65% 55%)", bg: "hsl(142 65% 48% / 0.08)", border: "hsl(142 65% 48% / 0.2)" },
+              { icon: Sparkles, label: "Trivia Game Apps",                 example: "Quiz & knowledge gameplay",        desc: "Trivia and quiz apps engage broad audiences with daily challenge mechanics and community features.",     color: "hsl(35 100% 62%)",  bg: "hsl(35 100% 58% / 0.08)",  border: "hsl(35 100% 58% / 0.2)" },
+              { icon: Users,    label: "Kids Educational Apps",            example: "Learning & discovery gameplay",    desc: "Family-friendly educational apps that combine learning mechanics with branded mobile experiences.",     color: "hsl(280 70% 65%)", bg: "hsl(280 70% 60% / 0.08)", border: "hsl(280 70% 60% / 0.2)" },
+              { icon: Activity, label: "Racing Game Apps",                 example: "Speed & competition gameplay",     desc: "Racing and competition apps bring high-energy gameplay to your branded mobile product lineup.",         color: "hsl(197 85% 55%)", bg: "hsl(197 85% 48% / 0.08)", border: "hsl(197 85% 48% / 0.2)" },
+              { icon: Target,   label: "Adventure Game Apps",              example: "Story & exploration gameplay",     desc: "Adventure-style apps offer immersive branded experiences with broad appeal across age groups.",         color: "hsl(355 80% 62%)", bg: "hsl(355 80% 55% / 0.08)", border: "hsl(355 80% 55% / 0.2)" },
             ].map(({ icon: Icon, label, example, desc, color, bg, border }, i) => (
               <motion.div key={label}
                 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
@@ -1077,13 +1079,13 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center max-w-xl mx-auto mb-16">
             <p className="text-sm font-semibold tracking-widest uppercase mb-4 text-silver">The Process</p>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ letterSpacing: "-0.03em" }}>How The App Launch Process Works</h2>
-            <p className="text-muted-foreground text-lg">Seven structured steps designed to take you from concept to a published app in the App Store and Google Play.</p>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ letterSpacing: "-0.03em" }}>Your Path To App Ownership</h2>
+            <p className="text-muted-foreground text-lg">Seven structured steps designed to guide you from exploration to a published branded digital product.</p>
           </motion.div>
 
           <div className="max-w-2xl mx-auto">
             {[
-              { n: "01", icon: PlayCircle,    title: "Explore The App Ownership Presentation", desc: "Watch a guided overview of how the App Squad app launch process works and what's included.",               cta: true  },
+              { n: "01", icon: PlayCircle,    title: "Watch The App Ownership Presentation",    desc: "Watch a guided overview of how the App Squad app launch process works and what's included.",               cta: true  },
               { n: "02", icon: Smartphone,    title: "Complete Your Application",           desc: "Tell us about your goals, timeline, and the type of digital product you're looking to launch.",               cta: false },
               { n: "03", icon: CalendarCheck, title: "Book Your Strategy Call",             desc: "Our team reviews your application and schedules your personalized App Launch Strategy Call.",                  cta: false },
               { n: "04", icon: Package,       title: "Choose Your Launch Package",          desc: "Select the app launch package that fits your goals and the level of support you're looking for.",              cta: false },
@@ -1137,14 +1139,16 @@ export default function Landing() {
           <motion.div
             initial="hidden" whileInView="visible" viewport={{ once: true }}
             variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.08 } } }}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
             {[
-              { icon: Smartphone, title: "Branded Mobile Applications",      desc: "Custom-branded mobile apps built on proven game templates and tailored to your identity.",                 color: "#4F8CFF",  bg: "rgba(79,140,255,0.08)",  border: "rgba(79,140,255,0.18)" },
-              { icon: Layers,     title: "Digital Product Launch Support",   desc: "End-to-end guidance through the app launch process from template selection to submission.",               color: "#68A4FF",  bg: "rgba(104,164,255,0.08)", border: "rgba(104,164,255,0.18)" },
-              { icon: Palette,    title: "Custom App Branding",              desc: "Name, colors, icons, splash screens, and visual identity applied to make the app distinctly yours.",        color: "#7A8DFF",  bg: "rgba(122,141,255,0.08)", border: "rgba(122,141,255,0.18)" },
-              { icon: BarChart3,  title: "Monetization Preparation",         desc: "Ad network integrations and in-app purchase configurations set up as part of your launch package.",        color: "hsl(142 65% 55%)", bg: "hsl(142 65% 48% / 0.08)", border: "hsl(142 65% 48% / 0.2)" },
-              { icon: Globe,      title: "Publishing Assistance",            desc: "Support preparing your app for submission to the Apple App Store and Google Play Store.",                  color: "hsl(35 100% 62%)",  bg: "hsl(35 100% 58% / 0.08)", border: "hsl(35 100% 58% / 0.2)" },
-              { icon: Rocket,     title: "Launch Guidance",                  desc: "Step-by-step support so you understand every stage of the app launch process from start to finish.",       color: "hsl(280 70% 65%)", bg: "hsl(280 70% 60% / 0.08)", border: "hsl(280 70% 60% / 0.2)" },
+              { icon: Smartphone, title: "Branded Mobile Applications",       desc: "Custom-branded mobile apps built on proven game templates and tailored to your digital product identity.",   color: "#4F8CFF",  bg: "rgba(79,140,255,0.08)",  border: "rgba(79,140,255,0.18)" },
+              { icon: Palette,    title: "Custom App Branding",               desc: "Name, colors, icons, splash screens, and visual identity applied to make the app distinctly yours.",          color: "#68A4FF",  bg: "rgba(104,164,255,0.08)", border: "rgba(104,164,255,0.18)" },
+              { icon: Gamepad2,   title: "Game Template Customization",       desc: "Choose from a library of mobile game templates and customize each element to match your brand.",              color: "#7A8DFF",  bg: "rgba(122,141,255,0.08)", border: "rgba(122,141,255,0.18)" },
+              { icon: BarChart3,  title: "Monetization Preparation",          desc: "Ad network integrations and in-app purchase configurations set up as part of your launch package.",           color: "hsl(142 65% 55%)", bg: "hsl(142 65% 48% / 0.08)", border: "hsl(142 65% 48% / 0.2)" },
+              { icon: Globe,      title: "Publishing Assistance",             desc: "Support preparing your branded digital product for submission to the Apple App Store and Google Play.",        color: "hsl(35 100% 62%)",  bg: "hsl(35 100% 58% / 0.08)", border: "hsl(35 100% 58% / 0.2)" },
+              { icon: Rocket,     title: "Launch Guidance",                   desc: "Step-by-step support so you understand every stage of the app ownership and launch process.",                  color: "hsl(197 85% 55%)", bg: "hsl(197 85% 48% / 0.08)", border: "hsl(197 85% 48% / 0.2)" },
+              { icon: Headphones, title: "Ongoing Support",                   desc: "Post-launch access to our team for questions, updates, and continued app development assistance.",             color: "hsl(280 70% 65%)", bg: "hsl(280 70% 60% / 0.08)", border: "hsl(280 70% 60% / 0.2)" },
+              { icon: Users,      title: "Client Onboarding Dashboard",       desc: "Access your personalized onboarding portal to track progress and manage your app launch milestones.",         color: "hsl(355 80% 62%)", bg: "hsl(355 80% 55% / 0.08)", border: "hsl(355 80% 55% / 0.2)" },
             ].map(({ icon: Icon, title, desc, color, bg, border }, i) => (
               <motion.div key={title}
                 variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
@@ -1182,7 +1186,7 @@ export default function Landing() {
                   App Squad was created for individuals who want to explore the process of launching a branded digital product of their own through a guided mobile app launch system.
                 </p>
                 <p style={{ fontFamily: "'Inter'", fontSize: 15, lineHeight: 1.8, color: "hsl(218 14% 56%)", fontWeight: 300 }}>
-                  This is not about learning to code. This is not about building software from scratch. This is about simplifying the path into the mobile app ecosystem.
+                  This is not about learning to code. This is not about building software from scratch. This is about simplifying the path into the mobile app economy through a guided launch system.
                 </p>
               </div>
             </motion.div>
@@ -1252,7 +1256,7 @@ export default function Landing() {
       <footer className="py-12 border-t border-white/[0.06] bg-card/30">
         <div className="container mx-auto px-4 text-center flex flex-col items-center">
           <p className="text-xs text-muted-foreground/50 italic max-w-4xl mx-auto leading-relaxed mb-6">
-            Disclaimer: App results depend on marketing, user engagement, platform approval, and other factors outside of App Squad's control. We do not guarantee income, downloads, rankings, or profits. The examples shown are for illustrative purposes only. Building a business requires risk, effort, and capital.
+            Disclaimer: App Squad does not guarantee earnings, downloads, rankings, app approvals, ad revenue, in-app purchase revenue, profits, or return on investment. App results depend on marketing, user engagement, platform approval, and other factors outside of App Squad's control. The examples shown are for illustrative purposes only. Building a business requires risk, effort, and capital.
           </p>
           <p className="text-sm text-muted-foreground font-medium">
             © 2025 App Squad Inc. All rights reserved.
