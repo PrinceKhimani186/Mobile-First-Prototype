@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Shield, Rocket, Layers, BarChart3,
-  Play, Clock, CheckCircle2,
+  ArrowRight, Shield, Rocket, Layers, BarChart3, VideoOff,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { APP_SQUAD_VIDEO_URL } from "../lib/video-config";
 
 const TRUST = [
   {
@@ -24,9 +24,52 @@ const TRUST = [
   },
 ];
 
+function VideoPlayer({ title = "App Ownership Overview" }: { title?: string }) {
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return (
+      <div className="rounded-2xl flex flex-col items-center justify-center gap-5 p-10 text-center"
+        style={{
+          aspectRatio: "16/9",
+          background: "hsl(226 32% 7%)",
+          border: "1px solid hsl(224 22% 13%)",
+        }}>
+        <VideoOff className="w-10 h-10" style={{ color: "hsl(218 16% 36%)" }} />
+        <div>
+          <p style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+            Video Temporarily Unavailable
+          </p>
+          <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(218 16% 48%)", lineHeight: 1.65 }}>
+            Please contact App Squad support or continue your application below.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full max-w-[1000px] mx-auto"
+      style={{
+        borderRadius: "1rem",
+        boxShadow: "0 0 0 1px hsl(217 85% 58% / 0.22), 0 32px 80px -20px hsl(228 42% 4% / 0.9), 0 0 60px -24px hsl(217 85% 58% / 0.1)",
+      }}>
+      <div style={{ position: "relative", paddingBottom: "56.25%", borderRadius: "1rem", overflow: "hidden" }}>
+        <iframe
+          src={APP_SQUAD_VIDEO_URL}
+          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+          allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+          allowFullScreen
+          title={title}
+          onError={() => setError(true)}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function Representative() {
   const [, navigate] = useLocation();
-  const [played, setPlayed] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("as_source", "Representative / Bought Lead");
@@ -56,7 +99,6 @@ export default function Representative() {
           className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-6"
             style={{ background: "hsl(35 90% 55% / 0.1)", border: "1px solid hsl(35 90% 55% / 0.24)" }}>
-            <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "hsl(35 90% 62%)" }} />
             <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(35 90% 66%)" }}>
               Continue Your Application
             </span>
@@ -66,7 +108,7 @@ export default function Representative() {
             Continue Your App Launch Application
           </h1>
           <p style={{ fontFamily: "'Inter'", fontSize: 15, lineHeight: 1.75, color: "hsl(218 16% 52%)", fontWeight: 300, maxWidth: 520, margin: "0 auto" }}>
-            Watch this quick overview before completing your application and scheduling your App Launch Strategy Call.
+            This short overview will help you better understand the App Squad process before completing your application.
           </p>
         </motion.div>
 
@@ -74,121 +116,7 @@ export default function Representative() {
         <motion.div
           initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="mb-8">
-
-          {/* Video label row */}
-          <div className="flex items-center justify-between mb-3 px-1">
-            <p style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(218 16% 38%)" }}>
-              Quick App Ownership Overview
-            </p>
-            <div className="flex items-center gap-1.5"
-              style={{ fontFamily: "'Inter'", fontSize: 11, color: "hsl(218 16% 38%)" }}>
-              <Clock className="w-3 h-3" />
-              45–60 seconds
-            </div>
-          </div>
-
-          {/* Cinematic video placeholder */}
-          <div
-            className="relative rounded-2xl overflow-hidden group cursor-pointer"
-            style={{
-              aspectRatio: "16/9",
-              background: "hsl(226 36% 6%)",
-              border: "1px solid hsl(224 22% 13%)",
-              boxShadow: "0 0 0 1px hsl(224 22% 9%), 0 32px 80px -20px hsl(228 42% 4% / 0.9)",
-            }}
-            onClick={() => setPlayed(true)}
-          >
-            {/* Cinematic overlay graphics */}
-            <div className="absolute inset-0">
-              {/* Grid lines */}
-              <svg className="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <pattern id="vgrid" width="48" height="48" patternUnits="userSpaceOnUse">
-                    <path d="M 48 0 L 0 0 0 48" fill="none" stroke="white" strokeWidth="0.5"/>
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#vgrid)" />
-              </svg>
-
-              {/* Glowing orb top-right */}
-              <div className="absolute top-[-20%] right-[-10%] w-[55%] h-[120%] rounded-full pointer-events-none"
-                style={{ background: "radial-gradient(ellipse at center, hsl(217 85% 58% / 0.18) 0%, transparent 65%)", filter: "blur(60px)" }} />
-
-              {/* Gold glow bottom-left */}
-              <div className="absolute bottom-[-20%] left-[-5%] w-[45%] h-[100%] rounded-full pointer-events-none"
-                style={{ background: "radial-gradient(ellipse at center, hsl(35 90% 55% / 0.13) 0%, transparent 65%)", filter: "blur(50px)" }} />
-
-              {/* Mock UI layers — left panel */}
-              <div className="absolute left-8 top-1/2 -translate-y-1/2 flex flex-col gap-2.5 opacity-30">
-                {["Game Template A", "Game Template B", "Game Template C"].map((t, i) => (
-                  <div key={t} className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl"
-                    style={{ background: "hsl(226 32% 10%)", border: "1px solid hsl(224 22% 16%)", minWidth: 148 }}>
-                    <div className="w-7 h-7 rounded-lg shrink-0"
-                      style={{ background: i === 0 ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))" : i === 1 ? "linear-gradient(135deg, hsl(217 85% 58%), hsl(240 72% 58%))" : "linear-gradient(135deg, hsl(280 72% 58%), hsl(310 72% 55%))" }} />
-                    <div>
-                      <div style={{ fontFamily: "'Space Grotesk'", fontSize: 10, fontWeight: 600, color: "hsl(220 20% 78%)" }}>{t}</div>
-                      <div style={{ fontFamily: "'Inter'", fontSize: 9, color: "hsl(218 16% 42%)" }}>Branded</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Mock UI layers — right panel */}
-              <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-2.5 opacity-30">
-                {[
-                  { label: "Downloads", val: "48.2K", up: true },
-                  { label: "Revenue", val: "$8,290", up: true },
-                  { label: "Ad Network", val: "Active", up: false },
-                ].map(({ label, val, up }) => (
-                  <div key={label} className="px-4 py-3 rounded-xl"
-                    style={{ background: "hsl(226 32% 10%)", border: "1px solid hsl(224 22% 16%)", minWidth: 120 }}>
-                    <p style={{ fontFamily: "'Inter'", fontSize: 9, color: "hsl(218 16% 42%)", marginBottom: 3 }}>{label}</p>
-                    <p style={{ fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 700, color: up ? "hsl(142 76% 55%)" : "hsl(35 90% 62%)" }}>{val}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Scan line overlay */}
-              <div className="absolute inset-0"
-                style={{ background: "repeating-linear-gradient(0deg, transparent, transparent 3px, hsl(228 42% 4% / 0.07) 3px, hsl(228 42% 4% / 0.07) 4px)" }} />
-
-              {/* Vignette */}
-              <div className="absolute inset-0"
-                style={{ background: "radial-gradient(ellipse at center, transparent 30%, hsl(228 42% 4% / 0.5) 100%)" }} />
-            </div>
-
-            {/* Center play button */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-              <motion.div
-                whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.97 }}
-                className="relative flex items-center justify-center"
-              >
-                {/* Glow ring */}
-                <div className="absolute w-24 h-24 rounded-full"
-                  style={{ background: "hsl(35 90% 55% / 0.18)", filter: "blur(16px)" }} />
-                {/* Pulse ring */}
-                <motion.div
-                  className="absolute w-20 h-20 rounded-full border"
-                  style={{ borderColor: "hsl(35 90% 55% / 0.3)" }}
-                  animate={{ scale: [1, 1.35, 1], opacity: [0.6, 0, 0.6] }}
-                  transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-                />
-                {/* Button */}
-                <div className="relative w-16 h-16 rounded-full flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))", boxShadow: "0 8px 32px hsl(35 90% 55% / 0.4)" }}>
-                  <Play className="w-6 h-6 text-white fill-white ml-1" />
-                </div>
-              </motion.div>
-              <p style={{ fontFamily: "'Inter'", fontSize: 12, fontWeight: 500, color: "hsl(218 16% 52%)", letterSpacing: "0.02em" }}>
-                Video placeholder — replace with embed
-              </p>
-            </div>
-
-            {/* Cinematic top bar */}
-            <div className="absolute top-0 inset-x-0 h-1"
-              style={{ background: "linear-gradient(90deg, transparent 0%, hsl(35 90% 55% / 0.5) 50%, transparent 100%)" }} />
-          </div>
+          <VideoPlayer title="App Squad — App Ownership Overview" />
         </motion.div>
 
         {/* ── Primary CTA ── */}

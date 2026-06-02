@@ -1,0 +1,121 @@
+Update the App Squad website video placeholders so they display our actual hosted video.
+
+IMPORTANT:
+Do NOT redesign the pages.
+Do NOT change the funnel structure.
+Only replace the existing placeholder containers with embedded video players.
+
+==================================================
+VIDEO LOCATIONS
+===============
+
+Replace the current video placeholder on:
+
+1. App Ownership Presentation page
+
+2. Representative / Continue Application page
+
+==================================================
+VIDEO BEHAVIOR
+==============
+
+Use the same hosted video for both locations.
+
+Requirements:
+
+* Responsive on desktop, tablet, and mobile
+* Modern video player
+* Rounded corners
+* Premium styling
+* Dark theme compatible
+* Loading thumbnail before play
+* Play button centered
+* Autoplay OFF
+* Sound OFF until user clicks play
+* Allow fullscreen
+
+==================================================
+PRESENTATION PAGE
+=================
+
+Page:
+Watch The App Ownership Presentation
+
+Embed the video directly under the headline.
+
+After video finishes:
+
+Display CTA section:
+
+Headline:
+Ready To Explore App Ownership?
+
+Button:
+Apply For An App Launch Strategy Call
+
+Route:
+/apply
+
+==================================================
+REPRESENTATIVE PAGE
+===================
+
+Page:
+Continue Your App Launch Application
+
+Embed the same video directly under the headline.
+
+Use supporting text:
+
+This short overview will help you better understand the App Squad process before completing your application.
+
+Button below video:
+
+Continue To Qualification
+
+Route:
+/apply
+
+==================================================
+VIDEO SOURCE
+============
+
+Create a configurable variable:
+
+const APP_SQUAD_VIDEO_URL = "PASTE_VIDEO_URL_HERE";
+
+All video embeds should reference this variable so we can easily swap videos later.
+
+==================================================
+FALLBACK
+========
+
+If the video fails to load:
+
+Display:
+
+Video Temporarily Unavailable
+
+Please contact App Squad support or continue your application below.
+
+Still display the CTA button.
+
+==================================================
+DESIGN
+======
+
+Video container:
+
+* Max width 1000px
+* Centered
+* 16:9 aspect ratio
+* Rounded corners
+* Soft shadow
+* Subtle blue glow border
+* Mobile optimized
+
+==================================================
+FINAL GOAL
+==========
+
+Both video placeholders should display the same hosted App Squad presentation video while maintaining the premium technology company look and feel.

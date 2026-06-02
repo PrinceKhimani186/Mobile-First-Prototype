@@ -1,7 +1,8 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
-import { ArrowRight, Play, Clock, Shield, Zap, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Shield, CheckCircle2, VideoOff } from "lucide-react";
 import { useLocation } from "wouter";
+import { APP_SQUAD_VIDEO_URL } from "../lib/video-config";
 
 function FadeUp({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef(null);
@@ -14,6 +15,50 @@ function FadeUp({ children, delay = 0, className = "" }: { children: React.React
       className={className}>
       {children}
     </motion.div>
+  );
+}
+
+function VideoPlayer({ title = "App Ownership Presentation" }: { title?: string }) {
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return (
+      <div className="rounded-2xl flex flex-col items-center justify-center gap-5 p-10 text-center"
+        style={{
+          aspectRatio: "16/9",
+          background: "hsl(226 32% 7%)",
+          border: "1px solid hsl(224 22% 13%)",
+        }}>
+        <VideoOff className="w-10 h-10" style={{ color: "hsl(218 16% 36%)" }} />
+        <div>
+          <p style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 600, marginBottom: 8 }}>
+            Video Temporarily Unavailable
+          </p>
+          <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(218 16% 48%)", lineHeight: 1.65 }}>
+            Please contact App Squad support or continue your application below.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full max-w-[1000px] mx-auto"
+      style={{
+        borderRadius: "1rem",
+        boxShadow: "0 0 0 1px hsl(217 85% 58% / 0.22), 0 32px 80px -20px hsl(228 42% 4% / 0.9), 0 0 60px -24px hsl(217 85% 58% / 0.1)",
+      }}>
+      <div style={{ position: "relative", paddingBottom: "56.25%", borderRadius: "1rem", overflow: "hidden" }}>
+        <iframe
+          src={APP_SQUAD_VIDEO_URL}
+          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+          allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media"
+          allowFullScreen
+          title={title}
+          onError={() => setError(true)}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -38,11 +83,11 @@ export default function Presentation() {
       </div>
 
       <div className="container mx-auto px-5 md:px-8 max-w-4xl relative z-10">
+
         {/* Header */}
         <FadeUp className="text-center mb-10 md:mb-12">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full mb-6"
             style={{ background: "hsl(35 90% 55% / 0.1)", border: "1px solid hsl(35 90% 55% / 0.22)" }}>
-            <Play className="w-3.5 h-3.5" style={{ color: "hsl(35 90% 62%)" }} />
             <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(35 90% 65%)" }}>
               App Ownership Presentation
             </span>
@@ -55,38 +100,9 @@ export default function Presentation() {
           </p>
         </FadeUp>
 
-        {/* Video placeholder */}
+        {/* Video embed */}
         <FadeUp delay={0.08} className="mb-10">
-          <div className="relative rounded-2xl overflow-hidden"
-            style={{ background: "hsl(226 32% 7%)", border: "1px solid hsl(224 22% 13%)", aspectRatio: "16/9", boxShadow: "0 32px 80px -20px hsl(228 42% 4% / 0.9), 0 0 0 1px hsl(224 22% 10%)" }}>
-            {/* Fake video background */}
-            <div className="absolute inset-0 grid-bg opacity-20" />
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, hsl(217 85% 58% / 0.06) 0%, transparent 70%)" }} />
-            </div>
-
-            {/* Play button */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-              <motion.div
-                whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.96 }}
-                className="w-20 h-20 rounded-full flex items-center justify-center cursor-pointer"
-                style={{ background: "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))", boxShadow: "0 0 48px -8px hsl(35 90% 55% / 0.6)" }}
-              >
-                <Play className="w-9 h-9 text-white ml-1" fill="white" />
-              </motion.div>
-              <div className="text-center">
-                <p style={{ fontFamily: "'Space Grotesk'", fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em" }}>App Ownership Presentation</p>
-                <div className="flex items-center justify-center gap-1.5 mt-1.5">
-                  <Clock className="w-3.5 h-3.5" style={{ color: "hsl(218 16% 48%)" }} />
-                  <span style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 48%)" }}>60–90 second overview</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-14 bg-gradient-to-t from-[hsl(226_32%_6%)] to-transparent" />
-          </div>
+          <VideoPlayer title="App Ownership Presentation" />
         </FadeUp>
 
         {/* What you'll see */}
@@ -108,8 +124,8 @@ export default function Presentation() {
 
         {/* CTA */}
         <FadeUp delay={0.2} className="text-center">
-          <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(218 16% 48%)", marginBottom: 16 }}>
-            Ready to take the next step?
+          <p style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.4rem, 3vw, 2rem)", fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 20 }}>
+            Ready To Explore App Ownership?
           </p>
           <button
             onClick={goApply}
