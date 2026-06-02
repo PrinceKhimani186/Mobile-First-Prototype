@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Zap } from "lucide-react";
+import { Menu, X, Zap, Code2, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +12,92 @@ const LINKS = [
   { href: "/partner-program", label: "Partner Program" },
 ];
 
+const DEV_LINKS = [
+  { href: "/enrollment",                label: "Enrollment" },
+  { href: "/onboarding/access",         label: "Onboarding Access" },
+  { href: "/onboarding/game-selection", label: "Game Selection" },
+  { href: "/onboarding/customization",  label: "Customization Form" },
+  { href: "/onboarding/dashboard",      label: "Client Dashboard" },
+];
+
+function DevDropdown({ location }: { location: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const isActive = DEV_LINKS.some(l => location === l.href);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={cn(
+          "flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all cursor-pointer border",
+          isActive
+            ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+            : "text-amber-500/70 border-amber-500/20 hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30"
+        )}
+      >
+        <Code2 className="w-3 h-3" />
+        Dev Access
+        <ChevronDown className={cn("w-3 h-3 transition-transform", open && "rotate-180")} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute right-0 top-full mt-2 w-52 rounded-xl overflow-hidden z-50"
+            style={{ background: "hsl(226 32% 7%)", border: "1px solid hsl(35 90% 55% / 0.22)", boxShadow: "0 16px 48px -12px hsl(228 42% 4% / 0.9)" }}
+          >
+            <div className="px-3 pt-2.5 pb-1.5">
+              <p style={{ fontFamily: "'Inter'", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "hsl(35 90% 55%)" }}>
+                Onboarding Flow
+              </p>
+            </div>
+            {DEV_LINKS.map((link, i) => (
+              <Link key={link.href} href={link.href} onClick={() => setOpen(false)}>
+                <span
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2.5 text-[12px] font-medium transition-all cursor-pointer",
+                    location === link.href
+                      ? "text-amber-400 bg-amber-500/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
+                  )}
+                >
+                  <span className="w-4 h-4 rounded flex items-center justify-center shrink-0 text-[9px] font-bold"
+                    style={{ background: "hsl(224 22% 12%)", color: "hsl(35 90% 55%)" }}>
+                    {i + 1}
+                  </span>
+                  {link.label}
+                </span>
+              </Link>
+            ))}
+            <div className="px-3 pb-2.5 pt-1">
+              <p style={{ fontFamily: "'Inter'", fontSize: 9, lineHeight: 1.5, color: "hsl(218 16% 30%)" }}>
+                Internal routes — for CRM integration dev use.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function Nav() {
   const [isOpen, setIsOpen] = useState(false);
+  const [devOpen, setDevOpen] = useState(false);
   const [location] = useLocation();
 
   return (
@@ -45,6 +129,8 @@ export function Nav() {
               </span>
             </Link>
           ))}
+          <span className="mx-1.5 w-px h-4 bg-white/10" />
+          <DevDropdown location={location} />
         </nav>
 
         <Link href="/start" className="hidden md:flex">
@@ -86,6 +172,36 @@ export function Nav() {
                   </span>
                 </Link>
               ))}
+
+              {/* Dev section separator */}
+              <div className="flex items-center gap-2 px-1 mt-2 mb-1">
+                <div className="flex-1 h-px" style={{ background: "hsl(35 90% 55% / 0.18)" }} />
+                <span className="flex items-center gap-1.5" style={{ fontFamily: "'Inter'", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "hsl(35 90% 50%)" }}>
+                  <Code2 className="w-2.5 h-2.5" />
+                  Dev / Onboarding
+                </span>
+                <div className="flex-1 h-px" style={{ background: "hsl(35 90% 55% / 0.18)" }} />
+              </div>
+
+              {DEV_LINKS.map((link, i) => (
+                <Link key={link.href} href={link.href} onClick={() => setIsOpen(false)}>
+                  <span
+                    className={cn(
+                      "flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                      location === link.href
+                        ? "bg-amber-500/15 text-amber-400"
+                        : "text-amber-500/60 hover:text-amber-400 hover:bg-amber-500/10"
+                    )}
+                  >
+                    <span className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold shrink-0"
+                      style={{ background: "hsl(224 22% 12%)", color: "hsl(35 90% 55%)" }}>
+                      {i + 1}
+                    </span>
+                    {link.label}
+                  </span>
+                </Link>
+              ))}
+
               <Link href="/start" onClick={() => setIsOpen(false)}>
                 <span className="btn-gold mt-2 h-11 text-[14px] font-semibold rounded-xl flex items-center justify-center gap-2 text-white cursor-pointer">
                   Watch Presentation
