@@ -2,6 +2,28 @@ import { Router, type IRouter } from "express";
 
 const router: IRouter = Router();
 
+const GHL_BASE = "https://services.leadconnectorhq.com";
+
+function ghlHeaders(apiKey: string) {
+  return {
+    Authorization: `Bearer ${apiKey}`,
+    Version: "2021-07-28",
+    "Content-Type": "application/json",
+  };
+}
+
+// GHL requires customFields as an array: [{ key, field_value }]
+// crm.ts sends a plain object — convert here.
+function toCustomFieldsArray(
+  customFields: unknown,
+): { key: string; field_value: string }[] {
+  if (!customFields) return [];
+  if (Array.isArray(customFields)) return customFields;
+  return Object.entries(customFields as Record<string, string>).map(
+    ([key, field_value]) => ({ key, field_value }),
+  );
+}
+
 router.post("/ghl/contact", async (req, res) => {
   const { firstName, lastName, email, phone, tags, customFields } = req.body;
 
@@ -14,40 +36,77 @@ router.post("/ghl/contact", async (req, res) => {
     return;
   }
 
-  // GHL requires customFields as an array: [{ key, field_value }]
-  // Our crm.ts sends it as a plain object for convenience — convert here.
-  const customFieldsArray = customFields && !Array.isArray(customFields)
-    ? Object.entries(customFields as Record<string, string>).map(([key, field_value]) => ({ key, field_value }))
-    : (customFields ?? []);
+  const customFieldsArray = toCustomFieldsArray(customFields);
+
+  // POST (create) needs locationId; PUT (update) must NOT include it
+  const createPayload = {
+    locationId,
+    firstName: firstName ?? "",
+    lastName: lastName ?? "",
+    email: email ?? "",
+    phone: phone ?? "",
+    ...(tags?.length ? { tags } : {}),
+    ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
+  };
+
+  const updatePayload = {
+    firstName: firstName ?? "",
+    lastName: lastName ?? "",
+    email: email ?? "",
+    phone: phone ?? "",
+    ...(tags?.length ? { tags } : {}),
+    ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
+  };
 
   try {
-    const ghlRes = await fetch("https://services.leadconnectorhq.com/contacts/", {
+    // Step 1: attempt to create the contact
+    const createRes = await fetch(`${GHL_BASE}/contacts/`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        Version: "2021-07-28",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        locationId,
-        firstName: firstName ?? "",
-        lastName: lastName ?? "",
-        email: email ?? "",
-        phone: phone ?? "",
-        ...(tags?.length ? { tags } : {}),
-        ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
-      }),
+      headers: ghlHeaders(apiKey),
+      body: JSON.stringify(createPayload),
     });
 
-    const data = await ghlRes.json();
+    const createData = (await createRes.json()) as {
+      contact?: unknown;
+      meta?: { contactId?: string };
+      message?: string;
+      statusCode?: number;
+    };
 
-    if (!ghlRes.ok) {
-      req.log.warn({ status: ghlRes.status, data }, "GHL API error");
-      res.status(ghlRes.status).json({ error: "GHL API error", details: data });
+    // Step 2: if GHL says duplicate, grab the existing contactId and PUT instead
+    if (!createRes.ok) {
+      const existingId = createData?.meta?.contactId;
+
+      if (existingId) {
+        req.log.info({ contactId: existingId }, "GHL: contact exists — updating");
+
+        const updateRes = await fetch(`${GHL_BASE}/contacts/${existingId}`, {
+          method: "PUT",
+          headers: ghlHeaders(apiKey),
+          body: JSON.stringify(updatePayload),
+        });
+
+        const updateData = await updateRes.json();
+
+        if (!updateRes.ok) {
+          req.log.warn({ status: updateRes.status, updateData }, "GHL update error");
+          res.status(updateRes.status).json({ error: "GHL update error", details: updateData });
+          return;
+        }
+
+        res.json({ ok: true, action: "updated", contactId: existingId, contact: updateData });
+        return;
+      }
+
+      // Some other error — pass it through
+      req.log.warn({ status: createRes.status, createData }, "GHL create error");
+      res.status(createRes.status).json({ error: "GHL API error", details: createData });
       return;
     }
 
-    res.json({ ok: true, contact: data });
+    // Step 3: fresh contact created successfully
+    req.log.info("GHL: new contact created");
+    res.json({ ok: true, action: "created", contact: createData });
   } catch (err) {
     req.log.error({ err }, "GHL proxy fetch failed");
     res.status(502).json({ error: "Failed to reach GHL API" });
