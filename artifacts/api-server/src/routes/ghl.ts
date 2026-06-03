@@ -14,6 +14,12 @@ router.post("/ghl/contact", async (req, res) => {
     return;
   }
 
+  // GHL requires customFields as an array: [{ key, field_value }]
+  // Our crm.ts sends it as a plain object for convenience — convert here.
+  const customFieldsArray = customFields && !Array.isArray(customFields)
+    ? Object.entries(customFields as Record<string, string>).map(([key, field_value]) => ({ key, field_value }))
+    : (customFields ?? []);
+
   try {
     const ghlRes = await fetch("https://services.leadconnectorhq.com/contacts/", {
       method: "POST",
@@ -28,8 +34,8 @@ router.post("/ghl/contact", async (req, res) => {
         lastName: lastName ?? "",
         email: email ?? "",
         phone: phone ?? "",
-        ...(tags ? { tags } : {}),
-        ...(customFields ? { customFields } : {}),
+        ...(tags?.length ? { tags } : {}),
+        ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
       }),
     });
 
