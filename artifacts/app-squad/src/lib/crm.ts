@@ -1,4 +1,37 @@
-// CRM integration stubs — replace console.log with GoHighLevel webhook calls when ready.
+// CRM integration — proxies through the API server to GoHighLevel V2.
+// The backend route is POST /api/ghl/contact.
+
+const GHL_PROXY = "/api/ghl/contact";
+
+async function upsertGHLContact(payload: {
+  firstName: string;
+  lastName?: string;
+  email: string;
+  phone: string;
+  tags?: string[];
+  customFields?: Record<string, string>;
+}) {
+  try {
+    const res = await fetch(GHL_PROXY, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.warn("[CRM] GHL error:", err);
+    }
+  } catch (e) {
+    console.warn("[CRM] Could not reach proxy:", e);
+  }
+}
+
+function splitName(full: string): { firstName: string; lastName: string } {
+  const parts = full.trim().split(/\s+/);
+  const firstName = parts[0] ?? full;
+  const lastName = parts.slice(1).join(" ");
+  return { firstName, lastName };
+}
 
 export function sendLeadToCRM(payload: {
   name: string;
@@ -6,16 +39,15 @@ export function sendLeadToCRM(payload: {
   phone: string;
   source: string;
 }) {
-  // TODO: Replace with GoHighLevel webhook endpoint
-  const data = {
-    source: payload.source,
-    stage: "lead_captured",
-    clientName: payload.name,
+  const { firstName, lastName } = splitName(payload.name);
+  upsertGHLContact({
+    firstName,
+    lastName,
     email: payload.email,
     phone: payload.phone,
-    timestamp: new Date().toISOString(),
-  };
-  console.log("[CRM] sendLeadToCRM:", JSON.stringify(data, null, 2));
+    tags: ["lead", payload.source],
+    customFields: { stage: "lead_captured", source: payload.source },
+  });
 }
 
 export function sendApplicationToCRM(payload: {
@@ -28,20 +60,22 @@ export function sendApplicationToCRM(payload: {
   timeline: string;
   source: string;
 }) {
-  // TODO: Replace with GoHighLevel webhook endpoint
-  const data = {
-    source: payload.source,
-    stage: "application_submitted",
-    clientName: payload.name,
+  const { firstName, lastName } = splitName(payload.name);
+  upsertGHLContact({
+    firstName,
+    lastName,
     email: payload.email,
     phone: payload.phone,
-    goal: payload.goal,
-    gameInterest: payload.game,
-    budgetRange: payload.budget,
-    launchTimeline: payload.timeline,
-    timestamp: new Date().toISOString(),
-  };
-  console.log("[CRM] sendApplicationToCRM:", JSON.stringify(data, null, 2));
+    tags: ["application", payload.source],
+    customFields: {
+      stage: "application_submitted",
+      source: payload.source,
+      goal: payload.goal,
+      game_interest: payload.game,
+      budget_range: payload.budget,
+      launch_timeline: payload.timeline,
+    },
+  });
 }
 
 export function sendGameSelectionToCRM(payload: {
@@ -53,19 +87,21 @@ export function sendGameSelectionToCRM(payload: {
   templateName: string;
   source: string;
 }) {
-  // TODO: Replace with GoHighLevel webhook endpoint
-  const data = {
-    source: "post_payment_onboarding",
-    stage: "game_selected",
-    clientName: payload.clientName,
+  const { firstName, lastName } = splitName(payload.clientName);
+  upsertGHLContact({
+    firstName,
+    lastName,
     email: payload.email,
     phone: payload.phone,
-    selectedGameType: payload.selectedGameType,
-    gameCategory: payload.gameCategory,
-    templateName: payload.templateName,
-    timestamp: new Date().toISOString(),
-  };
-  console.log("[CRM] sendGameSelectionToCRM:", JSON.stringify(data, null, 2));
+    tags: ["onboarding", "game-selected"],
+    customFields: {
+      stage: "game_selected",
+      source: "post_payment_onboarding",
+      selected_game_type: payload.selectedGameType,
+      game_category: payload.gameCategory,
+      template_name: payload.templateName,
+    },
+  });
 }
 
 export function sendCustomizationToCRM(payload: {
@@ -81,23 +117,25 @@ export function sendCustomizationToCRM(payload: {
   notesForDevelopmentTeam: string;
   source: string;
 }) {
-  // TODO: Replace with GoHighLevel webhook endpoint
-  const data = {
-    source: "post_payment_onboarding",
-    stage: "customization_submitted",
-    clientName: payload.clientName,
+  const { firstName, lastName } = splitName(payload.clientName);
+  upsertGHLContact({
+    firstName,
+    lastName,
     email: payload.email,
     phone: payload.phone,
-    appName: payload.appName,
-    brandName: payload.brandName,
-    preferredColors: payload.preferredColors,
-    targetAudience: payload.targetAudience,
-    appDescription: payload.appDescription,
-    monetizationPreference: payload.monetizationPreference,
-    notesForDevelopmentTeam: payload.notesForDevelopmentTeam,
-    timestamp: new Date().toISOString(),
-  };
-  console.log("[CRM] sendCustomizationToCRM:", JSON.stringify(data, null, 2));
+    tags: ["onboarding", "customization-submitted"],
+    customFields: {
+      stage: "customization_submitted",
+      source: "post_payment_onboarding",
+      app_name: payload.appName,
+      brand_name: payload.brandName,
+      preferred_colors: payload.preferredColors,
+      target_audience: payload.targetAudience,
+      app_description: payload.appDescription,
+      monetization_preference: payload.monetizationPreference,
+      notes_for_dev_team: payload.notesForDevelopmentTeam,
+    },
+  });
 }
 
 export function sendPartnerApplicationToCRM(payload: {
@@ -113,24 +151,26 @@ export function sendPartnerApplicationToCRM(payload: {
   bizOppExperience: string;
   reasonForPartnering: string;
 }) {
-  // TODO: Replace with GoHighLevel webhook endpoint
-  const data = {
-    source: "partner_program",
-    stage: "partner_application_submitted",
-    partnerName: payload.partnerName,
+  const { firstName, lastName } = splitName(payload.partnerName);
+  upsertGHLContact({
+    firstName,
+    lastName,
     email: payload.email,
     phone: payload.phone,
-    company: payload.company,
-    website: payload.website,
-    promotionMethod: payload.promotionMethod,
-    audienceType: payload.audienceType,
-    estimatedLeadVolume: payload.estimatedLeadVolume,
-    paidAdsExperience: payload.paidAdsExperience,
-    bizOppExperience: payload.bizOppExperience,
-    reasonForPartnering: payload.reasonForPartnering,
-    timestamp: new Date().toISOString(),
-  };
-  console.log("[CRM] sendPartnerApplicationToCRM:", JSON.stringify(data, null, 2));
+    tags: ["partner-application"],
+    customFields: {
+      stage: "partner_application_submitted",
+      source: "partner_program",
+      company: payload.company,
+      website: payload.website,
+      promotion_method: payload.promotionMethod,
+      audience_type: payload.audienceType,
+      estimated_lead_volume: payload.estimatedLeadVolume,
+      paid_ads_experience: payload.paidAdsExperience,
+      biz_opp_experience: payload.bizOppExperience,
+      reason_for_partnering: payload.reasonForPartnering,
+    },
+  });
 }
 
 export function updateProjectStatusInCRM(payload: {
@@ -140,14 +180,17 @@ export function updateProjectStatusInCRM(payload: {
   status: string;
   source: string;
 }) {
-  // TODO: Replace with GoHighLevel webhook endpoint
-  const data = {
-    source: "post_payment_onboarding",
-    stage: payload.stage,
-    status: payload.status,
-    clientName: payload.clientName,
+  const { firstName, lastName } = splitName(payload.clientName);
+  upsertGHLContact({
+    firstName,
+    lastName,
     email: payload.email,
-    timestamp: new Date().toISOString(),
-  };
-  console.log("[CRM] updateProjectStatusInCRM:", JSON.stringify(data, null, 2));
+    phone: "",
+    tags: ["project-update", payload.stage],
+    customFields: {
+      stage: payload.stage,
+      status: payload.status,
+      source: payload.source,
+    },
+  });
 }
