@@ -5,6 +5,7 @@ import {
   Apple, BarChart3, Layers, Rocket, Zap
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { sendLeadToCRM } from "@/lib/crm";
 
 const TRUST_POINTS = [
   "No coding experience needed",
@@ -37,8 +38,10 @@ export default function Start() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
+    const source = "Ads / Cold Traffic";
     localStorage.setItem("as_lead", JSON.stringify({ name, email, phone }));
-    localStorage.setItem("as_source", "Ads / Cold Traffic");
+    localStorage.setItem("as_source", source);
+    sendLeadToCRM({ name, email, phone, source });
     navigate("/presentation");
     window.scrollTo({ top: 0 });
   };
