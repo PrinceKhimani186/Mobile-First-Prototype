@@ -12,16 +12,30 @@ function ghlHeaders(apiKey: string) {
   };
 }
 
-// GHL requires customFields as an array: [{ key, field_value }]
-// crm.ts sends a plain object — convert here.
+// GHL requires customFields as an array: [{ key, field_value }] or [{ id, field_value }]
+// crm.ts may send a plain object — convert here; arrays are passed through unchanged.
 function toCustomFieldsArray(
   customFields: unknown,
-): { key: string; field_value: string }[] {
+): { key?: string; id?: string; field_value: string }[] {
   if (!customFields) return [];
   if (Array.isArray(customFields)) return customFields;
   return Object.entries(customFields as Record<string, string>).map(
     ([key, field_value]) => ({ key, field_value }),
   );
+}
+
+// Add tags without replacing existing ones using the dedicated GHL tags endpoint.
+async function addTagsToContact(
+  contactId: string,
+  tags: string[],
+  apiKey: string,
+): Promise<void> {
+  if (!tags?.length) return;
+  await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+    method: "POST",
+    headers: ghlHeaders(apiKey),
+    body: JSON.stringify({ tags }),
+  });
 }
 
 router.post("/ghl/contact", async (req, res) => {
@@ -38,7 +52,7 @@ router.post("/ghl/contact", async (req, res) => {
 
   const customFieldsArray = toCustomFieldsArray(customFields);
 
-  // POST (create) needs locationId; PUT (update) must NOT include it
+  // POST (create) includes locationId and tags in the body.
   const createPayload = {
     locationId,
     firstName: firstName ?? "",
@@ -49,12 +63,14 @@ router.post("/ghl/contact", async (req, res) => {
     ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
   };
 
+  // PUT (update) must NOT include locationId.
+  // Tags are intentionally excluded — we add them separately via the tags endpoint
+  // so existing tags are preserved (not replaced).
   const updatePayload = {
     firstName: firstName ?? "",
     lastName: lastName ?? "",
     email: email ?? "",
     phone: phone ?? "",
-    ...(tags?.length ? { tags } : {}),
     ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
   };
 
@@ -73,13 +89,14 @@ router.post("/ghl/contact", async (req, res) => {
       statusCode?: number;
     };
 
-    // Step 2: if GHL says duplicate, grab the existing contactId and PUT instead
+    // Step 2: if GHL says duplicate, grab the existing contactId and PUT + add tags
     if (!createRes.ok) {
       const existingId = createData?.meta?.contactId;
 
       if (existingId) {
         req.log.info({ contactId: existingId }, "GHL: contact exists — updating");
 
+        // Update fields (no tags in body — would replace existing ones)
         const updateRes = await fetch(`${GHL_BASE}/contacts/${existingId}`, {
           method: "PUT",
           headers: ghlHeaders(apiKey),
@@ -93,6 +110,9 @@ router.post("/ghl/contact", async (req, res) => {
           res.status(updateRes.status).json({ error: "GHL update error", details: updateData });
           return;
         }
+
+        // Append new tags without touching existing ones
+        await addTagsToContact(existingId, tags ?? [], apiKey);
 
         res.json({ ok: true, action: "updated", contactId: existingId, contact: updateData });
         return;
