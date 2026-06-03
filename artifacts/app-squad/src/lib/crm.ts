@@ -1,7 +1,20 @@
 // CRM integration — proxies through the API server to GoHighLevel V2.
 // The backend route is POST /api/ghl/contact.
+//
+// GHL custom field IDs (quiz answers):
+//   goal          → yNkDeB2x3gykjpzISYk9
+//   game_interest → XMINgcDYkyeA7WtinhbD
+//   budget_range  → 8zDiIiTk1TxHlNvZrOUU
+//   launch_timeline → 3KqLQ7tkgokS14sjF7X3
 
 const GHL_PROXY = "/api/ghl/contact";
+
+// Custom fields can be sent as:
+//   { key: "field_key", field_value: "..." }   — for key-based fields
+//   { id: "ghl_field_id", field_value: "..." } — for ID-based fields (quiz answers)
+type GHLField =
+  | { key: string; field_value: string }
+  | { id: string; field_value: string };
 
 async function upsertGHLContact(payload: {
   firstName: string;
@@ -9,7 +22,7 @@ async function upsertGHLContact(payload: {
   email: string;
   phone: string;
   tags?: string[];
-  customFields?: Record<string, string>;
+  customFields?: Record<string, string> | GHLField[];
 }) {
   try {
     const res = await fetch(GHL_PROXY, {
@@ -33,6 +46,8 @@ function splitName(full: string): { firstName: string; lastName: string } {
   return { firstName, lastName };
 }
 
+// ─── Lead capture (video presentation / start page) ─────────────────────────
+// Tag: "ads - form submitted"
 export function sendLeadToCRM(payload: {
   name: string;
   email: string;
@@ -45,11 +60,14 @@ export function sendLeadToCRM(payload: {
     lastName,
     email: payload.email,
     phone: payload.phone,
-    tags: ["lead", payload.source],
+    tags: ["lead", "ads - form submitted", payload.source],
     customFields: { stage: "lead_captured", source: payload.source },
   });
 }
 
+// ─── Quiz / application submission ──────────────────────────────────────────
+// Tag: "survey submitted"
+// Uses GHL field IDs for the four quiz answer fields.
 export function sendApplicationToCRM(payload: {
   name: string;
   email: string;
@@ -66,18 +84,41 @@ export function sendApplicationToCRM(payload: {
     lastName,
     email: payload.email,
     phone: payload.phone,
-    tags: ["application", payload.source],
+    tags: ["application", "survey submitted", payload.source],
+    customFields: [
+      { id: "yNkDeB2x3gykjpzISYk9", field_value: payload.goal },
+      { id: "XMINgcDYkyeA7WtinhbD", field_value: payload.game },
+      { id: "8zDiIiTk1TxHlNvZrOUU", field_value: payload.budget },
+      { id: "3KqLQ7tkgokS14sjF7X3", field_value: payload.timeline },
+    ],
+  });
+}
+
+// ─── Call booked (Calendly event_scheduled) ──────────────────────────────────
+// Called by book-call.tsx when Calendly fires the booking confirmation event.
+export function sendCallBookedToCRM(payload: {
+  name: string;
+  email: string;
+  phone: string;
+  source: string;
+  scheduledTime?: string;
+}) {
+  const { firstName, lastName } = splitName(payload.name);
+  upsertGHLContact({
+    firstName,
+    lastName,
+    email: payload.email,
+    phone: payload.phone,
+    tags: ["call-booked", payload.source],
     customFields: {
-      stage: "application_submitted",
+      stage: "call_booked",
       source: payload.source,
-      goal: payload.goal,
-      game_interest: payload.game,
-      budget_range: payload.budget,
-      launch_timeline: payload.timeline,
+      ...(payload.scheduledTime ? { call_scheduled_time: payload.scheduledTime } : {}),
     },
   });
 }
 
+// ─── Post-payment onboarding ─────────────────────────────────────────────────
 export function sendGameSelectionToCRM(payload: {
   clientName: string;
   email: string;
