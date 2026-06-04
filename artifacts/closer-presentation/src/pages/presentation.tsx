@@ -46,7 +46,7 @@ function VideoPlayer() {
         <div>
           <p className="font-display font-semibold mb-2" style={{ fontSize: 16 }}>Video Temporarily Unavailable</p>
           <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.65 }}>
-            Please contact App Squad support or continue your application below.
+            Please contact App Squad support or continue to the enrollment section below.
           </p>
         </div>
       </div>
@@ -137,7 +137,7 @@ const PACKAGES = [
       "App Store submission",
       "30-day post-launch support",
     ],
-    cta: "Learn More",
+    cta: "Choose Essentials",
     highlight: false,
   },
   {
@@ -154,7 +154,7 @@ const PACKAGES = [
       "Revenue optimization coaching",
       "Analytics dashboard access",
     ],
-    cta: "Apply Now",
+    cta: "Choose Accelerator",
     highlight: true,
   },
   {
@@ -171,7 +171,7 @@ const PACKAGES = [
       "Quarterly strategy sessions",
       "App portfolio growth roadmap",
     ],
-    cta: "Apply Now",
+    cta: "Choose Empire",
     highlight: false,
   },
 ];
@@ -705,7 +705,7 @@ export default function Presentation() {
 
           <FadeUp delay={0.3} className="text-center mt-8">
             <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "var(--text-dim)" }}>
-              Exact pricing is discussed on your strategy call. Investment levels are tailored to your specific goals and launch scope.
+              Investment levels are tailored to your specific goals and launch scope. Pricing is confirmed during enrollment.
             </p>
           </FadeUp>
         </div>
@@ -713,7 +713,7 @@ export default function Presentation() {
 
       <div className="divider" />
 
-      {/* ── 10. ENROLLMENT CTA ──────────────────────────────────── */}
+      {/* ── 10. ENROLLMENT ──────────────────────────────────────── */}
       <section id="enroll" className="section relative" style={{ paddingTop: 96, paddingBottom: 120 }}>
         <div className="glow-gold" style={{ width: 700, height: 400, top: "50%", left: "50%", transform: "translate(-50%,-50%)", background: "radial-gradient(ellipse, rgba(245,163,60,0.1) 0%, transparent 65%)" }} />
         <div className="grid-bg absolute inset-0 opacity-20" />
@@ -722,44 +722,111 @@ export default function Presentation() {
           <FadeUp>
             <div className="badge-gold mb-6" style={{ margin: "0 auto 24px" }}>
               <Star className="w-3.5 h-3.5" />
-              Limited Enrollment
+              Enrollment
             </div>
           </FadeUp>
 
           <FadeUp delay={0.07}>
             <h2 className="font-display" style={{ fontSize: "clamp(2rem, 5vw, 3.2rem)", fontWeight: 700, letterSpacing: "-0.035em", lineHeight: 1.08, marginBottom: 22 }}>
-              The Window to Join<br />
-              <span style={{ color: "var(--gold)" }}>App Squad Is Open Right Now</span>
+              Here's Exactly What Happens<br />
+              <span style={{ color: "var(--gold)" }}>When You Enroll Today</span>
             </h2>
           </FadeUp>
 
           <FadeUp delay={0.12}>
-            <p style={{ fontFamily: "'Inter'", fontSize: 16, lineHeight: 1.8, color: "var(--text-muted)", maxWidth: 600, margin: "0 auto 40px" }}>
-              Every day you wait is a day someone else becomes the owner of a digital asset that could have been yours. The app economy doesn't pause. The question is whether you're in it as a consumer or as an owner.
+            <p style={{ fontFamily: "'Inter'", fontSize: 16, lineHeight: 1.8, color: "var(--text-muted)", maxWidth: 580, margin: "0 auto 48px" }}>
+              Enrollment is a straightforward five-step process. Once you're in, your App Squad team takes over — you'll be in your owner's dashboard before the end of your first week.
             </p>
           </FadeUp>
 
-          <FadeUp delay={0.17}>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-10">
-              <a
-                href="https://appsquadinc.com/apply"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-gold"
-                style={{ padding: "20px 40px", fontSize: 17 }}>
-                Apply For A Strategy Call
-                <ArrowRight className="w-4 h-4" />
-              </a>
+          {/* 5-step enrollment process */}
+          <FadeUp delay={0.15} className="mb-12">
+            <div className="flex flex-col gap-4 text-left max-w-2xl mx-auto">
+              {[
+                {
+                  num: "01",
+                  title: "Agreement Completion",
+                  desc: "You review and sign the App Squad partnership agreement. All terms, deliverables, and timelines are clearly outlined — no fine print surprises.",
+                },
+                {
+                  num: "02",
+                  title: "Package Activation",
+                  desc: "Your selected package is activated and your dedicated launch coordinator is assigned. You'll receive a welcome email and onboarding instructions within 24 hours.",
+                },
+                {
+                  num: "03",
+                  title: "Template Selection",
+                  desc: "You browse App Squad's library of 50+ proven game templates and select the one that fits your brand vision. Your coordinator guides you through the decision.",
+                },
+                {
+                  num: "04",
+                  title: "Customization Form",
+                  desc: "You complete a detailed brand form covering your app name, color palette, characters, and identity preferences. This becomes the blueprint for your custom build.",
+                },
+                {
+                  num: "05",
+                  title: "Dashboard Access",
+                  desc: "Your owner's dashboard goes live. Track your app's build progress, review milestones, communicate with your team, and access your launch roadmap — all in one place.",
+                },
+              ].map((step, i) => (
+                <motion.div
+                  key={step.num}
+                  initial={{ opacity: 0, x: -16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.55, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                  style={{
+                    background: "var(--bg-card)",
+                    border: "1px solid rgba(245,163,60,0.18)",
+                    borderRadius: 14,
+                    padding: "22px 24px",
+                    display: "flex",
+                    gap: 20,
+                    alignItems: "flex-start",
+                  }}>
+                  <div style={{
+                    fontFamily: "'Space Grotesk'",
+                    fontWeight: 700,
+                    fontSize: 28,
+                    color: "rgba(245,163,60,0.3)",
+                    lineHeight: 1,
+                    minWidth: 40,
+                    letterSpacing: "-0.03em",
+                    flexShrink: 0,
+                    paddingTop: 2,
+                  }}>
+                    {step.num}
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "'Space Grotesk'", fontWeight: 600, fontSize: 16, marginBottom: 6, color: "rgba(255,255,255,0.92)" }}>
+                      {step.title}
+                    </div>
+                    <p style={{ fontFamily: "'Inter'", fontSize: 13.5, lineHeight: 1.72, color: "var(--text-muted)" }}>
+                      {step.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </FadeUp>
 
+          {/* Final CTA */}
           <FadeUp delay={0.22}>
-            <div className="flex flex-wrap justify-center gap-6 mb-14">
+            <button
+              className="btn-gold"
+              style={{ padding: "20px 48px", fontSize: 17 }}
+              onClick={() => window.open("https://appsquadinc.com/enroll", "_blank")}>
+              Continue To Enrollment
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </FadeUp>
+
+          <FadeUp delay={0.26}>
+            <div className="flex flex-wrap justify-center gap-6 mt-8 mb-14">
               {[
-                "No coding required",
-                "Done-for-you launch process",
-                "App Store & Google Play",
-                "Real support team",
+                "Agreement sent immediately",
+                "Coordinator assigned in 24 hrs",
+                "Dashboard live within the week",
               ].map(item => (
                 <div key={item} className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5" style={{ color: "var(--gold)" }} />
@@ -769,32 +836,8 @@ export default function Presentation() {
             </div>
           </FadeUp>
 
-          {/* Social proof */}
-          <FadeUp delay={0.27} className="mb-14">
-            <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-              {[
-                { quote: "The whole process was handled. I just approved decisions along the way — my app was live in weeks.", author: "Michael T.", role: "App Owner" },
-                { quote: "I had zero tech background. App Squad took everything off my plate and delivered a real product.", author: "Serena K.", role: "Digital Asset Owner" },
-                { quote: "Having a live app in both stores with monetization running is something I never thought I could do alone.", author: "James R.", role: "App Portfolio Owner" },
-              ].map(t => (
-                <div key={t.author} className="card p-6 text-left">
-                  <div className="flex gap-1 mb-3">
-                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3" style={{ fill: "var(--gold)", color: "var(--gold)" }} />)}
-                  </div>
-                  <p style={{ fontFamily: "'Inter'", fontSize: 13, lineHeight: 1.72, color: "rgba(255,255,255,0.65)", marginBottom: 14, fontStyle: "italic" }}>
-                    "{t.quote}"
-                  </p>
-                  <div>
-                    <div style={{ fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 600 }}>{t.author}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-dim)" }}>{t.role}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </FadeUp>
-
           {/* Disclaimer */}
-          <FadeUp delay={0.32}>
+          <FadeUp delay={0.30}>
             <div style={{ background: "rgba(17,22,32,0.8)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "20px 24px", maxWidth: 640, margin: "0 auto" }} className="flex gap-3 text-left">
               <Shield className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "var(--text-dim)" }} />
               <p style={{ fontFamily: "'Inter'", fontSize: 11, lineHeight: 1.75, color: "var(--text-dim)", fontWeight: 300 }}>
