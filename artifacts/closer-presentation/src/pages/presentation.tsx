@@ -174,6 +174,8 @@ const TEMPLATES = [
 const PACKAGES = [
   {
     name: "App Launch\nEssentials",
+    packageHeadline: "ENTER THE APP ECONOMY",
+    packageDesc: "Perfect for first-time app owners who want to launch their first digital asset.",
     tag: "Starter",
     tagColor: CYAN,
     isAccelerator: false,
@@ -185,10 +187,12 @@ const PACKAGES = [
       "App Store submission",
       "30-day post-launch support",
     ],
-    cta: "Choose Essentials",
+    cta: "Start Essentials Enrollment",
   },
   {
     name: "App Ownership\nAccelerator",
+    packageHeadline: "BUILD A STRONGER APP BRAND",
+    packageDesc: "For entrepreneurs who want a more complete launch experience.",
     tag: "Most Popular",
     tagColor: GOLD,
     isAccelerator: true,
@@ -202,10 +206,12 @@ const PACKAGES = [
       "Revenue optimization coaching",
       "Analytics dashboard access",
     ],
-    cta: "Choose Accelerator",
+    cta: "Start Accelerator Enrollment",
   },
   {
     name: "Digital Asset\nEmpire",
+    packageHeadline: "THE COMPLETE APP OWNERSHIP EXPERIENCE",
+    packageDesc: "For serious buyers who want the strongest implementation package available.",
     tag: "Premium",
     tagColor: "#A78BFA",
     isAccelerator: false,
@@ -219,7 +225,7 @@ const PACKAGES = [
       "Quarterly strategy sessions",
       "App portfolio growth roadmap",
     ],
-    cta: "Choose Empire",
+    cta: "Start Empire Enrollment",
   },
 ];
 
@@ -292,24 +298,13 @@ export default function Presentation() {
           </FadeUp>
 
           <FadeUp delay={0.15}>
-            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: bodySize, lineHeight: 1.85, color: "rgba(255,255,255,0.42)", fontWeight: 300, maxWidth: 680, margin: "0 auto 64px" }}>
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: bodySize, lineHeight: 1.85, color: "rgba(255,255,255,0.42)", fontWeight: 300, maxWidth: 680, margin: "0 auto" }}>
               The mobile app economy is one of the largest digital ecosystems in the world.
               Millions participate every day. Very few ever build an asset inside it.
             </p>
           </FadeUp>
 
-          <FadeUp delay={0.22}>
-            <button
-              onClick={() => scrollTo("consumer-owner")}
-              style={goldBtn}
-              onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}>
-              Show me the proof
-              <ChevronDown style={{ width: 20, height: 20 }} />
-            </button>
-          </FadeUp>
-
-          <FadeUp delay={0.3}>
+          <FadeUp delay={0.3} style={{ marginTop: 80 }}>
             <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 64, marginTop: 100 }}>
               {[
                 { val: "$1.1T", label: "Global App Economy 2025" },
@@ -352,12 +347,13 @@ export default function Presentation() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1px 1fr", minHeight: 700 }}>
           {/* Consumer */}
           <SlideIn dir="left" delay={0.08} style={{ padding: "80px 72px 80px 80px" }}>
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(13px, 1.1vw, 16px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(239,68,68,0.45)", marginBottom: 28 }}>Most People Stay</div>
             <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 64 }}>
               <div style={{ width: 80, height: 80, borderRadius: 22, background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Download style={{ width: 36, height: 36, color: "rgba(239,68,68,0.6)" }} />
               </div>
               <div>
-                <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(32px, 3.5vw, 52px)", fontWeight: 700, letterSpacing: "-0.04em", textTransform: "uppercase", color: "rgba(239,68,68,0.5)", lineHeight: 1 }}>Consumer</div>
+                <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(32px, 3.5vw, 52px)", fontWeight: 700, letterSpacing: "-0.04em", textTransform: "uppercase", color: "rgba(239,68,68,0.5)", lineHeight: 1 }}>Consumers</div>
                 <div style={{ fontFamily: "'Inter'", fontSize: 17, color: "rgba(255,255,255,0.18)", marginTop: 6 }}>Participates in the ecosystem</div>
               </div>
             </div>
@@ -388,12 +384,13 @@ export default function Presentation() {
           {/* Owner */}
           <SlideIn dir="right" delay={0.12} style={{ padding: "80px 80px 80px 72px", background: "linear-gradient(135deg, rgba(201,168,108,0.03) 0%, transparent 60%)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -60, right: -60, width: 360, height: 360, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(201,168,108,0.07) 0%, transparent 70%)`, filter: "blur(60px)", pointerEvents: "none" }} />
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(13px, 1.1vw, 16px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: `rgba(201,168,108,0.55)`, marginBottom: 28, position: "relative", zIndex: 1 }}>A Small Group Choose</div>
             <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 64, position: "relative", zIndex: 1 }}>
               <div style={{ width: 80, height: 80, borderRadius: 22, background: "rgba(201,168,108,0.08)", border: `1px solid rgba(201,168,108,0.22)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Award style={{ width: 36, height: 36, color: GOLD }} />
               </div>
               <div>
-                <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(32px, 3.5vw, 52px)", fontWeight: 700, letterSpacing: "-0.04em", textTransform: "uppercase", color: GOLD, lineHeight: 1 }}>Owner</div>
+                <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(32px, 3.5vw, 52px)", fontWeight: 700, letterSpacing: "-0.04em", textTransform: "uppercase", color: GOLD, lineHeight: 1 }}>Ownership</div>
                 <div style={{ fontFamily: "'Inter'", fontSize: 17, color: `rgba(201,168,108,0.4)`, marginTop: 6 }}>Builds inside the ecosystem</div>
               </div>
             </div>
@@ -865,8 +862,10 @@ export default function Presentation() {
                   </div>
 
                   {/* Name */}
-                  <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: pkg.isAccelerator ? "clamp(28px, 2.6vw, 42px)" : "clamp(24px, 2.2vw, 36px)", fontWeight: 700, letterSpacing: "-0.035em", lineHeight: 1.1, whiteSpace: "pre-line", marginBottom: 10, position: "relative", zIndex: 1 }}>{pkg.name}</h3>
-                  <div style={{ fontFamily: "'Inter'", fontSize: 15, color: "rgba(255,255,255,0.25)", marginBottom: 40, fontStyle: "italic", position: "relative", zIndex: 1 }}>Investment confirmed during enrollment</div>
+                  <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: pkg.isAccelerator ? "clamp(28px, 2.6vw, 42px)" : "clamp(24px, 2.2vw, 36px)", fontWeight: 700, letterSpacing: "-0.035em", lineHeight: 1.1, whiteSpace: "pre-line", marginBottom: 16, position: "relative", zIndex: 1 }}>{pkg.name}</h3>
+                  {/* Identity headline */}
+                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: pkg.isAccelerator ? "clamp(13px, 1.1vw, 16px)" : "clamp(12px, 1vw, 14px)", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: pkg.isAccelerator ? GOLD : pkg.isEmpire ? "#A78BFA" : CYAN, marginBottom: 12, position: "relative", zIndex: 1 }}>{pkg.packageHeadline}</div>
+                  <div style={{ fontFamily: "'Inter'", fontSize: 16, color: "rgba(255,255,255,0.38)", marginBottom: 36, lineHeight: 1.65, position: "relative", zIndex: 1 }}>{pkg.packageDesc}</div>
                   <div style={{ height: 1, background: pkg.isAccelerator ? `rgba(201,168,108,0.14)` : "rgba(255,255,255,0.06)", marginBottom: 36, position: "relative", zIndex: 1 }} />
 
                   {/* Features */}
@@ -922,23 +921,37 @@ export default function Presentation() {
             </p>
           </FadeUp>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(310px, 1fr))", gap: 22 }}>
+          {/* Visual arrow flow — two column layout */}
+          <div style={{ maxWidth: 1000, margin: "0 auto" }}>
             {ENROLLMENT_STEPS.map((step, i) => (
               <FadeUp key={step.title} delay={i * 0.07}>
-                <div
-                  style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(34,211,238,0.09)`, borderRadius: 20, padding: "44px 36px", display: "flex", flexDirection: "column", gap: 22, transition: "border-color 0.25s" }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = `rgba(34,211,238,0.25)`)}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = `rgba(34,211,238,0.09)`)}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                    <div style={{ width: 62, height: 62, borderRadius: 18, background: "rgba(34,211,238,0.06)", border: `1px solid rgba(34,211,238,0.14)`, display: "flex", alignItems: "center", justifyContent: "center", color: CYAN, flexShrink: 0 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  {/* Step row */}
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 28, width: "100%", background: "rgba(255,255,255,0.02)", border: `1px solid rgba(34,211,238,${0.12 - i * 0.01})`, borderRadius: 18, padding: "32px 40px", transition: "border-color 0.25s, background 0.25s" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = `rgba(34,211,238,0.3)`; (e.currentTarget as HTMLDivElement).style.background = "rgba(34,211,238,0.025)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = `rgba(34,211,238,${0.12 - i * 0.01})`; (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.02)"; }}>
+                    {/* Step number */}
+                    <div style={{ fontFamily: "'Space Grotesk'", fontSize: 42, fontWeight: 700, letterSpacing: "-0.04em", color: `rgba(34,211,238,${0.15 + (6 - i) * 0.04})`, lineHeight: 1, minWidth: 52, flexShrink: 0 }}>
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    {/* Icon */}
+                    <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(34,211,238,0.06)", border: `1px solid rgba(34,211,238,0.14)`, display: "flex", alignItems: "center", justifyContent: "center", color: CYAN, flexShrink: 0 }}>
                       {step.icon}
                     </div>
-                    <div style={{ fontFamily: "'Inter'", fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: `rgba(34,211,238,0.6)` }}>Step {i + 1}</div>
+                    {/* Content */}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(22px, 2vw, 30px)", fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 6 }}>{step.title}</div>
+                      <p style={{ fontFamily: "'Inter'", fontSize: 18, lineHeight: 1.7, color: "rgba(255,255,255,0.4)", margin: 0 }}>{step.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontFamily: "'Space Grotesk'", fontSize: cardTitleSize, fontWeight: 700, letterSpacing: "-0.03em", marginBottom: 14 }}>{step.title}</div>
-                    <p style={{ fontFamily: "'Inter'", fontSize: bodySize, lineHeight: 1.75, color: "rgba(255,255,255,0.42)" }}>{step.desc}</p>
-                  </div>
+                  {/* Arrow connector — not after last item */}
+                  {i < ENROLLMENT_STEPS.length - 1 && (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 0", gap: 3 }}>
+                      <div style={{ width: 1, height: 16, background: `rgba(34,211,238,0.2)` }} />
+                      <div style={{ width: 0, height: 0, borderLeft: "6px solid transparent", borderRight: "6px solid transparent", borderTop: `8px solid rgba(34,211,238,0.3)` }} />
+                    </div>
+                  )}
                 </div>
               </FadeUp>
             ))}
