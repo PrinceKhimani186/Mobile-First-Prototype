@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/closer-presentation/"
+title = "App Squad Closer Presentation"
+version = "1.0.0"
+id = "artifacts/closer-presentation"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/closer-presentation/" ]
+localPort = 25380
+
+[services.development]
+run = "pnpm --filter @workspace/closer-presentation run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/closer-presentation", "run", "build" ]
+publicDir = "artifacts/closer-presentation/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25380"
+BASE_PATH = "/closer-presentation/"

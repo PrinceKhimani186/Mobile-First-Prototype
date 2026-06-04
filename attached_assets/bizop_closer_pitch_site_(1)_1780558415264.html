@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mobile Game App Business | Digital Asset Opportunity</title>
+  <style>
+    :root {
+      --bg: #080b12;
+      --line: rgba(255,255,255,.14);
+      --text: #f7fbff;
+      --muted: #aeb9c8;
+      --cyan: #3df2d1;
+      --violet: #8067ff;
+      --gold: #ffd166;
+      --orange: #ff8c42;
+      --amber: #ffb347;
+      --green: #8dffb1;
+      --shadow: 0 30px 90px rgba(0,0,0,.45);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(255, 179, 71, .16), transparent 34%),
+        radial-gradient(circle at 82% 10%, rgba(128,103,255,.22), transparent 32%),
+        radial-gradient(circle at 50% 45%, rgba(61,242,209,.08), transparent 34%),
+        linear-gradient(180deg, #080b12 0%, #0b1321 52%, #05070d 100%);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    .container { width: min(1180px, calc(100% - 36px)); margin: 0 auto; }
+    .topbar { position: sticky; top: 0; z-index: 50; background: rgba(8,11,18,.76); backdrop-filter: blur(18px); border-bottom: 1px solid var(--line); }
+    .nav { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight: 950; letter-spacing: -.045em; }
+    .mark { width: 38px; height: 38px; border-radius: 14px; background: linear-gradient(135deg, var(--gold), var(--orange)); box-shadow: 0 0 35px rgba(255, 179, 71, .32); }
+    .links { display: flex; gap: 22px; color: var(--muted); font-size: 14px; }
+    .nav-cta { padding: 12px 18px; border-radius: 999px; background: linear-gradient(135deg, var(--gold), var(--orange)); color: #180b02; font-weight: 950; box-shadow: 0 14px 44px rgba(255, 140, 66, .22); }
+    section { padding: 88px 0; }
+    .hero { padding: 88px 0 62px; }
+    .hero-grid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 52px; align-items: center; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 10px; color: var(--gold); border: 1px solid rgba(255, 209, 102, .24); background: rgba(255,209,102,.07); border-radius: 999px; padding: 9px 14px; font-size: 13px; font-weight: 950; margin-bottom: 20px; text-transform: uppercase; letter-spacing: .04em; }
+    h1 { margin: 0; font-size: clamp(48px, 7vw, 92px); line-height: .9; letter-spacing: -.085em; font-weight: 1000; }
+    h2 { margin: 0; font-size: clamp(36px, 4.8vw, 68px); line-height: .94; letter-spacing: -.075em; font-weight: 1000; }
+    .lead { margin: 24px 0 0; max-width: 720px; color: var(--muted); font-size: 20px; line-height: 1.65; }
+    .gradient { background: linear-gradient(135deg, #fff, var(--gold), var(--orange)); -webkit-background-clip: text; color: transparent; }
+    .cta-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 34px; }
+    .btn { min-height: 56px; display: inline-flex; align-items: center; justify-content: center; padding: 0 25px; border-radius: 16px; border: 1px solid var(--line); font-weight: 1000; transition: .2s ease; cursor: pointer; letter-spacing: -.025em; }
+    .btn:hover { transform: translateY(-2px) scale(1.01); }
+    .primary { background: linear-gradient(135deg, var(--gold), var(--orange)); color: #180b02; box-shadow: 0 20px 70px rgba(255,140,66,.28); }
+    .secondary { background: rgba(255,255,255,.07); color: #fff; }
+    .stage { position: relative; min-height: 600px; display: grid; place-items: center; }
+    .glow { position: absolute; width: 450px; height: 450px; border-radius: 999px; background: radial-gradient(circle, rgba(255,179,71,.22), rgba(128,103,255,.15), transparent 70%); filter: blur(10px); }
+    .phone { position: relative; width: 286px; height: 570px; border-radius: 46px; background: linear-gradient(145deg, #172033, #02050a); border: 1px solid rgba(255,255,255,.18); padding: 14px; box-shadow: var(--shadow); transform: rotate(3deg); overflow: hidden; }
+    .screen { height: 100%; border-radius: 34px; background: linear-gradient(180deg, #0e1626, #060a12); overflow: hidden; position: relative; }
+    .game-hero { height: 41%; padding: 20px; display: flex; flex-direction: column; justify-content: flex-end; background: radial-gradient(circle at 30% 25%, rgba(255,207,112,.65), transparent 21%), radial-gradient(circle at 72% 30%, rgba(61,242,209,.42), transparent 24%), radial-gradient(circle at 48% 75%, rgba(128,103,255,.55), transparent 28%), linear-gradient(135deg, #152a4c, #2a1452); }
+    .game-hero h3 { margin: 0; font-size: 30px; line-height: 1; letter-spacing: -.06em; }
+    .game-hero span { color: rgba(255,255,255,.72); margin-top: 8px; font-size: 13px; }
+    .mini-card { margin: 14px; padding: 16px; border-radius: 22px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); }
+    .mini-row { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+    .bar { height: 9px; background: rgba(255,255,255,.11); border-radius: 999px; overflow: hidden; margin: 9px 0; }
+    .bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--gold), var(--orange)); }
+    .float { position: absolute; border: 1px solid var(--line); background: rgba(255,255,255,.08); backdrop-filter: blur(16px); padding: 15px 17px; border-radius: 18px; color: var(--muted); font-size: 13px; box-shadow: 0 20px 70px rgba(0,0,0,.26); animation: bob 6s ease-in-out infinite; }
+    .float strong { display:block; color:#fff; font-size:18px; margin-bottom: 3px; }
+    .f1 { top: 75px; left: 12px; }
+    .f2 { right: -12px; top: 225px; animation-delay: -2s; }
+    .f3 { bottom: 95px; left: 24px; animation-delay: -4s; }
+    @keyframes bob { 0%,100%{ transform:translateY(0);} 50%{transform:translateY(-14px);} }
+    .section-head { max-width: 890px; margin: 0 auto 44px; text-align: center; }
+    .section-head p { margin: 18px 0 0; color: var(--muted); line-height: 1.7; font-size: 18px; }
+    .split { display: grid; grid-template-columns: .95fr 1.05fr; gap: 38px; align-items: center; }
+    .video-box { aspect-ratio: 16/9; border-radius: 34px; border: 1px solid var(--line); background: linear-gradient(135deg, rgba(255,179,71,.17), rgba(128,103,255,.15)), linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.035)); display: grid; place-items: center; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+    .video-box:before { content: "Video Presentation Placeholder"; position: absolute; top: 18px; left: 20px; color: var(--muted); font-size: 13px; font-weight: 800; }
+    .play { width: 90px; height:90px; border-radius:50%; display:grid; place-items:center; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25); font-size:34px; box-shadow:0 0 55px rgba(255,179,71,.24); }
+    .cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+    .card { padding: 26px; border-radius: 28px; border: 1px solid var(--line); background: rgba(255,255,255,.07); box-shadow: 0 22px 70px rgba(0,0,0,.2); }
+    .card .num { width: 46px; height: 46px; border-radius: 16px; display:grid; place-items:center; background:linear-gradient(135deg, rgba(255,209,102,.24), rgba(255,140,66,.2)); border:1px solid var(--line); color:var(--gold); font-weight:950; }
+    .card h3 { font-size: 22px; letter-spacing: -.04em; margin: 16px 0 8px; }
+    .card p { color: var(--muted); line-height: 1.65; margin:0; }
+    .market-grid { display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
+    .market-card, .chart-box { padding: 28px; border-radius: 30px; background: linear-gradient(180deg, rgba(255,255,255,.095), rgba(255,255,255,.045)); border: 1px solid var(--line); }
+    .market-card h3, .chart-box h3 { margin: 0 0 12px; font-size: 28px; letter-spacing: -.05em; }
+    .market-card p, .chart-box p { color: var(--muted); line-height: 1.7; }
+    .proof-stat { display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-top:18px; }
+    .stat { padding: 18px; border-radius: 20px; background: rgba(0,0,0,.22); border: 1px solid var(--line); }
+    .stat strong { display:block; font-size: 30px; letter-spacing: -.05em; color: #fff; }
+    .stat span { color: var(--muted); font-size: 13px; }
+    .chart-row { display:grid; grid-template-columns: 170px 1fr 80px; gap:12px; align-items:center; margin: 14px 0; color: var(--muted); font-size:14px; }
+    .chart-bar { height:14px; border-radius:999px; background: rgba(255,255,255,.1); overflow:hidden; }
+    .chart-bar span { height:100%; display:block; border-radius:inherit; background:linear-gradient(90deg,var(--gold),var(--orange),var(--violet)); }
+    .app-stat-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
+    .app-stat-card { border-radius: 26px; border: 1px solid var(--line); background: rgba(255,255,255,.07); padding: 18px; min-height: 188px; position: relative; overflow: hidden; }
+    .app-stat-card:before { content:""; position:absolute; inset:auto -30px -45px auto; width:120px; height:120px; border-radius:50%; background: radial-gradient(circle, rgba(255,179,71,.20), transparent 65%); }
+    .app-icon { width: 58px; height: 58px; border-radius: 18px; display:grid; place-items:center; color:#fff; font-weight:1000; margin-bottom: 14px; font-size: 22px; box-shadow: 0 14px 34px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.18); }
+    .icon-candy { background: radial-gradient(circle at 30% 25%, #fff 0 9%, transparent 10%), radial-gradient(circle at 70% 30%, #ff5b8a 0 13%, transparent 14%), linear-gradient(135deg,#ffcf70,#ff4d7d,#7c5cff); }
+    .icon-mono { background: linear-gradient(135deg,#e21d2f,#111827); }
+    .icon-roblox { background: linear-gradient(135deg,#23272f,#5f6b7a); }
+    .icon-coin { background: radial-gradient(circle at 38% 35%, #ffd166 0 18%, transparent 19%), linear-gradient(135deg,#7c2d12,#ff8c42); }
+    .icon-subway { background: linear-gradient(135deg,#22c55e,#facc15,#ef4444); }
+    .icon-clash { background: linear-gradient(135deg,#2563eb,#7c3aed,#f59e0b); }
+    .icon-royal { background: radial-gradient(circle at 50% 20%, #fde68a 0 12%, transparent 13%), linear-gradient(135deg,#2563eb,#7c3aed); }
+    .icon-word { background: linear-gradient(135deg,#0f766e,#14b8a6); }
+    .icon-pubg { background: linear-gradient(135deg,#f59e0b,#111827); }
+    .icon-last { background: linear-gradient(135deg,#dc2626,#111827,#334155); }
+    .icon-garden { background: linear-gradient(135deg,#16a34a,#84cc16,#f59e0b); }
+    .icon-pokemon { background: linear-gradient(135deg,#facc15,#2563eb); }
+    .app-stat-card h3 { margin:0 0 8px; letter-spacing:-.04em; font-size:19px; }
+    .app-stat-card p { color:var(--muted); margin:0 0 14px; font-size:13px; line-height:1.45; }
+    .app-numbers { display:flex; gap:8px; flex-wrap:wrap; }
+    .pill { padding:7px 9px; border-radius:999px; background:rgba(255,209,102,.11); color:#ffe3a3; border:1px solid rgba(255,209,102,.18); font-size:12px; font-weight:900; }
+    .template-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:16px; }
+    .template { border-radius: 27px; overflow:hidden; border:1px solid var(--line); background:rgba(255,255,255,.065); transition:.22s ease; }
+    .template:hover { transform: translateY(-5px); border-color: rgba(255,179,71,.5); }
+    .art { height:190px; position:relative; overflow:hidden; background: radial-gradient(circle at 25% 30%, rgba(255,207,112,.58), transparent 20%), radial-gradient(circle at 70% 24%, rgba(61,242,209,.38), transparent 22%), radial-gradient(circle at 55% 72%, rgba(128,103,255,.55), transparent 28%), linear-gradient(135deg,#13233b,#281449); }
+    .art:before { content:""; position:absolute; inset:0; background:linear-gradient(to top, rgba(0,0,0,.48), transparent 45%); }
+    .art-label { position:absolute; left:18px; bottom:18px; z-index:2; }
+    .art-label strong { display:block; font-size:26px; letter-spacing:-.05em; }
+    .art-label span { color:rgba(255,255,255,.72); font-size:13px; }
+    .art-icons { position:absolute; top:16px; right:16px; display:flex; gap:8px; z-index:2; }
+    .mini-icon { width:34px; height:34px; border-radius:12px; display:grid; place-items:center; font-size:16px; font-weight:900; border:1px solid rgba(255,255,255,.18); backdrop-filter:blur(8px); box-shadow:0 8px 24px rgba(0,0,0,.22); }
+    .slot-bg { background: radial-gradient(circle at 30% 25%, rgba(255,215,0,.52), transparent 20%), radial-gradient(circle at 75% 22%, rgba(255,59,92,.45), transparent 24%), linear-gradient(135deg,#3b0a45,#0f172a); }
+    .puzzle-bg { background: radial-gradient(circle at 35% 28%, rgba(255,207,112,.55), transparent 22%), radial-gradient(circle at 72% 25%, rgba(61,242,209,.42), transparent 22%), linear-gradient(135deg,#1e3a8a,#4c1d95); }
+    .word-bg { background: radial-gradient(circle at 50% 18%, rgba(255,255,255,.18), transparent 16%), linear-gradient(135deg,#0f766e,#0f172a); }
+    .arcade-bg { background: radial-gradient(circle at 25% 22%, rgba(255,0,98,.35), transparent 20%), radial-gradient(circle at 78% 30%, rgba(0,255,247,.35), transparent 22%), linear-gradient(135deg,#111827,#4c1d95); }
+    .trivia-bg { background: radial-gradient(circle at 50% 18%, rgba(255,207,112,.32), transparent 16%), linear-gradient(135deg,#7c2d12,#111827); }
+    .kids-bg { background: radial-gradient(circle at 25% 20%, rgba(255,255,255,.22), transparent 18%), linear-gradient(135deg,#2563eb,#16a34a,#f59e0b); }
+    .racing-bg { background: radial-gradient(circle at 75% 18%, rgba(255,255,255,.18), transparent 16%), linear-gradient(135deg,#111827,#dc2626); }
+    .adventure-bg { background: radial-gradient(circle at 50% 20%, rgba(255,207,112,.28), transparent 16%), linear-gradient(135deg,#14532d,#1e293b,#4c1d95); }
+    .template-body { padding:18px; }
+    .template h3 { margin:0 0 8px; font-size:18px; letter-spacing:-.035em; }
+    .template p { color:var(--muted); margin:0 0 14px; line-height:1.5; font-size:14px; }
+    .tag { display:inline-flex; color:#ffe3a3; background:rgba(255,209,102,.12); padding:7px 10px; border-radius:999px; font-size:12px; font-weight:900; }
+    .dream-box { border-radius:34px; padding:36px; background: radial-gradient(circle at top left, rgba(255,179,71,.16), transparent 30%), rgba(255,255,255,.07); border:1px solid var(--line); box-shadow:var(--shadow); }
+    .dream-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:18px; margin-top:28px; }
+    .dream-mini { padding:22px; border-radius:24px; background:rgba(0,0,0,.22); border:1px solid var(--line); }
+    .dream-mini strong { display:block; font-size:22px; letter-spacing:-.04em; margin-bottom:8px; }
+    .dream-mini span { color:var(--muted); line-height:1.55; }
+    .close-panel { padding: 36px; border-radius: 34px; background: radial-gradient(circle at top left, rgba(255,179,71,.18), transparent 30%), radial-gradient(circle at bottom right, rgba(128,103,255,.16), transparent 34%), rgba(255,255,255,.08); border: 1px solid var(--line); box-shadow: var(--shadow); text-align: center; }
+    .disclaimer { border-radius: 26px; padding: 24px; background: rgba(255,207,112,.08); border:1px solid rgba(255,207,112,.22); color:#f6ddb4; line-height:1.7; font-size:14px; }
+    footer { padding: 44px 0; border-top:1px solid var(--line); color:var(--muted); font-size:14px; }
+    @media (max-width: 960px) { .hero-grid, .split, .market-grid { grid-template-columns: 1fr; } .cards, .dream-grid { grid-template-columns: 1fr; } .template-grid, .app-stat-grid { grid-template-columns: repeat(2,1fr); } .links { display:none; } .stage { min-height: 520px; } }
+    @media (max-width: 560px) { section { padding: 68px 0; } .hero { padding-top: 58px; } h1 { font-size: 45px; } .lead { font-size: 17px; } .btn { width: 100%; } .phone { width: 244px; height: 500px; } .float { display:none; } .template-grid, .proof-stat, .app-stat-grid { grid-template-columns: 1fr; } .chart-row { grid-template-columns: 1fr; gap: 7px; } }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="container nav">
+      <a class="brand" href="#top"><span class="mark"></span> Mobile App Opportunity</a>
+      <div class="links">
+        <a href="#market">Market</a>
+        <a href="#proof">Top Apps</a>
+        <a href="#stats">Game Stats</a>
+        <a href="#templates">Templates</a>
+        <a href="#enroll">Enroll</a>
+      </div>
+      <a class="nav-cta" href="#enroll">Get Started</a>
+    </div>
+  </div>
+
+  <main id="top">
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <div class="eyebrow">Digital Asset Opportunity</div>
+          <h1>Most People <span class="gradient">Play Apps.</span><br>Very Few Own One.</h1>
+          <p class="lead">Explore the mobile app economy, discover popular game categories, and learn how branded mobile game apps can be customized, monetized, and launched through a guided onboarding experience.</p>
+          <div class="cta-row">
+            <a href="#vsl" class="btn primary">Watch Presentation</a>
+            <a href="#templates" class="btn secondary">View Game Templates</a>
+          </div>
+        </div>
+        <div class="stage">
+          <div class="glow"></div>
+          <div class="float f1"><strong>In-App Ads</strong>Ad network monetization model</div>
+          <div class="float f2"><strong>In-App Purchases</strong>Upgrades, coins, features</div>
+          <div class="float f3"><strong>App Stores</strong>Google Play + Apple App Store</div>
+          <div class="phone">
+            <div class="screen">
+              <div class="game-hero"><h3>Game Empire</h3><span>Custom branded app preview</span></div>
+              <div class="mini-card">
+                <div class="mini-row"><span>Template Selected</span><strong>Puzzle</strong></div><div class="bar"><span style="width:82%"></span></div>
+                <div class="mini-row"><span>Branding</span><strong>Ready</strong></div><div class="bar"><span style="width:68%"></span></div>
+                <div class="mini-row"><span>Monetization Prep</span><strong>Optional</strong></div><div class="bar"><span style="width:54%"></span></div>
+              </div>
+              <div class="mini-card">
+                <div class="mini-row"><span>Ad Placements</span><strong>Supported</strong></div>
+                <div class="mini-row"><span>IAP Structure</span><strong>Available</strong></div>
+                <div class="mini-row"><span>Publishing Help</span><strong>Included</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="vsl">
+      <div class="container split">
+        <div class="video-box"><div class="play">▶</div></div>
+        <div>
+          <div class="eyebrow">Video Presentation</div>
+          <h2>The App Economy, Explained Clearly.</h2>
+          <p class="lead">This presentation explains how mobile games can become digital products, how app monetization models work, and how the launch process moves from template selection to customization and publishing assistance.</p>
+          <div class="cta-row"><a href="#market" class="btn primary">Explore The Market</a><a href="#templates" class="btn secondary">View Game Templates</a></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="market">
+      <div class="container">
+        <div class="section-head">
+          <h2>Mobile Games Are Not Just Games. They Are <span class="gradient">Digital Products.</span></h2>
+          <p>Popular mobile games monetize through engagement, in-app purchases, ad networks, upgrades, and ongoing player activity across global app marketplaces.</p>
+        </div>
+        <div class="cards">
+          <div class="card"><div class="num">1</div><h3>People Download</h3><p>Mobile apps reach users through global app stores. A free game can be distributed broadly if it is approved and promoted correctly.</p></div>
+          <div class="card"><div class="num">2</div><h3>People Engage</h3><p>Games create repeat sessions. More engagement can create more chances for ads, upgrades, and user activity.</p></div>
+          <div class="card"><div class="num">3</div><h3>Apps Monetize</h3><p>Games may monetize through in-app ads, in-app purchases, rewarded ads, upgrades, coins, levels, and premium features.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="proof">
+      <div class="container">
+        <div class="section-head">
+          <h2>Market Intelligence Makes The Opportunity <span class="gradient">Feel Real.</span></h2>
+          <p>Top-chart and market intelligence platforms show how many different game categories can create major app activity: puzzle games, board games, word games, casino-style entertainment, arcade games, strategy games, and location-based games.</p>
+        </div>
+
+        <div class="market-grid">
+          <div class="market-card">
+            <div class="eyebrow">Market Intelligence Example</div>
+            <h3>Top Apps Show How The Model Works</h3>
+            <p>Use this section to educate customers on how the app economy works. The message is not “you will become one of these companies.” The message is that mobile games are real digital products with real monetization models.</p>
+            <div class="proof-stat">
+              <div class="stat"><strong>$54M</strong><span>Candy Crush Saga last-month revenue estimate from Sensor Tower-style market data</span></div>
+              <div class="stat"><strong>1M</strong><span>Candy Crush Saga last-month download estimate from Sensor Tower-style market data</span></div>
+              <div class="stat"><strong>$134M</strong><span>Monopoly GO! January 2026 after-fee revenue estimate from app intelligence reporting</span></div>
+              <div class="stat"><strong>55M</strong><span>Royal Match monthly active users reported in public game profile data</span></div>
+              <div class="stat"><strong>$3B+</strong><span>Global social casino mobile category annual consumer spend estimates across slot-style and casino entertainment apps</span></div>
+            </div>
+          </div>
+          <div class="chart-box">
+            <h3>Popular Game Category Examples</h3>
+            <div class="chart-row"><span>Puzzle Games</span><div class="chart-bar"><span style="width:92%"></span></div><strong>High</strong></div>
+            <div class="chart-row"><span>Board Games</span><div class="chart-bar"><span style="width:88%"></span></div><strong>High</strong></div>
+            <div class="chart-row"><span>Word Games</span><div class="chart-bar"><span style="width:74%"></span></div><strong>Strong</strong></div>
+            <div class="chart-row"><span>Casino Style</span><div class="chart-bar"><span style="width:84%"></span></div><strong>High</strong></div>
+            <div class="chart-row"><span>Arcade</span><div class="chart-bar"><span style="width:62%"></span></div><strong>Active</strong></div>
+            <div class="chart-row"><span>Trivia</span><div class="chart-bar"><span style="width:55%"></span></div><strong>Niche</strong></div>
+            <p>These examples are educational and are not projections or guarantees for any customer app.</p>
+          </div>
+        </div>
+
+        <div class="app-stat-grid" style="margin-top:18px;">
+          <div class="app-stat-card"><div class="app-icon icon-candy">🍬</div><h3>Candy Crush Saga</h3><p>Match-3 puzzle example with freemium upgrades and long-term player engagement.</p><div class="app-numbers"><span class="pill">Puzzle</span><span class="pill">IAP</span><span class="pill">Ads Ecosystem</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-mono">M</div><h3>Monopoly GO!</h3><p>Board-game mobile hit built around events, collections, and social play loops.</p><div class="app-numbers"><span class="pill">Board</span><span class="pill">Events</span><span class="pill">IAP</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-royal">♛</div><h3>Royal Match</h3><p>Modern puzzle game with levels, rewards, progression, and polished visuals.</p><div class="app-numbers"><span class="pill">Puzzle</span><span class="pill">55M MAU</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-roblox">◆</div><h3>Roblox</h3><p>Large game ecosystem powered by creators, virtual currency, and communities.</p><div class="app-numbers"><span class="pill">UGC</span><span class="pill">Currency</span></div></div>
+          <div class="app-stat-card"><div class="app-icon slot-bg">🎰</div><h3>Slotomania</h3><p>Social casino slot experience demonstrating entertainment loops, virtual coins, and high replay engagement.</p><div class="app-numbers"><span class="pill">Casino Slots</span><span class="pill">Entertainment</span><span class="pill">Virtual Coins</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="stats">
+      <div class="container">
+        <div class="section-head">
+          <h2>Look At The Size Of The <span class="gradient">Mobile Game Ecosystem.</span></h2>
+          <p>These well-known apps show how different game categories can become massive digital products through downloads, engagement, ads, upgrades, and in-app purchases. These examples are for market education only.</p>
+        </div>
+        <div class="app-stat-grid">
+          <div class="app-stat-card"><div class="app-icon icon-candy">🍬</div><h3>Candy Crush Saga</h3><p>Puzzle match game with long-term engagement and in-app purchase activity.</p><div class="app-numbers"><span class="pill">Puzzle</span><span class="pill">IAP</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-mono">M</div><h3>Monopoly GO!</h3><p>Board-game style mobile hit built around events, collections, and upgrades.</p><div class="app-numbers"><span class="pill">Casual</span><span class="pill">Events</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-roblox">◆</div><h3>Roblox</h3><p>User-generated game ecosystem with virtual currency and marketplace activity.</p><div class="app-numbers"><span class="pill">UGC</span><span class="pill">Currency</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-coin">₵</div><h3>Coin Master</h3><p>Casino-style casual entertainment mechanics with social loops and upgrades.</p><div class="app-numbers"><span class="pill">Casino Style</span><span class="pill">IAP</span><span class="pill">High Engagement</span></div></div>
+          <div class="app-stat-card"><div class="app-icon slot-bg">🎰</div><h3>Slotomania</h3><p>Popular social casino slot experience demonstrating entertainment-based engagement loops.</p><div class="app-numbers"><span class="pill">Slots</span><span class="pill">Entertainment</span><span class="pill">Virtual Coins</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-subway">⚡</div><h3>Subway Surfers</h3><p>Arcade runner game showing the power of simple gameplay and wide reach.</p><div class="app-numbers"><span class="pill">Arcade</span><span class="pill">Ads</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-clash">⚔</div><h3>Clash Royale</h3><p>Strategy card battler built around progression, competition, and upgrades.</p><div class="app-numbers"><span class="pill">Strategy</span><span class="pill">IAP</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-royal">♛</div><h3>Royal Match</h3><p>Modern puzzle game with levels, rewards, and strong visual design.</p><div class="app-numbers"><span class="pill">Puzzle</span><span class="pill">Levels</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-word">W</div><h3>Wordscapes</h3><p>Word puzzle category example with broad casual audience appeal.</p><div class="app-numbers"><span class="pill">Word</span><span class="pill">Casual</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-pubg">🎯</div><h3>PUBG Mobile</h3><p>Competitive mobile game showing how communities form around play and status.</p><div class="app-numbers"><span class="pill">Action</span><span class="pill">Skins</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-last">☢</div><h3>Last War</h3><p>Strategy/survival mobile game category built around progression and engagement.</p><div class="app-numbers"><span class="pill">Strategy</span><span class="pill">Progression</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-garden">🌿</div><h3>Gardenscapes</h3><p>Puzzle and story-driven game example with long-term player progression.</p><div class="app-numbers"><span class="pill">Puzzle</span><span class="pill">Story</span></div></div>
+          <div class="app-stat-card"><div class="app-icon icon-pokemon">●</div><h3>Pokémon GO</h3><p>Location-based game showing how real-world activity can drive app engagement.</p><div class="app-numbers"><span class="pill">AR</span><span class="pill">Community</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="dream">
+      <div class="container">
+        <div class="dream-box">
+          <div class="eyebrow">The Digital Asset Vision</div>
+          <h2>Imagine Capturing Even A Tiny Fraction Of This Ecosystem.</h2>
+          <p class="lead">This is not about promising massive results. It is about understanding the opportunity: mobile apps give entrepreneurs a digital product they can brand, launch, promote, and build over time.</p>
+          <div class="dream-grid">
+            <div class="dream-mini"><strong>Ownership</strong><span>Move from only consuming apps to owning a branded mobile product.</span></div>
+            <div class="dream-mini"><strong>Monetization Paths</strong><span>Prepare for ads, upgrades, in-app purchases, and user engagement models where available.</span></div>
+            <div class="dream-mini"><strong>Long-Term Asset</strong><span>Build something you can promote, improve, and potentially expand over time.</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="templates">
+      <div class="container">
+        <div class="section-head"><h2>Choose A Game Template</h2><p>Browse different mobile game categories and explore the styles available for customization and launch.</p></div>
+        <div class="template-grid">
+          <div class="template"><div class="art puzzle-bg"><div class="art-icons"><div class="mini-icon">🧩</div><div class="mini-icon">⭐</div></div><div class="art-label"><strong>Puzzle Match</strong><span>Casual replay model</span></div></div><div class="template-body"><h3>Puzzle Match Game</h3><p>Broad casual appeal with repeat play potential.</p><span class="tag">Ads + Upgrades</span></div></div>
+          <div class="template"><div class="art word-bg"><div class="art-icons"><div class="mini-icon">W</div><div class="mini-icon">🔤</div></div><div class="art-label"><strong>Word Game</strong><span>Simple and addictive</span></div></div><div class="template-body"><h3>Word Game</h3><p>Simple, familiar, and niche-brand friendly.</p><span class="tag">Casual</span></div></div>
+          <div class="template"><div class="art slot-bg"><div class="art-icons"><div class="mini-icon">🎰</div><div class="mini-icon">💎</div></div><div class="art-label"><strong>Casino Slots</strong><span>Entertainment focused</span></div></div><div class="template-body"><h3>Slots-Style Game</h3><p>Entertainment-style template with visual excitement.</p><span class="tag">IAP Optional</span></div></div>
+          <div class="template"><div class="art arcade-bg"><div class="art-icons"><div class="mini-icon">⚡</div><div class="mini-icon">👾</div></div><div class="art-label"><strong>Arcade</strong><span>Fast play sessions</span></div></div><div class="template-body"><h3>Arcade Game</h3><p>Fast-play sessions and high-energy gameplay.</p><span class="tag">Ad Ready</span></div></div>
+          <div class="template"><div class="art trivia-bg"><div class="art-icons"><div class="mini-icon">❓</div><div class="mini-icon">🏆</div></div><div class="art-label"><strong>Trivia</strong><span>Competitive engagement</span></div></div><div class="template-body"><h3>Trivia Game</h3><p>Works for educational, niche, or brand-focused audiences.</p><span class="tag">Brandable</span></div></div>
+          <div class="template"><div class="art kids-bg"><div class="art-icons"><div class="mini-icon">🎨</div><div class="mini-icon">🧠</div></div><div class="art-label"><strong>Kids Learning</strong><span>Educational fun</span></div></div><div class="template-body"><h3>Kids Educational</h3><p>Family-friendly learning and entertainment themes.</p><span class="tag">Educational</span></div></div>
+          <div class="template"><div class="art racing-bg"><div class="art-icons"><div class="mini-icon">🏎</div><div class="mini-icon">🔥</div></div><div class="art-label"><strong>Racing</strong><span>High energy visuals</span></div></div><div class="template-body"><h3>Racing Game</h3><p>Action-style game with energetic visuals.</p><span class="tag">Action</span></div></div>
+          <div class="template"><div class="art adventure-bg"><div class="art-icons"><div class="mini-icon">🗺</div><div class="mini-icon">⚔</div></div><div class="art-label"><strong>Adventure</strong><span>Story-driven gameplay</span></div></div><div class="template-body"><h3>Adventure Game</h3><p>Character and story-driven branded game experience.</p><span class="tag">Custom Theme</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="process">
+      <div class="container">
+        <div class="section-head"><h2>Your Launch Process</h2><p>Follow the guided process from game template selection through customization, enrollment, and onboarding access.</p></div>
+        <div class="cards">
+          <div class="card"><div class="num">1</div><h3>Pick Template</h3><p>Select the mobile game category that best fits your audience, style, and goals.</p></div>
+          <div class="card"><div class="num">2</div><h3>Customize App</h3><p>Complete the customization form with app name, colors, logo, audience, and monetization preferences.</p></div>
+          <div class="card"><div class="num">3</div><h3>Enroll + Onboard</h3><p>After enrollment, access the onboarding flow and track your app launch status.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="enroll">
+      <div class="container">
+        <div class="close-panel">
+          <div class="eyebrow">Start Your App Launch</div>
+          <h2>Choose Your Game. Customize Your Brand. Launch Your Digital Asset.</h2>
+          <p class="lead" style="margin-left:auto; margin-right:auto;">Once you select the direction that fits your goals, the next step is enrollment. After payment, you’ll enter the real onboarding flow where you choose your template, submit your customization details, and track your app launch status.</p>
+          <div class="cta-row" style="justify-content:center;"><a class="btn primary" href="/onboarding/access">Continue To Enrollment</a><a class="btn secondary" href="#templates">Review Game Templates</a></div>
+          <p style="color:var(--muted); font-size:13px; margin-top:18px;">Replace /onboarding/access with your real checkout or hidden onboarding URL.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="disclaimer">
+      <div class="container">
+        <div class="disclaimer"><strong>Important Earnings, Market Data & Platform Disclaimer:</strong><br>This page is an educational presentation for custom mobile game app development, monetization preparation, and app store publishing assistance. Third-party tools such as Sensor Tower may display estimated downloads, revenue, rankings, and category performance for popular apps. These estimates are not guarantees, are not typical customer results, and should only be used to explain how the app economy and monetization models work. We do not guarantee earnings, downloads, rankings, app store approval, advertising approval, ad revenue, in-app purchase revenue, profits, or return on investment. Results vary and depend on many factors including marketing effort, platform rules, user demand, app quality, audience engagement, consistency, and third-party approval processes.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container"><strong>Mobile App Opportunity</strong><br>Customer-facing presentation: market overview → game template selection → customization preview → enrollment → onboarding.</div>
+  </footer>
+</body>
+</html>
