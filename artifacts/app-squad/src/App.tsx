@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -44,6 +45,13 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    if (window.location.hostname === "ownyourgameapp.com" ||
+        window.location.hostname === "www.ownyourgameapp.com") {
+      window.location.replace("/closer-presentation/");
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
