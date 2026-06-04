@@ -175,9 +175,9 @@ const TEMPLATES = [
 const PACKAGES = [
   {
     name: "App Launch\nEssentials",
-    packageHeadline: "ENTER THE APP ECONOMY",
+    packageHeadline: "START YOUR FIRST APP LAUNCH",
     packageDesc: "Perfect for first-time app owners who want to launch their first digital asset.",
-    tag: "Starter",
+    tag: "ENTRY PATH",
     tagColor: CYAN,
     isAccelerator: false,
     isEmpire: false,
@@ -188,15 +188,15 @@ const PACKAGES = [
       "App Store submission",
       "30-day post-launch support",
     ],
-    cta: "START MY APP LAUNCH",
+    cta: "START ESSENTIALS ENROLLMENT",
     route: "https://appsquadinc.com/enroll/essentials",
   },
   {
     name: "App Ownership\nAccelerator",
     packageHeadline: "BUILD A STRONGER APP BRAND",
     packageDesc: "For entrepreneurs who want a more complete launch experience.",
-    tag: "Most Popular",
-    tagColor: GOLD,
+    tag: "MOST POPULAR",
+    tagColor: CYAN,
     isAccelerator: true,
     isEmpire: false,
     features: [
@@ -208,15 +208,15 @@ const PACKAGES = [
       "Revenue optimization coaching",
       "Analytics dashboard access",
     ],
-    cta: "ACTIVATE MY APP OWNERSHIP PLAN",
+    cta: "START ACCELERATOR ENROLLMENT",
     route: "https://appsquadinc.com/enroll/accelerator",
   },
   {
     name: "Digital Asset\nEmpire",
     packageHeadline: "THE COMPLETE APP OWNERSHIP EXPERIENCE",
     packageDesc: "For serious buyers who want the strongest implementation package available.",
-    tag: "Premium",
-    tagColor: "#7B61FF",
+    tag: "PREMIUM",
+    tagColor: PURPLE,
     isAccelerator: false,
     isEmpire: true,
     features: [
@@ -228,7 +228,7 @@ const PACKAGES = [
       "Quarterly strategy sessions",
       "App portfolio growth roadmap",
     ],
-    cta: "BEGIN MY EMPIRE ENROLLMENT",
+    cta: "START EMPIRE ENROLLMENT",
     route: "https://appsquadinc.com/enroll/empire",
   },
 ];
@@ -351,7 +351,7 @@ export default function Presentation() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1px 1fr", minHeight: 700 }}>
           {/* Consumer */}
           <SlideIn dir="left" delay={0.08} style={{ padding: "80px 72px 80px 80px" }}>
-            <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(13px, 1.1vw, 16px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(109,7,26,0.45)", marginBottom: 28 }}>Most People Stay</div>
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(13px, 1.1vw, 16px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(109,7,26,0.65)", marginBottom: 28 }}>Most People Stay Consumers</div>
             <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 64 }}>
               <div style={{ width: 80, height: 80, borderRadius: 22, background: "rgba(109,7,26,0.07)", border: "1px solid rgba(109,7,26,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Download style={{ width: 36, height: 36, color: "rgba(109,7,26,0.6)" }} />
@@ -388,7 +388,7 @@ export default function Presentation() {
           {/* Owner */}
           <SlideIn dir="right" delay={0.12} style={{ padding: "80px 80px 80px 72px", background: "linear-gradient(135deg, rgba(0,212,255,0.03) 0%, transparent 60%)", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -60, right: -60, width: 360, height: 360, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(0,212,255,0.07) 0%, transparent 70%)`, filter: "blur(60px)", pointerEvents: "none" }} />
-            <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(13px, 1.1vw, 16px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: `rgba(0,212,255,0.55)`, marginBottom: 28, position: "relative", zIndex: 1 }}>A Small Group Choose</div>
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(13px, 1.1vw, 16px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: `rgba(0,212,255,0.75)`, marginBottom: 28, position: "relative", zIndex: 1 }}>A Small Group Choose Ownership</div>
             <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 64, position: "relative", zIndex: 1 }}>
               <div style={{ width: 80, height: 80, borderRadius: 22, background: "rgba(0,212,255,0.08)", border: `1px solid rgba(0,212,255,0.22)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Award style={{ width: 36, height: 36, color: GOLD }} />
@@ -834,20 +834,22 @@ export default function Presentation() {
               <FadeUp key={pkg.name} delay={i * 0.1}>
                 <div style={{
                   background: pkg.isAccelerator
-                    ? "linear-gradient(155deg, #181F2E 0%, #111820 60%, #0D1218 100%)"
-                    : pkg.isEmpire ? "linear-gradient(155deg, #14112A 0%, #0E0D1E 100%)"
-                    : "rgba(255,255,255,0.025)",
+                    ? "linear-gradient(155deg, #0E1828 0%, #0A1220 60%, #08101A 100%)"
+                    : pkg.isEmpire ? "linear-gradient(155deg, #130F28 0%, #0D0B1C 60%, #080614 100%)"
+                    : "rgba(255,255,255,0.02)",
                   border: pkg.isAccelerator
-                    ? `1px solid rgba(0,212,255,0.45)`
-                    : pkg.isEmpire ? "1px solid rgba(123,97,255,0.28)"
-                    : "1px solid rgba(255,255,255,0.08)",
+                    ? `1px solid rgba(0,212,255,0.55)`
+                    : pkg.isEmpire ? "1px solid rgba(123,97,255,0.42)"
+                    : "1px solid rgba(255,255,255,0.07)",
                   borderRadius: 24,
-                  padding: pkg.isAccelerator ? "64px 48px" : "56px 44px",
+                  padding: pkg.isAccelerator ? "68px 52px" : "56px 44px",
                   display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
                   boxShadow: pkg.isAccelerator
-                    ? `0 0 140px -30px rgba(0,212,255,0.18), 0 40px 80px -20px rgba(0,0,0,0.9)`
-                    : pkg.isEmpire ? "0 0 80px -40px rgba(123,97,255,0.1)" : "none",
-                  marginTop: pkg.isAccelerator ? -24 : 0,
+                    ? `0 0 0 1px rgba(0,212,255,0.1), 0 0 180px -20px rgba(0,212,255,0.22), 0 40px 80px -20px rgba(0,0,0,0.95)`
+                    : pkg.isEmpire
+                    ? `0 0 0 1px rgba(123,97,255,0.08), 0 0 120px -30px rgba(123,97,255,0.18), 0 30px 60px -20px rgba(0,0,0,0.9)`
+                    : "none",
+                  marginTop: pkg.isAccelerator ? -28 : 0,
                 }}>
                   {pkg.isAccelerator && (
                     <>
@@ -906,41 +908,48 @@ export default function Presentation() {
                       gap: 12,
                       transition: "transform 0.2s ease, box-shadow 0.2s ease",
                       ...(pkg.isAccelerator ? {
-                        background: "linear-gradient(135deg, #00D4FF 0%, #0099BB 50%, #00D4FF 100%)",
-                        backgroundSize: "200% 100%",
+                        background: "linear-gradient(135deg, #00D4FF 0%, #7B61FF 100%)",
                         border: "none",
-                        color: "#050505",
-                        boxShadow: "0 0 0 1px rgba(0,212,255,0.5), 0 8px 32px rgba(0,212,255,0.3), 0 2px 8px rgba(0,0,0,0.5)",
+                        color: "#FFFFFF",
+                        boxShadow: "0 0 0 1px rgba(0,212,255,0.4), 0 8px 40px rgba(0,212,255,0.25), 0 4px 16px rgba(123,97,255,0.15)",
                       } : pkg.isEmpire ? {
-                        background: "#050505",
-                        border: "1px solid rgba(123,97,255,0.4)",
-                        color: "#7B61FF",
-                        boxShadow: "0 0 0 1px rgba(123,97,255,0.12), inset 0 1px 0 rgba(123,97,255,0.1), 0 4px 24px rgba(123,97,255,0.15)",
+                        background: "linear-gradient(135deg, #7B61FF 0%, #5B41DF 60%, #7B61FF 100%)",
+                        border: "1px solid rgba(123,97,255,0.55)",
+                        color: "#FFFFFF",
+                        boxShadow: "0 0 0 1px rgba(123,97,255,0.2), inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(123,97,255,0.3)",
                       } : {
                         background: "#050505",
-                        border: "1px solid rgba(0,212,255,0.2)",
+                        border: "1px solid rgba(0,212,255,0.35)",
                         color: "#00D4FF",
-                        boxShadow: "0 0 0 1px rgba(0,212,255,0.06), inset 0 1px 0 rgba(0,212,255,0.05), 0 4px 16px rgba(0,0,0,0.3)",
+                        boxShadow: "0 0 0 1px rgba(0,212,255,0.08), inset 0 1px 0 rgba(0,212,255,0.06), 0 4px 20px rgba(0,0,0,0.4)",
+                        transition: "transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease",
                       }),
                     }}
                     onMouseEnter={e => {
-                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.transform = "translateY(-3px) scale(1.01)";
                       if (pkg.isAccelerator) {
-                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.7), 0 12px 48px rgba(0,212,255,0.45), 0 4px 16px rgba(0,0,0,0.5)";
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.6), 0 16px 60px rgba(0,212,255,0.35), 0 8px 30px rgba(123,97,255,0.25)";
+                        e.currentTarget.style.filter = "brightness(1.08)";
                       } else if (pkg.isEmpire) {
-                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(123,97,255,0.4), 0 8px 40px rgba(123,97,255,0.25), 0 4px 16px rgba(0,0,0,0.4)";
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(123,97,255,0.5), 0 12px 50px rgba(123,97,255,0.4), 0 4px 20px rgba(0,0,0,0.5)";
+                        e.currentTarget.style.filter = "brightness(1.12)";
                       } else {
-                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.3), 0 8px 40px rgba(0,212,255,0.2), 0 4px 16px rgba(0,0,0,0.4)";
+                        e.currentTarget.style.background = "#00D4FF";
+                        e.currentTarget.style.color = "#050505";
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.6), 0 8px 40px rgba(0,212,255,0.3), 0 4px 16px rgba(0,0,0,0.4)";
                       }
                     }}
                     onMouseLeave={e => {
-                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.transform = "translateY(0) scale(1)";
+                      e.currentTarget.style.filter = "";
                       if (pkg.isAccelerator) {
-                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.5), 0 8px 32px rgba(0,212,255,0.3), 0 2px 8px rgba(0,0,0,0.5)";
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.4), 0 8px 40px rgba(0,212,255,0.25), 0 4px 16px rgba(123,97,255,0.15)";
                       } else if (pkg.isEmpire) {
-                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(123,97,255,0.12), inset 0 1px 0 rgba(123,97,255,0.1), 0 4px 24px rgba(123,97,255,0.15)";
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(123,97,255,0.2), inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 32px rgba(123,97,255,0.3)";
                       } else {
-                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.06), inset 0 1px 0 rgba(0,212,255,0.05), 0 4px 16px rgba(0,0,0,0.3)";
+                        e.currentTarget.style.background = "#050505";
+                        e.currentTarget.style.color = "#00D4FF";
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.08), inset 0 1px 0 rgba(0,212,255,0.06), 0 4px 20px rgba(0,0,0,0.4)";
                       }
                     }}>
                     {pkg.cta}

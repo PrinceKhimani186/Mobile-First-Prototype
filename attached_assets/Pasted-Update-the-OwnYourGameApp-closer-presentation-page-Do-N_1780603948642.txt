@@ -1,0 +1,201 @@
+Update the OwnYourGameApp closer presentation page.
+
+Do NOT redesign the entire page.
+Do NOT change the section order.
+Do NOT change the current script flow.
+
+Focus only on improving:
+1. Package card psychology
+2. CTA button strength
+3. Visual hierarchy
+4. Consumer vs Owner emotional contrast
+
+==================================================
+PACKAGE SECTION IMPROVEMENT
+==================================================
+
+The current package cards feel too similar.
+
+They should immediately communicate:
+
+Essentials = Entry
+Accelerator = Most Popular
+Empire = Premium / Highest Tier
+
+Before the prospect reads the details.
+
+Update package cards:
+
+APP LAUNCH ESSENTIALS
+
+Visual feeling:
+Entry point
+
+Label:
+ENTRY PATH
+
+Headline:
+START YOUR FIRST APP LAUNCH
+
+Button:
+START ESSENTIALS ENROLLMENT
+
+Button route:
+/enroll/essentials
+
+--------------------------------------------------
+
+APP OWNERSHIP ACCELERATOR
+
+Visual feeling:
+Best overall option
+
+Label:
+MOST POPULAR
+
+Headline:
+BUILD A STRONGER APP BRAND
+
+Button:
+START ACCELERATOR ENROLLMENT
+
+Button route:
+/enroll/accelerator
+
+Make this card slightly larger than Essentials.
+
+Add stronger glow, border, and visual emphasis.
+
+--------------------------------------------------
+
+DIGITAL ASSET EMPIRE
+
+Visual feeling:
+Premium / elite / highest tier
+
+Label:
+PREMIUM
+
+Headline:
+THE COMPLETE APP OWNERSHIP EXPERIENCE
+
+Button:
+START EMPIRE ENROLLMENT
+
+Button route:
+/enroll/empire
+
+Make this card feel elite using royal purple accents, deeper glow, premium border, and stronger visual weight.
+
+==================================================
+CTA BUTTON IMPROVEMENT
+==================================================
+
+Package buttons currently feel like navigation buttons.
+
+They need to feel like enrollment actions.
+
+Button goals:
+- strong
+- clickable
+- premium
+- decisive
+- high contrast
+
+Use action words:
+START
+ACTIVATE
+BEGIN
+
+Remove weak wording:
+Choose
+Learn More
+Apply
+Book Call
+
+Button styling:
+
+Essentials:
+Dark button with cyan border and cyan glow.
+Hover: solid cyan background with dark text.
+
+Accelerator:
+Cyan-to-purple gradient.
+Hover: stronger glow and slight scale-up.
+
+Empire:
+Royal purple gradient.
+Premium glow.
+Hover: brighter purple and subtle shine animation.
+
+==================================================
+CONSUMER VS OWNER SECTION
+==================================================
+
+Strengthen emotional contrast.
+
+Consumer side should feel like:
+- stuck
+- spending
+- average
+- trapped in consumption
+
+Owner side should feel like:
+- future
+- control
+- creation
+- digital asset ownership
+
+Update headings:
+
+Consumer side:
+MOST PEOPLE STAY CONSUMERS
+
+Owner side:
+A SMALL GROUP CHOOSE OWNERSHIP
+
+Consumer color:
+Deep burgundy / dark red
+
+Owner color:
+Electric cyan
+
+Make this section more dramatic and visually memorable.
+
+==================================================
+VISUAL HIERARCHY
+==================================================
+
+Make the prospect instantly understand the story:
+
+Consumer = Pain
+Owner = Opportunity
+Accelerator = Most Popular
+Empire = Status
+
+The page should feel like a closer presentation, not a normal website.
+
+The package section should feel like the decision point of the call.
+
+==================================================
+FINAL OBJECTIVE
+==================================================
+
+When the closer reaches the package section, the prospect should visually feel:
+
+Essentials:
+"I can start here."
+
+Accelerator:
+"This is the smart choice."
+
+Empire:
+"This is the premium path."
+
+The CTA buttons should feel like:
+
+"I am enrolling."
+
+Not:
+
+"I am browsing."
