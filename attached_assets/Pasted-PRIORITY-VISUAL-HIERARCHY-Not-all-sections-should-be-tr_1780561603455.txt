@@ -1,0 +1,103 @@
+PRIORITY VISUAL HIERARCHY
+
+Not all sections should be treated equally.
+
+The following sections are the most important sections in the entire presentation and should receive the largest amount of visual space, strongest design treatment, and most premium presentation styling.
+
+PRIORITY #1
+
+CONSUMER VS OWNER
+
+Purpose:
+
+Identity shift.
+
+This is where the prospect stops seeing themselves as a consumer and starts imagining themselves as an owner.
+
+Requirements:
+
+* Large visual comparison
+* Full-width layout
+* Strong iconography
+* High contrast
+* Dramatic typography
+* Premium animations
+
+This should be one of the most memorable sections on the page.
+
+---
+
+PRIORITY #2
+
+THE APP ECONOMY
+
+Purpose:
+
+Build certainty in the industry.
+
+This section should feel like a keynote presentation.
+
+Requirements:
+
+* Large Sensor Tower screenshots
+* Category rankings
+* Market intelligence visuals
+* Download examples
+* App store ecosystem graphics
+
+The closer should be able to spend 10+ minutes in this section.
+
+This should be one of the largest sections on the page.
+
+---
+
+PRIORITY #3
+
+WHICH PATH FITS YOU?
+
+Purpose:
+
+Transition from belief to commitment.
+
+Requirements:
+
+* Large package cards
+* Premium styling
+* Strong visual differentiation
+* Accelerator highlighted as Most Popular
+* Empire highlighted as Premium
+
+This section should feel like the decision point of the presentation.
+
+---
+
+SECONDARY SECTIONS
+
+* Video Presentation
+* How Apps Monetize
+* Why Most People Never Enter
+* App Squad Solution
+* Game Templates
+* What Happens Next
+
+These sections should support the presentation but should not visually overpower the three priority sections above.
+
+FINAL DESIGN OBJECTIVE
+
+The page should feel less like a website and more like a cinematic high-ticket sales presentation where the prospect is guided through:
+
+Consumer
+↓
+Owner
+↓
+Industry
+↓
+Possibility
+↓
+Solution
+↓
+Decision
+↓
+Enrollment
+
+Every scroll should increase certainty and emotional engagement.

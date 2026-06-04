@@ -343,97 +343,139 @@ export default function Presentation() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════
-          SECTION 2 — CONSUMER vs OWNER
+          SECTION 2 — CONSUMER vs OWNER  [PRIORITY #1]
       ══════════════════════════════════════════════════════════════ */}
-      <section style={{ padding: "120px 40px", position: "relative", background: "linear-gradient(180deg, #0B0F14 0%, #0E1219 50%, #0B0F14 100%)" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <FadeUp className="text-center" style={{ textAlign: "center", marginBottom: 80 }}>
-            <SectionLabel>Section 2 · The Mindset Shift</SectionLabel>
-            <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(42px, 6vw, 76px)", fontWeight: 700, letterSpacing: "-0.04em", lineHeight: 1.05, textTransform: "uppercase" }}>
-              There Are Two Types of People
-              <br />
-              <span style={{ color: "#F5A33C" }}>in Every Economy</span>
-            </h2>
-          </FadeUp>
+      <section style={{ position: "relative", padding: "160px 0 180px", overflow: "hidden", background: "linear-gradient(180deg, #0B0F14 0%, #0D1118 40%, #0B0F14 100%)" }}>
+        {/* Full-bleed ambient glows */}
+        <div style={{ position: "absolute", top: "20%", left: "-10%", width: "45%", height: "60%", borderRadius: "50%", background: "radial-gradient(ellipse, rgba(239,68,68,0.05) 0%, transparent 65%)", filter: "blur(100px)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "20%", right: "-10%", width: "45%", height: "60%", borderRadius: "50%", background: "radial-gradient(ellipse, rgba(245,163,60,0.09) 0%, transparent 65%)", filter: "blur(100px)", pointerEvents: "none" }} />
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-            {/* Consumer */}
-            <SlideIn direction="left" delay={0.1}>
-              <div style={{
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 24,
-                padding: "56px 48px",
-                height: "100%",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 40 }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Download style={{ width: 26, height: 26, color: "#EF4444" }} />
-                  </div>
-                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Consumer</div>
+        {/* Section label */}
+        <FadeUp style={{ textAlign: "center", marginBottom: 60 }}>
+          <SectionLabel>Section 2 · The Identity Shift</SectionLabel>
+        </FadeUp>
+
+        {/* Cinematic headline */}
+        <FadeUp delay={0.06} style={{ textAlign: "center", marginBottom: 100, padding: "0 40px" }}>
+          <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(48px, 7.5vw, 110px)", fontWeight: 700, letterSpacing: "-0.045em", lineHeight: 0.95, textTransform: "uppercase", margin: "0 auto" }}>
+            <span style={{ display: "block", color: "rgba(255,255,255,0.25)" }}>Everyone in the app economy</span>
+            <span style={{ display: "block", color: "#E8ECF2", marginTop: 12 }}>Is either a</span>
+            <span style={{ display: "block", marginTop: 8 }}>
+              <span style={{ color: "rgba(239,68,68,0.7)" }}>Consumer</span>
+              <span style={{ color: "rgba(255,255,255,0.2)", margin: "0 24px" }}>or an</span>
+              <span style={{ color: "#F5A33C" }}>Owner</span>
+            </span>
+          </h2>
+        </FadeUp>
+
+        {/* Full-width two-panel comparison */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", minHeight: 580 }}>
+          {/* ── CONSUMER side ── */}
+          <SlideIn direction="left" delay={0.1}>
+            <div style={{
+              padding: "80px 64px 80px 80px",
+              borderRight: "1px solid rgba(255,255,255,0.06)",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 0,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 56 }}>
+                <div style={{
+                  width: 72, height: 72, borderRadius: 20,
+                  background: "rgba(239,68,68,0.08)",
+                  border: "1px solid rgba(239,68,68,0.18)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Download style={{ width: 34, height: 34, color: "rgba(239,68,68,0.7)" }} />
                 </div>
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 24 }}>
-                  {[
-                    "Downloads Apps",
-                    "Buys Upgrades",
-                    "Watches Ads",
-                    "Uses Products",
-                    "Participates In Ecosystems",
-                  ].map(item => (
-                    <li key={item} style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                      <span style={{ color: "#EF4444", fontSize: 22, lineHeight: 1, flexShrink: 0, fontWeight: 700 }}>✕</span>
-                      <span style={{ fontFamily: "'Inter'", fontSize: 22, lineHeight: 1.4, color: "rgba(255,255,255,0.45)" }}>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </SlideIn>
-
-            {/* Owner */}
-            <SlideIn direction="right" delay={0.15}>
-              <div style={{
-                background: "linear-gradient(145deg, rgba(245,163,60,0.06) 0%, rgba(245,163,60,0.02) 100%)",
-                border: "1px solid rgba(245,163,60,0.3)",
-                borderRadius: 24,
-                padding: "56px 48px",
-                height: "100%",
-                position: "relative",
-                overflow: "hidden",
-                boxShadow: "0 0 80px -30px rgba(245,163,60,0.15)",
-              }}>
-                <div style={{ position: "absolute", top: -80, right: -80, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(245,163,60,0.07) 0%, transparent 70%)", filter: "blur(40px)", pointerEvents: "none" }} />
-                <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 40 }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(245,163,60,0.12)", border: "1px solid rgba(245,163,60,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Award style={{ width: 26, height: 26, color: "#F5A33C" }} />
-                  </div>
-                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", color: "#F5A33C", textTransform: "uppercase" }}>Owner</div>
+                <div>
+                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(28px, 3vw, 44px)", fontWeight: 700, letterSpacing: "-0.04em", textTransform: "uppercase", color: "rgba(239,68,68,0.55)", lineHeight: 1 }}>Consumer</div>
+                  <div style={{ fontFamily: "'Inter'", fontSize: 16, color: "rgba(255,255,255,0.2)", marginTop: 4 }}>Participates in the ecosystem</div>
                 </div>
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 24 }}>
-                  {[
-                    "Owns Digital Assets",
-                    "Builds Brands",
-                    "Creates Products",
-                    "Participates In Growth",
-                    "Owns Something Inside The Ecosystem",
-                  ].map(item => (
-                    <li key={item} style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                      <CheckCircle2 style={{ width: 22, height: 22, color: "#F5A33C", flexShrink: 0 }} />
-                      <span style={{ fontFamily: "'Inter'", fontSize: 22, lineHeight: 1.4, color: "rgba(255,255,255,0.88)" }}>{item}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
-            </SlideIn>
-          </div>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 32 }}>
+                {[
+                  { text: "Downloads Apps", sub: "Fills someone else's ecosystem" },
+                  { text: "Buys Upgrades", sub: "Funds someone else's business" },
+                  { text: "Watches Ads", sub: "Generates revenue for the owner" },
+                  { text: "Uses Products", sub: "Consumes what others built" },
+                  { text: "Participates In Ecosystems", sub: "With no ownership stake" },
+                ].map(item => (
+                  <li key={item.text} style={{ display: "flex", gap: 22, alignItems: "flex-start" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                      <span style={{ color: "rgba(239,68,68,0.7)", fontSize: 16, fontWeight: 700 }}>✕</span>
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: "'Inter'", fontSize: "clamp(20px, 2vw, 28px)", lineHeight: 1.2, color: "rgba(255,255,255,0.38)", fontWeight: 500 }}>{item.text}</div>
+                      <div style={{ fontFamily: "'Inter'", fontSize: 15, color: "rgba(255,255,255,0.18)", marginTop: 4 }}>{item.sub}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </SlideIn>
 
-          <FadeUp delay={0.25} style={{ marginTop: 60, textAlign: "center" }}>
-            <p style={{ fontFamily: "'Inter'", fontSize: 22, lineHeight: 1.8, color: "rgba(255,255,255,0.4)", maxWidth: 700, margin: "0 auto" }}>
-              The app economy generated{" "}
-              <strong style={{ color: "rgba(255,255,255,0.75)", fontWeight: 600 }}>$935 billion in 2023 alone.</strong>{" "}
-              The question is which side of that equation you're on.
-            </p>
-          </FadeUp>
+          {/* ── OWNER side ── */}
+          <SlideIn direction="right" delay={0.15}>
+            <div style={{
+              padding: "80px 80px 80px 64px",
+              background: "linear-gradient(140deg, rgba(245,163,60,0.04) 0%, transparent 60%)",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              position: "relative",
+              overflow: "hidden",
+            }}>
+              <div style={{ position: "absolute", top: 0, right: 0, width: "60%", height: "60%", borderRadius: "0 0 0 100%", background: "radial-gradient(ellipse at top right, rgba(245,163,60,0.06) 0%, transparent 60%)", pointerEvents: "none" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 56 }}>
+                <div style={{
+                  width: 72, height: 72, borderRadius: 20,
+                  background: "rgba(245,163,60,0.1)",
+                  border: "1px solid rgba(245,163,60,0.25)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Award style={{ width: 34, height: 34, color: "#F5A33C" }} />
+                </div>
+                <div>
+                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(28px, 3vw, 44px)", fontWeight: 700, letterSpacing: "-0.04em", textTransform: "uppercase", color: "#F5A33C", lineHeight: 1 }}>Owner</div>
+                  <div style={{ fontFamily: "'Inter'", fontSize: 16, color: "rgba(245,163,60,0.45)", marginTop: 4 }}>Builds inside the ecosystem</div>
+                </div>
+              </div>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 32, position: "relative", zIndex: 1 }}>
+                {[
+                  { text: "Owns Digital Assets", sub: "A product that exists without you" },
+                  { text: "Builds Brands", sub: "Identity, loyalty, and equity" },
+                  { text: "Creates Products", sub: "Users pay you for access" },
+                  { text: "Participates In Growth", sub: "As the ecosystem expands, so do you" },
+                  { text: "Owns Something Inside The Ecosystem", sub: "A stake in the digital economy" },
+                ].map(item => (
+                  <li key={item.text} style={{ display: "flex", gap: 22, alignItems: "flex-start" }}>
+                    <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(245,163,60,0.1)", border: "1px solid rgba(245,163,60,0.22)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+                      <CheckCircle2 style={{ width: 18, height: 18, color: "#F5A33C" }} />
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: "'Inter'", fontSize: "clamp(20px, 2vw, 28px)", lineHeight: 1.2, color: "rgba(255,255,255,0.9)", fontWeight: 500 }}>{item.text}</div>
+                      <div style={{ fontFamily: "'Inter'", fontSize: 15, color: "rgba(245,163,60,0.45)", marginTop: 4 }}>{item.sub}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </SlideIn>
         </div>
+
+        {/* Bottom identity statement */}
+        <FadeUp delay={0.3} style={{ padding: "80px 40px 0", textAlign: "center" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <p style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(22px, 3vw, 38px)", fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.4, color: "rgba(255,255,255,0.75)" }}>
+              The app economy generated{" "}
+              <span style={{ color: "#F5A33C" }}>$935 billion in 2023 alone.</span>
+              <br />
+              The only question is: which side of that number are you on?
+            </p>
+          </div>
+        </FadeUp>
       </section>
 
       {/* Divider */}
@@ -503,80 +545,192 @@ export default function Presentation() {
       <div style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent)" }} />
 
       {/* ══════════════════════════════════════════════════════════════
-          SECTION 4 — THE APP ECONOMY
+          SECTION 4 — THE APP ECONOMY  [PRIORITY #2]
       ══════════════════════════════════════════════════════════════ */}
-      <section style={{ padding: "120px 40px", background: "rgba(14,18,25,0.7)", position: "relative" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <FadeUp style={{ textAlign: "center", marginBottom: 80 }}>
+      <section style={{ padding: "160px 40px 180px", background: "linear-gradient(180deg, #0B0F14 0%, #0D1219 30%, #0B0F14 100%)", position: "relative" }}>
+        <div style={{ position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)", width: 1200, height: 800, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(96,165,250,0.04) 0%, transparent 65%)", filter: "blur(120px)", pointerEvents: "none" }} />
+
+        <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+          {/* Headline */}
+          <FadeUp style={{ textAlign: "center", marginBottom: 100 }}>
             <SectionLabel>
               <BarChart3 style={{ width: 14, height: 14 }} />
               Section 4 · Market Intelligence
             </SectionLabel>
-            <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(42px, 6vw, 76px)", fontWeight: 700, letterSpacing: "-0.04em", lineHeight: 1.0, textTransform: "uppercase" }}>
+            <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(48px, 7vw, 96px)", fontWeight: 700, letterSpacing: "-0.045em", lineHeight: 0.95, textTransform: "uppercase", marginBottom: 32 }}>
               The App Economy
               <br />
               <span style={{ color: "#F5A33C" }}>Is Already Here</span>
             </h2>
-            <p style={{ fontFamily: "'Inter'", fontSize: 22, color: "rgba(255,255,255,0.45)", maxWidth: 680, margin: "24px auto 0", lineHeight: 1.75 }}>
-              The market already exists.
-              The users already exist.
-              The ecosystem already exists.
+            <p style={{ fontFamily: "'Inter'", fontSize: 24, color: "rgba(255,255,255,0.4)", maxWidth: 700, margin: "0 auto", lineHeight: 1.7 }}>
+              The market already exists. The users already exist.
+              <br />The ecosystem already exists.
             </p>
           </FadeUp>
 
-          {/* Stat cards */}
+          {/* ── Tier 1: Hero stats ── */}
           <FadeUp delay={0.06}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20, marginBottom: 80 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, marginBottom: 48 }}>
               {[
-                { val: "$935B", label: "Global App Market 2023", color: "#F5A33C" },
-                { val: "6.3B", label: "Smartphone Users Worldwide", color: "#60A5FA" },
-                { val: "35B+", label: "App Downloads in Q4 2023", color: "#A78BFA" },
-                { val: "$4.80", label: "Avg Revenue Per User / Day", color: "#34D399" },
+                { val: "$935B", label: "Global App Economy", sub: "2023 — Sensor Tower", color: "#F5A33C" },
+                { val: "6.3B", label: "Smartphone Users", sub: "Worldwide — Statista", color: "#60A5FA" },
+                { val: "35B+", label: "Downloads / Quarter", sub: "Q4 2023 Data.ai", color: "#A78BFA" },
+                { val: "$188B", label: "Consumer App Spend", sub: "App Stores Combined", color: "#34D399" },
               ].map(s => (
-                <div key={s.val} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "36px 28px", textAlign: "center" }}>
-                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(32px, 4vw, 48px)", fontWeight: 700, color: s.color, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 12 }}>{s.val}</div>
-                  <div style={{ fontFamily: "'Inter'", fontSize: 15, color: "rgba(255,255,255,0.35)", lineHeight: 1.5, textTransform: "uppercase", letterSpacing: "0.05em" }}>{s.label}</div>
+                <div key={s.val} style={{
+                  background: "rgba(255,255,255,0.025)",
+                  border: `1px solid ${s.color}22`,
+                  borderRadius: 20,
+                  padding: "44px 28px",
+                  textAlign: "center",
+                  position: "relative",
+                  overflow: "hidden",
+                }}>
+                  <div style={{ position: "absolute", top: -30, left: "50%", transform: "translateX(-50%)", width: 140, height: 80, borderRadius: "50%", background: `radial-gradient(ellipse, ${s.color}18 0%, transparent 70%)`, filter: "blur(20px)", pointerEvents: "none" }} />
+                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(36px, 3.5vw, 56px)", fontWeight: 700, color: s.color, letterSpacing: "-0.04em", lineHeight: 1, marginBottom: 10 }}>{s.val}</div>
+                  <div style={{ fontFamily: "'Inter'", fontSize: 16, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 4, lineHeight: 1.3 }}>{s.label}</div>
+                  <div style={{ fontFamily: "'Inter'", fontSize: 12, color: "rgba(255,255,255,0.25)", letterSpacing: "0.06em", textTransform: "uppercase" }}>{s.sub}</div>
                 </div>
               ))}
             </div>
           </FadeUp>
 
-          {/* Two-col: category bars + app examples */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
-            <FadeIn>
-              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "44px 40px", height: "100%" }}>
-                <p style={{ fontFamily: "'Inter'", fontSize: 13, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#F5A33C", marginBottom: 36 }}>
-                  Revenue Growth by Category
-                </p>
+          {/* ── Tier 2: Category bars + App rankings ── */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 24 }}>
+            <FadeIn delay={0.08}>
+              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "48px 44px", height: "100%" }}>
+                <p style={{ fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: "#E8ECF2", marginBottom: 8 }}>Revenue Growth by Category</p>
+                <p style={{ fontFamily: "'Inter'", fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 40, letterSpacing: "0.05em", textTransform: "uppercase" }}>Year-over-year market expansion</p>
                 {APP_CATEGORIES.map((cat, i) => (
-                  <CategoryBar key={cat.label} {...cat} delay={i * 0.1} />
+                  <CategoryBar key={cat.label} {...cat} delay={i * 0.08} />
                 ))}
+                <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "rgba(255,255,255,0.2)", marginTop: 24, lineHeight: 1.6 }}>
+                  * Category data based on industry reports and app store analytics.
+                </p>
               </div>
             </FadeIn>
 
-            <FadeIn delay={0.1}>
-              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "44px 40px", height: "100%" }}>
-                <p style={{ fontFamily: "'Inter'", fontSize: 13, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#F5A33C", marginBottom: 36 }}>
-                  What Successful Apps Generate
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                  {APP_EXAMPLES.map(app => (
-                    <div key={app.name} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "18px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                        <span style={{ fontSize: 24 }}>{app.icon}</span>
-                        <span style={{ fontFamily: "'Space Grotesk'", fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{app.name}</span>
+            <FadeIn delay={0.12}>
+              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "48px 44px", height: "100%" }}>
+                <p style={{ fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em", color: "#E8ECF2", marginBottom: 8 }}>Known App Revenue Benchmarks</p>
+                <p style={{ fontFamily: "'Inter'", fontSize: 14, color: "rgba(255,255,255,0.3)", marginBottom: 40, letterSpacing: "0.05em", textTransform: "uppercase" }}>Estimates from public industry data</p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {APP_EXAMPLES.map((app, i) => (
+                    <motion.div
+                      key={app.name}
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: i * 0.07 }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        background: "rgba(255,255,255,0.03)",
+                        borderRadius: 12,
+                        padding: "16px 20px",
+                        borderLeft: `3px solid rgba(245,163,60,${0.5 - i * 0.05})`,
+                      }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                        <span style={{ fontSize: 28 }}>{app.icon}</span>
+                        <div>
+                          <div style={{ fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 600, lineHeight: 1.2 }}>{app.name}</div>
+                          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em", marginTop: 2 }}>{app.cat}</div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: 13, color: "#F5A33C", fontWeight: 700 }}>{app.rev}</div>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 2, textTransform: "uppercase", letterSpacing: "0.06em" }}>{app.cat}</div>
-                    </div>
+                      <div style={{ fontFamily: "'Space Grotesk'", fontSize: 18, fontWeight: 700, color: "#F5A33C" }}>{app.rev}</div>
+                    </motion.div>
                   ))}
                 </div>
-                <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "rgba(255,255,255,0.25)", marginTop: 20, lineHeight: 1.6 }}>
-                  * Estimates based on public data and industry reporting.
-                </p>
               </div>
             </FadeIn>
           </div>
+
+          {/* ── Tier 3: Download context + ecosystem facts ── */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 24, marginBottom: 24 }}>
+            {[
+              {
+                icon: "📱",
+                title: "App Store Downloads",
+                stat: "900M+",
+                statSub: "Paid iOS apps downloaded in 2023",
+                facts: [
+                  "Games make up 70%+ of all app revenue",
+                  "Top 1% of games earn 90%+ of the revenue",
+                  "Average user has 40+ apps installed",
+                ],
+              },
+              {
+                icon: "🌍",
+                title: "Global Reach",
+                stat: "190+",
+                statSub: "Countries served by app stores",
+                facts: [
+                  "Asia Pacific leads total download volume",
+                  "North America leads in revenue per user",
+                  "Emerging markets are fastest growing",
+                ],
+              },
+              {
+                icon: "⚡",
+                title: "Market Velocity",
+                stat: "8.9B+",
+                statSub: "App downloads in a single quarter",
+                facts: [
+                  "Mobile gaming now outpaces console + PC combined",
+                  "IAP revenue grew 30%+ in 3 years",
+                  "Rewarded video ads = fastest-growing ad format",
+                ],
+              },
+            ].map((panel, i) => (
+              <FadeUp key={panel.title} delay={i * 0.08}>
+                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "40px 32px", height: "100%" }}>
+                  <div style={{ fontSize: 40, marginBottom: 20 }}>{panel.icon}</div>
+                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: 44, fontWeight: 700, letterSpacing: "-0.04em", color: "#F5A33C", lineHeight: 1, marginBottom: 6 }}>{panel.stat}</div>
+                  <div style={{ fontFamily: "'Inter'", fontSize: 14, color: "rgba(255,255,255,0.35)", marginBottom: 28, textTransform: "uppercase", letterSpacing: "0.05em" }}>{panel.statSub}</div>
+                  <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 14 }}>
+                    {panel.facts.map(f => (
+                      <li key={f} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#F5A33C", flexShrink: 0, marginTop: 9 }} />
+                        <span style={{ fontFamily: "'Inter'", fontSize: 16, color: "rgba(255,255,255,0.5)", lineHeight: 1.6 }}>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </FadeUp>
+            ))}
+          </div>
+
+          {/* ── Tier 4: Category rankings table ── */}
+          <FadeIn delay={0.15}>
+            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(245,163,60,0.12)", borderRadius: 20, padding: "48px 44px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 40, flexWrap: "wrap", gap: 16 }}>
+                <div>
+                  <p style={{ fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 700, color: "#E8ECF2", marginBottom: 4 }}>Top Game Categories by Download Volume</p>
+                  <p style={{ fontFamily: "'Inter'", fontSize: 14, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>App Store & Google Play combined</p>
+                </div>
+                <div style={{ fontFamily: "'Inter'", fontSize: 13, color: "rgba(255,255,255,0.2)", fontStyle: "italic" }}>Based on publicly available industry data</div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+                {[
+                  { rank: "#1", cat: "Casual Games", detail: "Puzzle, idle, match-3", color: "#F5A33C" },
+                  { rank: "#2", cat: "Arcade & Action", detail: "Runners, shooters, platformers", color: "#F472B6" },
+                  { rank: "#3", cat: "Strategy", detail: "Tower defense, city builders", color: "#60A5FA" },
+                  { rank: "#4", cat: "Word & Trivia", detail: "Brain games, crosswords", color: "#A78BFA" },
+                  { rank: "#5", cat: "Racing & Sports", detail: "Simulation, endless racers", color: "#34D399" },
+                  { rank: "#6", cat: "RPG & Adventure", detail: "Story-driven, character builds", color: "#FB923C" },
+                ].map(row => (
+                  <div key={row.rank} style={{ display: "flex", gap: 16, alignItems: "center", background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "18px 20px" }}>
+                    <div style={{ fontFamily: "'Space Grotesk'", fontSize: 24, fontWeight: 700, color: row.color, minWidth: 40 }}>{row.rank}</div>
+                    <div>
+                      <div style={{ fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 600 }}>{row.cat}</div>
+                      <div style={{ fontFamily: "'Inter'", fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{row.detail}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </FadeIn>
         </div>
       </section>
 
@@ -820,90 +974,161 @@ export default function Presentation() {
       <div style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent)" }} />
 
       {/* ══════════════════════════════════════════════════════════════
-          SECTION 9 — WHICH PATH FITS YOU?
+          SECTION 9 — WHICH PATH FITS YOU?  [PRIORITY #3]
       ══════════════════════════════════════════════════════════════ */}
-      <section style={{ padding: "120px 40px" }}>
-        <div style={{ maxWidth: 1300, margin: "0 auto" }}>
-          <FadeUp style={{ textAlign: "center", marginBottom: 80 }}>
+      <section style={{ padding: "160px 40px 180px", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", width: 1100, height: 700, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(245,163,60,0.05) 0%, transparent 65%)", filter: "blur(100px)", pointerEvents: "none" }} />
+
+        <div style={{ maxWidth: 1440, margin: "0 auto" }}>
+          {/* Headline */}
+          <FadeUp style={{ textAlign: "center", marginBottom: 32 }}>
             <SectionLabel>
               <Package style={{ width: 14, height: 14 }} />
-              Section 9 · Choose Your Path
+              Section 9 · The Decision
             </SectionLabel>
-            <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(42px, 6vw, 76px)", fontWeight: 700, letterSpacing: "-0.04em", lineHeight: 1.0, textTransform: "uppercase" }}>
+            <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(48px, 7vw, 96px)", fontWeight: 700, letterSpacing: "-0.045em", lineHeight: 0.95, textTransform: "uppercase", marginBottom: 24 }}>
               Which App Ownership Path
               <br />
               <span style={{ color: "#F5A33C" }}>Fits You?</span>
             </h2>
           </FadeUp>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
-            {PACKAGES.map((pkg, i) => (
-              <FadeUp key={pkg.name} delay={i * 0.1}>
-                <div style={{
-                  background: pkg.highlight ? "linear-gradient(160deg, #161C26 0%, #111820 100%)" : "rgba(255,255,255,0.02)",
-                  border: pkg.highlight ? "1px solid rgba(245,163,60,0.4)" : "1px solid rgba(255,255,255,0.07)",
-                  borderRadius: 24,
-                  padding: "48px 36px",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  position: "relative",
-                  overflow: "hidden",
-                  boxShadow: pkg.highlight ? "0 0 80px -30px rgba(245,163,60,0.18)" : "none",
-                }}>
-                  {pkg.highlight && (
-                    <div style={{ position: "absolute", top: -80, right: -60, width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(245,163,60,0.07) 0%, transparent 70%)", filter: "blur(40px)", pointerEvents: "none" }} />
-                  )}
+          <FadeUp delay={0.06} style={{ textAlign: "center", marginBottom: 80 }}>
+            <p style={{ fontFamily: "'Inter'", fontSize: 22, color: "rgba(255,255,255,0.4)", maxWidth: 680, margin: "0 auto", lineHeight: 1.75 }}>
+              Three paths. One goal. The right entry point depends on where you are and how fast you want to move.
+            </p>
+          </FadeUp>
 
+          {/* Package cards — Accelerator elevated */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.08fr 1fr", gap: 20, alignItems: "start" }}>
+            {PACKAGES.map((pkg, i) => {
+              const isAccelerator = pkg.highlight;
+              const isEmpire = pkg.tag === "Premium";
+              return (
+                <FadeUp key={pkg.name} delay={i * 0.1}>
                   <div style={{
-                    display: "inline-flex", alignItems: "center",
-                    padding: "5px 14px", borderRadius: 8, alignSelf: "flex-start", marginBottom: 24,
-                    background: `${pkg.tagColor}18`,
-                    border: `1px solid ${pkg.tagColor}35`,
-                    fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: pkg.tagColor,
+                    background: isAccelerator
+                      ? "linear-gradient(155deg, #1A2130 0%, #121820 60%, #0F141C 100%)"
+                      : isEmpire
+                      ? "linear-gradient(155deg, #161220 0%, #0F0E1A 100%)"
+                      : "rgba(255,255,255,0.02)",
+                    border: isAccelerator
+                      ? "1px solid rgba(245,163,60,0.5)"
+                      : isEmpire
+                      ? "1px solid rgba(167,139,250,0.3)"
+                      : "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 24,
+                    padding: isAccelerator ? "60px 44px" : "52px 40px",
+                    display: "flex",
+                    flexDirection: "column",
+                    position: "relative",
+                    overflow: "hidden",
+                    boxShadow: isAccelerator
+                      ? "0 0 120px -30px rgba(245,163,60,0.22), 0 40px 80px -20px rgba(0,0,0,0.8)"
+                      : isEmpire
+                      ? "0 0 80px -30px rgba(167,139,250,0.1)"
+                      : "none",
+                    marginTop: isAccelerator ? -20 : 0,
                   }}>
-                    {pkg.tag}
-                  </div>
+                    {/* Ambient glow inside card */}
+                    {isAccelerator && (
+                      <>
+                        <div style={{ position: "absolute", top: -60, right: -60, width: 280, height: 280, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(245,163,60,0.1) 0%, transparent 70%)", filter: "blur(40px)", pointerEvents: "none" }} />
+                        <div style={{ position: "absolute", bottom: -60, left: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(245,163,60,0.06) 0%, transparent 70%)", filter: "blur(40px)", pointerEvents: "none" }} />
+                      </>
+                    )}
+                    {isEmpire && (
+                      <div style={{ position: "absolute", top: -40, right: -40, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(167,139,250,0.07) 0%, transparent 70%)", filter: "blur(40px)", pointerEvents: "none" }} />
+                    )}
 
-                  <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: 32, fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.15, whiteSpace: "pre-line", marginBottom: 8 }}>{pkg.name}</h3>
-                  <div style={{ fontFamily: "'Inter'", fontSize: 15, color: "rgba(255,255,255,0.3)", marginBottom: 36, fontStyle: "italic" }}>Investment level confirmed during enrollment</div>
+                    {/* Tag badge */}
+                    <div style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "7px 16px", borderRadius: 10, alignSelf: "flex-start", marginBottom: 32,
+                      background: isAccelerator ? "rgba(245,163,60,0.12)" : isEmpire ? "rgba(167,139,250,0.1)" : "rgba(96,165,250,0.08)",
+                      border: isAccelerator ? "1px solid rgba(245,163,60,0.35)" : isEmpire ? "1px solid rgba(167,139,250,0.25)" : "1px solid rgba(96,165,250,0.2)",
+                      fontSize: 13, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" as const,
+                      color: isAccelerator ? "#F5A33C" : isEmpire ? "#A78BFA" : "#60A5FA",
+                      position: "relative", zIndex: 1,
+                    }}>
+                      {isAccelerator && <Star style={{ width: 12, height: 12, fill: "#F5A33C" }} />}
+                      {pkg.tag}
+                    </div>
 
-                  <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16, flex: 1 }}>
-                    {pkg.features.map(f => (
-                      <li key={f} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-                        <CheckCircle2 style={{ width: 18, height: 18, color: pkg.highlight ? "#F5A33C" : "#34D399", flexShrink: 0, marginTop: 2 }} />
-                        <span style={{ fontFamily: "'Inter'", fontSize: 18, lineHeight: 1.55, color: "rgba(255,255,255,0.65)" }}>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <button
-                    onClick={scrollToEnroll}
-                    style={{
-                      marginTop: 36,
-                      width: "100%",
-                      padding: "18px 0",
-                      borderRadius: 12,
+                    {/* Name */}
+                    <h3 style={{
                       fontFamily: "'Space Grotesk'",
-                      fontWeight: 700,
-                      fontSize: 17,
-                      cursor: "pointer",
-                      border: pkg.highlight ? "none" : "1px solid rgba(255,255,255,0.14)",
-                      background: pkg.highlight ? "linear-gradient(135deg, #F5A33C 0%, #E8891A 100%)" : "transparent",
-                      color: pkg.highlight ? "#0B0F14" : "rgba(255,255,255,0.65)",
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                      transition: "opacity 0.18s",
-                      boxShadow: pkg.highlight ? "0 8px 32px rgba(245,163,60,0.25)" : "none",
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
-                    onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
-                    {pkg.cta}
-                    <ChevronRight style={{ width: 18, height: 18 }} />
-                  </button>
-                </div>
-              </FadeUp>
-            ))}
+                      fontSize: isAccelerator ? "clamp(28px, 2.5vw, 40px)" : "clamp(24px, 2.2vw, 34px)",
+                      fontWeight: 700, letterSpacing: "-0.035em", lineHeight: 1.1,
+                      whiteSpace: "pre-line", marginBottom: 10, position: "relative", zIndex: 1,
+                    }}>{pkg.name}</h3>
+
+                    <div style={{ fontFamily: "'Inter'", fontSize: 15, color: "rgba(255,255,255,0.28)", marginBottom: 40, fontStyle: "italic", position: "relative", zIndex: 1 }}>
+                      Investment level confirmed during enrollment
+                    </div>
+
+                    {/* Visual divider */}
+                    <div style={{ height: 1, background: isAccelerator ? "rgba(245,163,60,0.15)" : "rgba(255,255,255,0.06)", marginBottom: 32, position: "relative", zIndex: 1 }} />
+
+                    {/* Features */}
+                    <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 20, flex: 1, position: "relative", zIndex: 1 }}>
+                      {pkg.features.map(f => (
+                        <li key={f} style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                          <div style={{
+                            width: 24, height: 24, borderRadius: 7, flexShrink: 0, marginTop: 2,
+                            background: isAccelerator ? "rgba(245,163,60,0.1)" : isEmpire ? "rgba(167,139,250,0.08)" : "rgba(52,211,153,0.07)",
+                            border: isAccelerator ? "1px solid rgba(245,163,60,0.2)" : isEmpire ? "1px solid rgba(167,139,250,0.18)" : "1px solid rgba(52,211,153,0.15)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                          }}>
+                            <CheckCircle2 style={{ width: 13, height: 13, color: isAccelerator ? "#F5A33C" : isEmpire ? "#A78BFA" : "#34D399" }} />
+                          </div>
+                          <span style={{ fontFamily: "'Inter'", fontSize: isAccelerator ? 20 : 18, lineHeight: 1.55, color: isAccelerator ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.55)" }}>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* CTA */}
+                    <button
+                      onClick={scrollToEnroll}
+                      style={{
+                        marginTop: 40,
+                        width: "100%",
+                        padding: isAccelerator ? "22px 0" : "18px 0",
+                        borderRadius: 14,
+                        fontFamily: "'Space Grotesk'",
+                        fontWeight: 700,
+                        fontSize: isAccelerator ? 20 : 17,
+                        cursor: "pointer",
+                        border: isAccelerator ? "none" : isEmpire ? "1px solid rgba(167,139,250,0.3)" : "1px solid rgba(255,255,255,0.12)",
+                        background: isAccelerator
+                          ? "linear-gradient(135deg, #F5A33C 0%, #E8891A 100%)"
+                          : isEmpire
+                          ? "rgba(167,139,250,0.08)"
+                          : "transparent",
+                        color: isAccelerator ? "#0B0F14" : isEmpire ? "#A78BFA" : "rgba(255,255,255,0.55)",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                        transition: "opacity 0.18s, transform 0.18s",
+                        boxShadow: isAccelerator ? "0 8px 40px rgba(245,163,60,0.3)" : "none",
+                        position: "relative", zIndex: 1,
+                        letterSpacing: "-0.01em",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}>
+                      {pkg.cta}
+                      <ChevronRight style={{ width: isAccelerator ? 20 : 17, height: isAccelerator ? 20 : 17 }} />
+                    </button>
+                  </div>
+                </FadeUp>
+              );
+            })}
           </div>
+
+          {/* Bottom note */}
+          <FadeUp delay={0.3} style={{ textAlign: "center", marginTop: 56 }}>
+            <p style={{ fontFamily: "'Inter'", fontSize: 17, color: "rgba(255,255,255,0.25)", maxWidth: 600, margin: "0 auto", lineHeight: 1.75 }}>
+              All packages include the full App Squad guided launch process. The right path depends on your goals, timeline, and level of involvement.
+            </p>
+          </FadeUp>
         </div>
       </section>
 
