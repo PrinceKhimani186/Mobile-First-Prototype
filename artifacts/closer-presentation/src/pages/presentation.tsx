@@ -187,7 +187,8 @@ const PACKAGES = [
       "App Store submission",
       "30-day post-launch support",
     ],
-    cta: "Start Essentials Enrollment",
+    cta: "START MY APP LAUNCH",
+    route: "https://appsquadinc.com/enroll/essentials",
   },
   {
     name: "App Ownership\nAccelerator",
@@ -206,7 +207,8 @@ const PACKAGES = [
       "Revenue optimization coaching",
       "Analytics dashboard access",
     ],
-    cta: "Start Accelerator Enrollment",
+    cta: "ACTIVATE MY APP OWNERSHIP PLAN",
+    route: "https://appsquadinc.com/enroll/accelerator",
   },
   {
     name: "Digital Asset\nEmpire",
@@ -225,7 +227,8 @@ const PACKAGES = [
       "Quarterly strategy sessions",
       "App portfolio growth roadmap",
     ],
-    cta: "Start Empire Enrollment",
+    cta: "BEGIN MY EMPIRE ENROLLMENT",
+    route: "https://appsquadinc.com/enroll/empire",
   },
 ];
 
@@ -882,12 +885,63 @@ export default function Presentation() {
 
                   {/* CTA */}
                   <button
-                    onClick={() => scrollTo("enroll")}
-                    style={{ marginTop: 44, width: "100%", padding: pkg.isAccelerator ? "24px 0" : "20px 0", borderRadius: 14, fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: pkg.isAccelerator ? 20 : 18, cursor: "pointer", border: pkg.isAccelerator ? "none" : pkg.isEmpire ? "1px solid rgba(167,139,250,0.28)" : "1px solid rgba(255,255,255,0.1)", background: pkg.isAccelerator ? `linear-gradient(135deg, ${GOLD} 0%, #A8844A 100%)` : pkg.isEmpire ? "rgba(167,139,250,0.07)" : "transparent", color: pkg.isAccelerator ? "#0A0B0E" : pkg.isEmpire ? "#A78BFA" : "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, transition: "opacity 0.18s, transform 0.18s", boxShadow: pkg.isAccelerator ? `0 8px 40px rgba(201,168,108,0.24)` : "none", position: "relative", zIndex: 1, letterSpacing: "-0.01em" }}
-                    onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}>
+                    onClick={() => window.open(pkg.route, "_blank")}
+                    style={{
+                      marginTop: 44,
+                      width: "100%",
+                      padding: pkg.isAccelerator ? "26px 0" : "22px 0",
+                      borderRadius: 12,
+                      fontFamily: "'Space Grotesk'",
+                      fontWeight: 700,
+                      fontSize: pkg.isAccelerator ? 16 : 14,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      cursor: "pointer",
+                      position: "relative",
+                      zIndex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 12,
+                      transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                      ...(pkg.isAccelerator ? {
+                        background: "linear-gradient(135deg, #D4AF37 0%, #A8844A 50%, #D4AF37 100%)",
+                        backgroundSize: "200% 100%",
+                        border: "none",
+                        color: "#0A0A0A",
+                        boxShadow: "0 0 0 1px rgba(212,175,55,0.4), 0 8px 32px rgba(212,175,55,0.3), 0 2px 8px rgba(0,0,0,0.4)",
+                      } : pkg.isEmpire ? {
+                        background: "#0A0A0A",
+                        border: "1px solid rgba(0,212,255,0.35)",
+                        color: "#00D4FF",
+                        boxShadow: "0 0 0 1px rgba(0,212,255,0.1), inset 0 1px 0 rgba(0,212,255,0.08), 0 4px 24px rgba(0,212,255,0.12)",
+                      } : {
+                        background: "#0A0A0A",
+                        border: "1px solid rgba(0,212,255,0.2)",
+                        color: "#00D4FF",
+                        boxShadow: "0 0 0 1px rgba(0,212,255,0.06), inset 0 1px 0 rgba(0,212,255,0.05), 0 4px 16px rgba(0,0,0,0.3)",
+                      }),
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      if (pkg.isAccelerator) {
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(212,175,55,0.6), 0 12px 48px rgba(212,175,55,0.45), 0 4px 16px rgba(0,0,0,0.5)";
+                      } else {
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.3), 0 8px 40px rgba(0,212,255,0.2), 0 4px 16px rgba(0,0,0,0.4)";
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      if (pkg.isAccelerator) {
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(212,175,55,0.4), 0 8px 32px rgba(212,175,55,0.3), 0 2px 8px rgba(0,0,0,0.4)";
+                      } else if (pkg.isEmpire) {
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.1), inset 0 1px 0 rgba(0,212,255,0.08), 0 4px 24px rgba(0,212,255,0.12)";
+                      } else {
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.06), inset 0 1px 0 rgba(0,212,255,0.05), 0 4px 16px rgba(0,0,0,0.3)";
+                      }
+                    }}>
                     {pkg.cta}
-                    <ChevronRight style={{ width: pkg.isAccelerator ? 20 : 18, height: pkg.isAccelerator ? 20 : 18 }} />
+                    <ArrowRight style={{ width: 16, height: 16, flexShrink: 0 }} />
                   </button>
                 </div>
               </FadeUp>
