@@ -1,9 +1,12 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import {
   Gamepad2, DollarSign, Palette, Rocket, CreditCard,
   CheckCircle2, Phone, ArrowRight, Calendar, Clock, Shield
 } from "lucide-react";
+
+const CALENDLY_URL = "https://calendly.com/appguyofficial/30min";
 
 const COVER_ITEMS = [
   {
@@ -51,6 +54,16 @@ const fadeUp = {
 };
 
 export default function ScheduleCall() {
+  useEffect(() => {
+    const id = "calendly-widget-script";
+    if (document.getElementById(id)) return;
+    const script = document.createElement("script");
+    script.id = id;
+    script.src = "https://assets.calendly.com/assets/external/widget.js";
+    script.async = true;
+    document.head.appendChild(script);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -93,32 +106,12 @@ export default function ScheduleCall() {
             transition={{ delay: 0.1, duration: 0.5 }}
             className="lg:col-span-3 glass rounded-[2rem] border border-white/[0.08] overflow-hidden shadow-[0_0_60px_-20px_hsl(217_85%_50%_/_0.12)]"
           >
-            {/* Calendly placeholder */}
-            <div className="bg-card/60 flex flex-col items-center justify-center gap-6 min-h-[480px] p-10 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Calendar className="w-8 h-8 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-1 font-medium tracking-wide uppercase">Calendly embed</p>
-                <h3 className="text-xl font-bold mb-2">Pick a Time That Works</h3>
-                <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                  Your Calendly booking widget will appear here once connected.
-                </p>
-              </div>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-primary" /> 30 min</span>
-                <span className="w-px h-4 bg-white/10" />
-                <span className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary" /> Video or phone</span>
-              </div>
-              <button
-                className="btn-primary h-12 px-8 text-sm font-semibold rounded-xl text-white flex items-center gap-2"
-                data-testid="button-schedule-call"
-                onClick={() => {}}
-              >
-                Schedule My App Launch Call
-                <Calendar className="w-4 h-4" />
-              </button>
-            </div>
+            {/* Calendly inline widget */}
+            <div
+              className="calendly-inline-widget w-full rounded-[2rem] overflow-hidden"
+              data-url={`${CALENDLY_URL}?hide_gdpr_banner=1&background_color=0b0f14&text_color=f0f4ff&primary_color=6366f1`}
+              style={{ minWidth: 320, height: 700 }}
+            />
           </motion.div>
 
           {/* Trust panel — spans 2 cols */}

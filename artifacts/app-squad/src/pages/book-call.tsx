@@ -9,7 +9,7 @@ import { sendCallBookedToCRM } from "@/lib/crm";
 
 // ─── Replace with your Calendly scheduling URL ────────────────────────────────
 // e.g. "https://calendly.com/yourname/strategy-call"
-const CALENDLY_URL = "";
+const CALENDLY_URL = "https://calendly.com/appguyofficial/30min";
 // ─────────────────────────────────────────────────────────────────────────────
 
 function FadeUp({
