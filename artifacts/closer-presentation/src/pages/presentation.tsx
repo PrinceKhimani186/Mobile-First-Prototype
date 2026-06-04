@@ -9,9 +9,10 @@ import {
 } from "lucide-react";
 
 /* ─────────────────── color tokens ──────────────────────────────── */
-const GOLD = "#C9A86C";      // champagne gold
-const CYAN = "#22D3EE";      // electric cyan
-const RED  = "#EF4444";
+const GOLD   = "#00D4FF";    // electric cyan — ownership accent
+const CYAN   = "#00D4FF";    // electric cyan
+const RED    = "#6D071A";    // deep burgundy — consumer accent
+const PURPLE = "#7B61FF";    // royal purple — empire accent
 
 /* ─────────────────── animation helpers ─────────────────────────── */
 
@@ -77,12 +78,12 @@ function Label({ children }: { children: React.ReactNode }) {
     <div style={{
       display: "inline-flex", alignItems: "center", gap: 8,
       padding: "8px 20px", borderRadius: 999,
-      background: "rgba(201,168,108,0.07)",
-      border: "1px solid rgba(201,168,108,0.2)",
+      background: "rgba(0,212,255,0.07)",
+      border: "1px solid rgba(0,212,255,0.2)",
       fontFamily: "'Inter', sans-serif",
       fontSize: 12, fontWeight: 700, letterSpacing: "0.14em",
       textTransform: "uppercase" as const,
-      color: "rgba(201,168,108,0.75)",
+      color: "rgba(0,212,255,0.75)",
       marginBottom: 36,
     }}>
       {children}
@@ -122,7 +123,7 @@ function Divider() {
 const CATEGORIES = [
   { label: "Games & Entertainment", pct: 74, color: GOLD },
   { label: "Lifestyle & Social", pct: 68, color: CYAN },
-  { label: "Health & Fitness", pct: 61, color: "#A78BFA" },
+  { label: "Health & Fitness", pct: 61, color: "#7B61FF" },
   { label: "Education & Learning", pct: 54, color: "#34D399" },
   { label: "Productivity Tools", pct: 47, color: "#F472B6" },
 ];
@@ -215,7 +216,7 @@ const PACKAGES = [
     packageHeadline: "THE COMPLETE APP OWNERSHIP EXPERIENCE",
     packageDesc: "For serious buyers who want the strongest implementation package available.",
     tag: "Premium",
-    tagColor: "#A78BFA",
+    tagColor: "#7B61FF",
     isAccelerator: false,
     isEmpire: true,
     features: [
@@ -254,8 +255,8 @@ export default function Presentation() {
   const bodySize = "clamp(18px, 1.5vw, 22px)";
 
   const goldBtn = {
-    background: `linear-gradient(135deg, ${GOLD} 0%, #A8844A 100%)`,
-    color: "#080A0E",
+    background: `linear-gradient(135deg, ${CYAN} 0%, #0099BB 100%)`,
+    color: "#050505",
     fontFamily: "'Space Grotesk', sans-serif",
     fontWeight: 700,
     fontSize: 18,
@@ -267,12 +268,12 @@ export default function Presentation() {
     alignItems: "center",
     gap: 12,
     padding: "22px 48px",
-    boxShadow: `0 8px 48px rgba(201,168,108,0.22), 0 2px 12px rgba(0,0,0,0.6)`,
+    boxShadow: `0 8px 48px rgba(0,212,255,0.22), 0 2px 12px rgba(0,0,0,0.6)`,
     transition: "opacity 0.18s, transform 0.18s",
   } as React.CSSProperties;
 
   return (
-    <div style={{ background: "#08090E", minHeight: "100vh", overflowX: "hidden", color: "#E8ECF2" }}>
+    <div style={{ background: "#050505", minHeight: "100vh", overflowX: "hidden", color: "#E8ECF2" }}>
 
       {/* ══════════════════════════════════════════════════════════════
           THE BIG IDEA
@@ -281,8 +282,8 @@ export default function Presentation() {
         {/* Fine grid */}
         <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)", backgroundSize: "80px 80px", pointerEvents: "none" }} />
         {/* Glow */}
-        <div style={{ position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)", width: 1000, height: 600, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(201,168,108,0.08) 0%, transparent 65%)`, filter: "blur(80px)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 240, background: "linear-gradient(transparent, #08090E)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)", width: 1000, height: 600, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(0,212,255,0.08) 0%, transparent 65%)`, filter: "blur(80px)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 240, background: "linear-gradient(transparent, #050505)", pointerEvents: "none" }} />
 
         <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 10 }}>
           <FadeUp>
@@ -327,10 +328,10 @@ export default function Presentation() {
       {/* ══════════════════════════════════════════════════════════════
           CONSUMER vs OWNER  [LARGEST SECTION]
       ══════════════════════════════════════════════════════════════ */}
-      <section id="consumer-owner" style={{ position: "relative", padding: "180px 0 200px", overflow: "hidden", background: "linear-gradient(180deg, #08090E 0%, #0C1018 40%, #08090E 100%)" }}>
+      <section id="consumer-owner" style={{ position: "relative", padding: "180px 0 200px", overflow: "hidden", background: "linear-gradient(180deg, #050505 0%, #080808 40%, #050505 100%)" }}>
         {/* Ambient split lighting */}
-        <div style={{ position: "absolute", top: 0, left: 0, width: "50%", height: "100%", background: "radial-gradient(ellipse at 20% 50%, rgba(239,68,68,0.04) 0%, transparent 60%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: 0, right: 0, width: "50%", height: "100%", background: `radial-gradient(ellipse at 80% 50%, rgba(201,168,108,0.07) 0%, transparent 60%)`, pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: 0, left: 0, width: "50%", height: "100%", background: "radial-gradient(ellipse at 20% 50%, rgba(109,7,26,0.04) 0%, transparent 60%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: 0, right: 0, width: "50%", height: "100%", background: `radial-gradient(ellipse at 80% 50%, rgba(0,212,255,0.07) 0%, transparent 60%)`, pointerEvents: "none" }} />
 
         {/* Label + headline */}
         <FadeUp style={{ textAlign: "center", marginBottom: 56, padding: "0 48px" }}>
@@ -340,7 +341,7 @@ export default function Presentation() {
         <FadeUp delay={0.06} style={{ textAlign: "center", marginBottom: 120, padding: "0 48px" }}>
           <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: heroFontSize, fontWeight: 700, letterSpacing: "-0.045em", lineHeight: 0.92, textTransform: "uppercase" }}>
             <span style={{ display: "block", color: "rgba(255,255,255,0.18)", fontSize: "0.55em", marginBottom: 16, letterSpacing: "-0.02em" }}>Everyone in the app economy is either a</span>
-            <span style={{ color: `rgba(239,68,68,0.65)` }}>Consumer</span>
+            <span style={{ color: `rgba(109,7,26,0.65)` }}>Consumer</span>
             <span style={{ color: "rgba(255,255,255,0.14)", margin: "0 32px" }}>or an</span>
             <span style={{ color: GOLD }}>Owner</span>
           </h2>
@@ -350,13 +351,13 @@ export default function Presentation() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1px 1fr", minHeight: 700 }}>
           {/* Consumer */}
           <SlideIn dir="left" delay={0.08} style={{ padding: "80px 72px 80px 80px" }}>
-            <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(13px, 1.1vw, 16px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(239,68,68,0.45)", marginBottom: 28 }}>Most People Stay</div>
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(13px, 1.1vw, 16px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(109,7,26,0.45)", marginBottom: 28 }}>Most People Stay</div>
             <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 64 }}>
-              <div style={{ width: 80, height: 80, borderRadius: 22, background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Download style={{ width: 36, height: 36, color: "rgba(239,68,68,0.6)" }} />
+              <div style={{ width: 80, height: 80, borderRadius: 22, background: "rgba(109,7,26,0.07)", border: "1px solid rgba(109,7,26,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Download style={{ width: 36, height: 36, color: "rgba(109,7,26,0.6)" }} />
               </div>
               <div>
-                <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(32px, 3.5vw, 52px)", fontWeight: 700, letterSpacing: "-0.04em", textTransform: "uppercase", color: "rgba(239,68,68,0.5)", lineHeight: 1 }}>Consumers</div>
+                <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(32px, 3.5vw, 52px)", fontWeight: 700, letterSpacing: "-0.04em", textTransform: "uppercase", color: "rgba(109,7,26,0.5)", lineHeight: 1 }}>Consumers</div>
                 <div style={{ fontFamily: "'Inter'", fontSize: 17, color: "rgba(255,255,255,0.18)", marginTop: 6 }}>Participates in the ecosystem</div>
               </div>
             </div>
@@ -369,8 +370,8 @@ export default function Presentation() {
                 { text: "Participates In Ecosystems", sub: "With no ownership stake" },
               ].map(item => (
                 <li key={item.text} style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 3 }}>
-                    <span style={{ color: "rgba(239,68,68,0.65)", fontSize: 17, fontWeight: 700 }}>✕</span>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(109,7,26,0.06)", border: "1px solid rgba(109,7,26,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 3 }}>
+                    <span style={{ color: "rgba(109,7,26,0.65)", fontSize: 17, fontWeight: 700 }}>✕</span>
                   </div>
                   <div>
                     <div style={{ fontFamily: "'Inter'", fontSize: "clamp(22px, 2.2vw, 30px)", lineHeight: 1.2, color: "rgba(255,255,255,0.32)", fontWeight: 500 }}>{item.text}</div>
@@ -385,16 +386,16 @@ export default function Presentation() {
           <div style={{ background: "rgba(255,255,255,0.06)", alignSelf: "stretch" }} />
 
           {/* Owner */}
-          <SlideIn dir="right" delay={0.12} style={{ padding: "80px 80px 80px 72px", background: "linear-gradient(135deg, rgba(201,168,108,0.03) 0%, transparent 60%)", position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: -60, right: -60, width: 360, height: 360, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(201,168,108,0.07) 0%, transparent 70%)`, filter: "blur(60px)", pointerEvents: "none" }} />
-            <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(13px, 1.1vw, 16px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: `rgba(201,168,108,0.55)`, marginBottom: 28, position: "relative", zIndex: 1 }}>A Small Group Choose</div>
+          <SlideIn dir="right" delay={0.12} style={{ padding: "80px 80px 80px 72px", background: "linear-gradient(135deg, rgba(0,212,255,0.03) 0%, transparent 60%)", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: -60, right: -60, width: 360, height: 360, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(0,212,255,0.07) 0%, transparent 70%)`, filter: "blur(60px)", pointerEvents: "none" }} />
+            <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(13px, 1.1vw, 16px)", fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: `rgba(0,212,255,0.55)`, marginBottom: 28, position: "relative", zIndex: 1 }}>A Small Group Choose</div>
             <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 64, position: "relative", zIndex: 1 }}>
-              <div style={{ width: 80, height: 80, borderRadius: 22, background: "rgba(201,168,108,0.08)", border: `1px solid rgba(201,168,108,0.22)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div style={{ width: 80, height: 80, borderRadius: 22, background: "rgba(0,212,255,0.08)", border: `1px solid rgba(0,212,255,0.22)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Award style={{ width: 36, height: 36, color: GOLD }} />
               </div>
               <div>
                 <div style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(32px, 3.5vw, 52px)", fontWeight: 700, letterSpacing: "-0.04em", textTransform: "uppercase", color: GOLD, lineHeight: 1 }}>Ownership</div>
-                <div style={{ fontFamily: "'Inter'", fontSize: 17, color: `rgba(201,168,108,0.4)`, marginTop: 6 }}>Builds inside the ecosystem</div>
+                <div style={{ fontFamily: "'Inter'", fontSize: 17, color: `rgba(0,212,255,0.4)`, marginTop: 6 }}>Builds inside the ecosystem</div>
               </div>
             </div>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 36, position: "relative", zIndex: 1 }}>
@@ -406,12 +407,12 @@ export default function Presentation() {
                 { text: "Participates In Growth", sub: "As the ecosystem expands, so do you" },
               ].map(item => (
                 <li key={item.text} style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(201,168,108,0.08)", border: `1px solid rgba(201,168,108,0.18)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 3 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(0,212,255,0.08)", border: `1px solid rgba(0,212,255,0.18)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 3 }}>
                     <CheckCircle2 style={{ width: 20, height: 20, color: GOLD }} />
                   </div>
                   <div>
                     <div style={{ fontFamily: "'Inter'", fontSize: "clamp(22px, 2.2vw, 30px)", lineHeight: 1.2, color: "rgba(255,255,255,0.88)", fontWeight: 500 }}>{item.text}</div>
-                    <div style={{ fontFamily: "'Inter'", fontSize: 16, color: `rgba(201,168,108,0.4)`, marginTop: 5 }}>{item.sub}</div>
+                    <div style={{ fontFamily: "'Inter'", fontSize: 16, color: `rgba(0,212,255,0.4)`, marginTop: 5 }}>{item.sub}</div>
                   </div>
                 </li>
               ))}
@@ -436,7 +437,7 @@ export default function Presentation() {
           VIDEO — REAL APP OWNER STORIES  [LARGE]
       ══════════════════════════════════════════════════════════════ */}
       <section style={{ padding: "140px 48px 160px", position: "relative" }}>
-        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 900, height: 600, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(34,211,238,0.04) 0%, transparent 65%)`, filter: "blur(100px)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 900, height: 600, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(0,212,255,0.04) 0%, transparent 65%)`, filter: "blur(100px)", pointerEvents: "none" }} />
 
         <div style={{ maxWidth: 1200, margin: "0 auto", position: "relative", zIndex: 10 }}>
           <FadeUp style={{ textAlign: "center", marginBottom: 72 }}>
@@ -452,7 +453,7 @@ export default function Presentation() {
           </FadeUp>
 
           <ScaleIn delay={0.1}>
-            <div style={{ borderRadius: 24, overflow: "hidden", boxShadow: `0 0 0 1px rgba(34,211,238,0.12), 0 60px 120px -30px rgba(0,0,0,0.97), 0 0 100px -40px rgba(34,211,238,0.05)` }}>
+            <div style={{ borderRadius: 24, overflow: "hidden", boxShadow: `0 0 0 1px rgba(0,212,255,0.12), 0 60px 120px -30px rgba(0,0,0,0.97), 0 0 100px -40px rgba(0,212,255,0.05)` }}>
               <div style={{ position: "relative", paddingBottom: "56.25%" }}>
                 <iframe
                   src="https://player.vimeo.com/video/1197652826?badge=0&autopause=0&player_id=0&app_id=58479&title=0&byline=0&portrait=0&dnt=1"
@@ -495,8 +496,8 @@ export default function Presentation() {
       {/* ══════════════════════════════════════════════════════════════
           THE APP ECONOMY  [MASSIVE SECTION]
       ══════════════════════════════════════════════════════════════ */}
-      <section style={{ padding: "160px 48px 200px", background: "linear-gradient(180deg, #08090E 0%, #0B0F16 25%, #08090E 100%)", position: "relative" }}>
-        <div style={{ position: "absolute", top: "15%", left: "50%", transform: "translateX(-50%)", width: 1400, height: 900, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(34,211,238,0.03) 0%, transparent 65%)`, filter: "blur(140px)", pointerEvents: "none" }} />
+      <section style={{ padding: "160px 48px 200px", background: "linear-gradient(180deg, #050505 0%, #080808 25%, #050505 100%)", position: "relative" }}>
+        <div style={{ position: "absolute", top: "15%", left: "50%", transform: "translateX(-50%)", width: 1400, height: 900, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(0,212,255,0.03) 0%, transparent 65%)`, filter: "blur(140px)", pointerEvents: "none" }} />
 
         <div style={{ maxWidth: 1440, margin: "0 auto" }}>
           {/* Headline */}
@@ -519,7 +520,7 @@ export default function Presentation() {
               {[
                 { val: "$1.1T", label: "Global App Economy", sub: "2025 — Data.ai / Sensor Tower", color: GOLD },
                 { val: "7.1B", label: "Smartphone Users", sub: "Worldwide — Statista 2025", color: CYAN },
-                { val: "40B+", label: "Downloads / Quarter", sub: "Q1 2025 Combined Stores", color: "#A78BFA" },
+                { val: "40B+", label: "Downloads / Quarter", sub: "Q1 2025 Combined Stores", color: "#7B61FF" },
                 { val: "$200B+", label: "Consumer App Spend", sub: "App Stores 2025 Combined", color: "#34D399" },
               ].map(s => (
                 <div key={s.val} style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${s.color}1E`, borderRadius: 20, padding: "48px 28px", textAlign: "center", position: "relative", overflow: "hidden" }}>
@@ -559,7 +560,7 @@ export default function Presentation() {
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
                       transition={{ duration: 0.52, delay: i * 0.07 }}
-                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "18px 22px", borderLeft: `3px solid rgba(201,168,108,${0.55 - i * 0.05})` }}>
+                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "18px 22px", borderLeft: `3px solid rgba(0,212,255,${0.55 - i * 0.05})` }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                         <span style={{ fontSize: 28 }}>{app.icon}</span>
                         <div>
@@ -611,7 +612,7 @@ export default function Presentation() {
 
           {/* Tier 4 — Category rankings */}
           <FadeIn delay={0.14}>
-            <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(201,168,108,0.1)`, borderRadius: 20, padding: "52px 48px" }}>
+            <div style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(0,212,255,0.1)`, borderRadius: 20, padding: "52px 48px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 44, flexWrap: "wrap", gap: 16 }}>
                 <div>
                   <div style={{ fontFamily: "'Space Grotesk'", fontSize: cardTitleSize, fontWeight: 700, letterSpacing: "-0.03em", marginBottom: 6 }}>Top Game Categories by Download Volume</div>
@@ -623,7 +624,7 @@ export default function Presentation() {
                 {[
                   { rank: "#1", cat: "Casual Games", detail: "Puzzle, idle, match-3", color: GOLD },
                   { rank: "#2", cat: "Arcade & Action", detail: "Runners, shooters, platformers", color: CYAN },
-                  { rank: "#3", cat: "Strategy", detail: "Tower defense, city builders", color: "#A78BFA" },
+                  { rank: "#3", cat: "Strategy", detail: "Tower defense, city builders", color: "#7B61FF" },
                   { rank: "#4", cat: "Word & Trivia", detail: "Brain games, crosswords", color: "#34D399" },
                   { rank: "#5", cat: "Racing & Sports", detail: "Simulation, endless racers", color: "#F472B6" },
                   { rank: "#6", cat: "RPG & Adventure", detail: "Story-driven, character builds", color: "#FB923C" },
@@ -665,9 +666,9 @@ export default function Presentation() {
               <FadeUp key={m.title} delay={i * 0.07}>
                 <div
                   style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "48px 40px", height: "100%", display: "flex", flexDirection: "column", gap: 22, transition: "border-color 0.25s" }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = `rgba(201,168,108,0.22)`)}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = `rgba(0,212,255,0.22)`)}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)")}>
-                  <div style={{ width: 68, height: 68, borderRadius: 20, background: "rgba(201,168,108,0.07)", border: `1px solid rgba(201,168,108,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD }}>
+                  <div style={{ width: 68, height: 68, borderRadius: 20, background: "rgba(0,212,255,0.07)", border: `1px solid rgba(0,212,255,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD }}>
                     {m.icon}
                   </div>
                   <div>
@@ -693,14 +694,14 @@ export default function Presentation() {
             <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: sectionFontSize, fontWeight: 700, letterSpacing: "-0.045em", lineHeight: 0.95, textTransform: "uppercase" }}>
               Why Most People
               <br />
-              <span style={{ color: "rgba(239,68,68,0.65)" }}>Never Enter</span>
+              <span style={{ color: "rgba(109,7,26,0.65)" }}>Never Enter</span>
             </h2>
           </FadeUp>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: 22, marginBottom: 80 }}>
             {BARRIERS.map((b, i) => (
               <FadeUp key={b.title} delay={i * 0.08}>
-                <div style={{ background: "rgba(239,68,68,0.025)", border: "1px solid rgba(239,68,68,0.1)", borderRadius: 20, padding: "48px 40px", height: "100%" }}>
-                  <div style={{ width: 68, height: 68, borderRadius: 20, background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.13)", display: "flex", alignItems: "center", justifyContent: "center", color: `rgba(239,68,68,0.7)`, marginBottom: 32 }}>
+                <div style={{ background: "rgba(109,7,26,0.025)", border: "1px solid rgba(109,7,26,0.1)", borderRadius: 20, padding: "48px 40px", height: "100%" }}>
+                  <div style={{ width: 68, height: 68, borderRadius: 20, background: "rgba(109,7,26,0.07)", border: "1px solid rgba(109,7,26,0.13)", display: "flex", alignItems: "center", justifyContent: "center", color: `rgba(109,7,26,0.7)`, marginBottom: 32 }}>
                     {b.icon}
                   </div>
                   <div style={{ fontFamily: "'Space Grotesk'", fontSize: cardTitleSize, fontWeight: 700, letterSpacing: "-0.03em", marginBottom: 16 }}>{b.title}</div>
@@ -712,8 +713,8 @@ export default function Presentation() {
 
           {/* Transition */}
           <FadeUp delay={0.24}>
-            <div style={{ background: `linear-gradient(135deg, rgba(201,168,108,0.05) 0%, rgba(201,168,108,0.02) 100%)`, border: `1px solid rgba(201,168,108,0.22)`, borderRadius: 24, padding: "80px 64px", textAlign: "center", position: "relative", overflow: "hidden", boxShadow: `0 0 100px -40px rgba(201,168,108,0.1)` }}>
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 700, height: 350, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(201,168,108,0.05) 0%, transparent 70%)`, filter: "blur(80px)", pointerEvents: "none" }} />
+            <div style={{ background: `linear-gradient(135deg, rgba(0,212,255,0.05) 0%, rgba(0,212,255,0.02) 100%)`, border: `1px solid rgba(0,212,255,0.22)`, borderRadius: 24, padding: "80px 64px", textAlign: "center", position: "relative", overflow: "hidden", boxShadow: `0 0 100px -40px rgba(0,212,255,0.1)` }}>
+              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 700, height: 350, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(0,212,255,0.05) 0%, transparent 70%)`, filter: "blur(80px)", pointerEvents: "none" }} />
               <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(36px, 5vw, 70px)", fontWeight: 700, letterSpacing: "-0.04em", textTransform: "uppercase", position: "relative", zIndex: 1, marginBottom: 24 }}>
                 That's Why
                 <br />
@@ -746,10 +747,10 @@ export default function Presentation() {
             {PROCESS.map((step, i) => (
               <FadeUp key={step.num} delay={i * 0.09}>
                 <div
-                  style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(201,168,108,0.12)`, borderRadius: 20, padding: "44px 48px", display: "flex", gap: 40, alignItems: "flex-start", transition: "border-color 0.25s" }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = `rgba(201,168,108,0.3)`)}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = `rgba(201,168,108,0.12)`)}>
-                  <div style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: "clamp(40px, 4.5vw, 68px)", color: `rgba(201,168,108,0.18)`, lineHeight: 1, minWidth: 64, letterSpacing: "-0.04em", flexShrink: 0 }}>{step.num}</div>
+                  style={{ background: "rgba(255,255,255,0.02)", border: `1px solid rgba(0,212,255,0.12)`, borderRadius: 20, padding: "44px 48px", display: "flex", gap: 40, alignItems: "flex-start", transition: "border-color 0.25s" }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = `rgba(0,212,255,0.3)`)}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = `rgba(0,212,255,0.12)`)}>
+                  <div style={{ fontFamily: "'Space Grotesk'", fontWeight: 700, fontSize: "clamp(40px, 4.5vw, 68px)", color: `rgba(0,212,255,0.18)`, lineHeight: 1, minWidth: 64, letterSpacing: "-0.04em", flexShrink: 0 }}>{step.num}</div>
                   <div>
                     <div style={{ fontFamily: "'Space Grotesk'", fontSize: cardTitleSize, fontWeight: 700, letterSpacing: "-0.03em", marginBottom: 14 }}>{step.title}</div>
                     <p style={{ fontFamily: "'Inter'", fontSize: bodySize, lineHeight: 1.75, color: "rgba(255,255,255,0.42)" }}>{step.desc}</p>
@@ -784,10 +785,10 @@ export default function Presentation() {
               <FadeUp key={tmpl.name} delay={i * 0.06}>
                 <div
                   style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "48px 32px", textAlign: "center", cursor: "pointer", position: "relative", overflow: "hidden", transition: "border-color 0.22s, background 0.22s, transform 0.22s" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = `rgba(201,168,108,0.3)`; e.currentTarget.style.background = `rgba(201,168,108,0.03)`; e.currentTarget.style.transform = "translateY(-5px)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = `rgba(0,212,255,0.3)`; e.currentTarget.style.background = `rgba(0,212,255,0.03)`; e.currentTarget.style.transform = "translateY(-5px)"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.transform = "translateY(0)"; }}>
                   {tmpl.tag && (
-                    <div style={{ position: "absolute", top: 16, right: 16, padding: "5px 11px", borderRadius: 7, background: tmpl.tag === "Most Popular" ? `rgba(201,168,108,0.12)` : tmpl.tag === "New" ? "rgba(52,211,153,0.1)" : "rgba(34,211,238,0.09)", border: `1px solid ${tmpl.tag === "Most Popular" ? `rgba(201,168,108,0.28)` : tmpl.tag === "New" ? "rgba(52,211,153,0.22)" : "rgba(34,211,238,0.2)"}`, fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: tmpl.tag === "Most Popular" ? GOLD : tmpl.tag === "New" ? "#34D399" : CYAN }}>
+                    <div style={{ position: "absolute", top: 16, right: 16, padding: "5px 11px", borderRadius: 7, background: tmpl.tag === "Most Popular" ? `rgba(0,212,255,0.12)` : tmpl.tag === "New" ? "rgba(52,211,153,0.1)" : "rgba(0,212,255,0.09)", border: `1px solid ${tmpl.tag === "Most Popular" ? `rgba(0,212,255,0.28)` : tmpl.tag === "New" ? "rgba(52,211,153,0.22)" : "rgba(0,212,255,0.2)"}`, fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: tmpl.tag === "Most Popular" ? GOLD : tmpl.tag === "New" ? "#34D399" : CYAN }}>
                       {tmpl.tag}
                     </div>
                   )}
@@ -810,7 +811,7 @@ export default function Presentation() {
           WHICH PATH FITS YOU?  [DECISION SECTION]
       ══════════════════════════════════════════════════════════════ */}
       <section style={{ padding: "160px 48px 180px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "35%", left: "50%", transform: "translateX(-50%)", width: 1200, height: 800, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(201,168,108,0.04) 0%, transparent 65%)`, filter: "blur(120px)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "35%", left: "50%", transform: "translateX(-50%)", width: 1200, height: 800, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(0,212,255,0.04) 0%, transparent 65%)`, filter: "blur(120px)", pointerEvents: "none" }} />
 
         <div style={{ maxWidth: 1500, margin: "0 auto" }}>
           <FadeUp style={{ textAlign: "center", marginBottom: 36 }}>
@@ -837,29 +838,29 @@ export default function Presentation() {
                     : pkg.isEmpire ? "linear-gradient(155deg, #14112A 0%, #0E0D1E 100%)"
                     : "rgba(255,255,255,0.025)",
                   border: pkg.isAccelerator
-                    ? `1px solid rgba(201,168,108,0.45)`
-                    : pkg.isEmpire ? "1px solid rgba(167,139,250,0.28)"
+                    ? `1px solid rgba(0,212,255,0.45)`
+                    : pkg.isEmpire ? "1px solid rgba(123,97,255,0.28)"
                     : "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 24,
                   padding: pkg.isAccelerator ? "64px 48px" : "56px 44px",
                   display: "flex", flexDirection: "column", position: "relative", overflow: "hidden",
                   boxShadow: pkg.isAccelerator
-                    ? `0 0 140px -30px rgba(201,168,108,0.18), 0 40px 80px -20px rgba(0,0,0,0.9)`
-                    : pkg.isEmpire ? "0 0 80px -40px rgba(167,139,250,0.1)" : "none",
+                    ? `0 0 140px -30px rgba(0,212,255,0.18), 0 40px 80px -20px rgba(0,0,0,0.9)`
+                    : pkg.isEmpire ? "0 0 80px -40px rgba(123,97,255,0.1)" : "none",
                   marginTop: pkg.isAccelerator ? -24 : 0,
                 }}>
                   {pkg.isAccelerator && (
                     <>
-                      <div style={{ position: "absolute", top: -60, right: -60, width: 320, height: 320, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(201,168,108,0.09) 0%, transparent 70%)`, filter: "blur(50px)", pointerEvents: "none" }} />
-                      <div style={{ position: "absolute", bottom: -50, left: -40, width: 200, height: 200, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(201,168,108,0.05) 0%, transparent 70%)`, filter: "blur(40px)", pointerEvents: "none" }} />
+                      <div style={{ position: "absolute", top: -60, right: -60, width: 320, height: 320, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(0,212,255,0.09) 0%, transparent 70%)`, filter: "blur(50px)", pointerEvents: "none" }} />
+                      <div style={{ position: "absolute", bottom: -50, left: -40, width: 200, height: 200, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(0,212,255,0.05) 0%, transparent 70%)`, filter: "blur(40px)", pointerEvents: "none" }} />
                     </>
                   )}
                   {pkg.isEmpire && (
-                    <div style={{ position: "absolute", top: -40, right: -40, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(167,139,250,0.06) 0%, transparent 70%)", filter: "blur(40px)", pointerEvents: "none" }} />
+                    <div style={{ position: "absolute", top: -40, right: -40, width: 240, height: 240, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(123,97,255,0.06) 0%, transparent 70%)", filter: "blur(40px)", pointerEvents: "none" }} />
                   )}
 
                   {/* Tag */}
-                  <div style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "7px 16px", borderRadius: 10, alignSelf: "flex-start", marginBottom: 32, background: pkg.isAccelerator ? `rgba(201,168,108,0.1)` : pkg.isEmpire ? "rgba(167,139,250,0.08)" : `rgba(34,211,238,0.07)`, border: `1px solid ${pkg.isAccelerator ? "rgba(201,168,108,0.3)" : pkg.isEmpire ? "rgba(167,139,250,0.22)" : "rgba(34,211,238,0.18)"}`, fontSize: 13, fontWeight: 700, letterSpacing: "0.11em", textTransform: "uppercase" as const, color: pkg.tagColor, position: "relative", zIndex: 1 }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "7px 16px", borderRadius: 10, alignSelf: "flex-start", marginBottom: 32, background: pkg.isAccelerator ? `rgba(0,212,255,0.1)` : pkg.isEmpire ? "rgba(123,97,255,0.08)" : `rgba(0,212,255,0.07)`, border: `1px solid ${pkg.isAccelerator ? "rgba(0,212,255,0.3)" : pkg.isEmpire ? "rgba(123,97,255,0.22)" : "rgba(0,212,255,0.18)"}`, fontSize: 13, fontWeight: 700, letterSpacing: "0.11em", textTransform: "uppercase" as const, color: pkg.tagColor, position: "relative", zIndex: 1 }}>
                     {pkg.isAccelerator && <Star style={{ width: 12, height: 12, fill: GOLD, color: GOLD }} />}
                     {pkg.tag}
                   </div>
@@ -867,16 +868,16 @@ export default function Presentation() {
                   {/* Name */}
                   <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: pkg.isAccelerator ? "clamp(28px, 2.6vw, 42px)" : "clamp(24px, 2.2vw, 36px)", fontWeight: 700, letterSpacing: "-0.035em", lineHeight: 1.1, whiteSpace: "pre-line", marginBottom: 16, position: "relative", zIndex: 1 }}>{pkg.name}</h3>
                   {/* Identity headline */}
-                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: pkg.isAccelerator ? "clamp(13px, 1.1vw, 16px)" : "clamp(12px, 1vw, 14px)", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: pkg.isAccelerator ? GOLD : pkg.isEmpire ? "#A78BFA" : CYAN, marginBottom: 12, position: "relative", zIndex: 1 }}>{pkg.packageHeadline}</div>
+                  <div style={{ fontFamily: "'Space Grotesk'", fontSize: pkg.isAccelerator ? "clamp(13px, 1.1vw, 16px)" : "clamp(12px, 1vw, 14px)", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: pkg.isAccelerator ? GOLD : pkg.isEmpire ? "#7B61FF" : CYAN, marginBottom: 12, position: "relative", zIndex: 1 }}>{pkg.packageHeadline}</div>
                   <div style={{ fontFamily: "'Inter'", fontSize: 16, color: "rgba(255,255,255,0.38)", marginBottom: 36, lineHeight: 1.65, position: "relative", zIndex: 1 }}>{pkg.packageDesc}</div>
-                  <div style={{ height: 1, background: pkg.isAccelerator ? `rgba(201,168,108,0.14)` : "rgba(255,255,255,0.06)", marginBottom: 36, position: "relative", zIndex: 1 }} />
+                  <div style={{ height: 1, background: pkg.isAccelerator ? `rgba(0,212,255,0.14)` : "rgba(255,255,255,0.06)", marginBottom: 36, position: "relative", zIndex: 1 }} />
 
                   {/* Features */}
                   <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 20, flex: 1, position: "relative", zIndex: 1 }}>
                     {pkg.features.map(f => (
                       <li key={f} style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
-                        <div style={{ width: 26, height: 26, borderRadius: 8, flexShrink: 0, marginTop: 2, background: pkg.isAccelerator ? `rgba(201,168,108,0.09)` : pkg.isEmpire ? "rgba(167,139,250,0.07)" : "rgba(52,211,153,0.06)", border: `1px solid ${pkg.isAccelerator ? "rgba(201,168,108,0.2)" : pkg.isEmpire ? "rgba(167,139,250,0.16)" : "rgba(52,211,153,0.14)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <CheckCircle2 style={{ width: 13, height: 13, color: pkg.isAccelerator ? GOLD : pkg.isEmpire ? "#A78BFA" : "#34D399" }} />
+                        <div style={{ width: 26, height: 26, borderRadius: 8, flexShrink: 0, marginTop: 2, background: pkg.isAccelerator ? `rgba(0,212,255,0.09)` : pkg.isEmpire ? "rgba(123,97,255,0.07)" : "rgba(52,211,153,0.06)", border: `1px solid ${pkg.isAccelerator ? "rgba(0,212,255,0.2)" : pkg.isEmpire ? "rgba(123,97,255,0.16)" : "rgba(52,211,153,0.14)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <CheckCircle2 style={{ width: 13, height: 13, color: pkg.isAccelerator ? GOLD : pkg.isEmpire ? "#7B61FF" : "#34D399" }} />
                         </div>
                         <span style={{ fontFamily: "'Inter'", fontSize: pkg.isAccelerator ? 20 : 19, lineHeight: 1.55, color: pkg.isAccelerator ? "rgba(255,255,255,0.78)" : "rgba(255,255,255,0.52)" }}>{f}</span>
                       </li>
@@ -905,18 +906,18 @@ export default function Presentation() {
                       gap: 12,
                       transition: "transform 0.2s ease, box-shadow 0.2s ease",
                       ...(pkg.isAccelerator ? {
-                        background: "linear-gradient(135deg, #D4AF37 0%, #A8844A 50%, #D4AF37 100%)",
+                        background: "linear-gradient(135deg, #00D4FF 0%, #0099BB 50%, #00D4FF 100%)",
                         backgroundSize: "200% 100%",
                         border: "none",
-                        color: "#0A0A0A",
-                        boxShadow: "0 0 0 1px rgba(212,175,55,0.4), 0 8px 32px rgba(212,175,55,0.3), 0 2px 8px rgba(0,0,0,0.4)",
+                        color: "#050505",
+                        boxShadow: "0 0 0 1px rgba(0,212,255,0.5), 0 8px 32px rgba(0,212,255,0.3), 0 2px 8px rgba(0,0,0,0.5)",
                       } : pkg.isEmpire ? {
-                        background: "#0A0A0A",
-                        border: "1px solid rgba(0,212,255,0.35)",
-                        color: "#00D4FF",
-                        boxShadow: "0 0 0 1px rgba(0,212,255,0.1), inset 0 1px 0 rgba(0,212,255,0.08), 0 4px 24px rgba(0,212,255,0.12)",
+                        background: "#050505",
+                        border: "1px solid rgba(123,97,255,0.4)",
+                        color: "#7B61FF",
+                        boxShadow: "0 0 0 1px rgba(123,97,255,0.12), inset 0 1px 0 rgba(123,97,255,0.1), 0 4px 24px rgba(123,97,255,0.15)",
                       } : {
-                        background: "#0A0A0A",
+                        background: "#050505",
                         border: "1px solid rgba(0,212,255,0.2)",
                         color: "#00D4FF",
                         boxShadow: "0 0 0 1px rgba(0,212,255,0.06), inset 0 1px 0 rgba(0,212,255,0.05), 0 4px 16px rgba(0,0,0,0.3)",
@@ -925,7 +926,9 @@ export default function Presentation() {
                     onMouseEnter={e => {
                       e.currentTarget.style.transform = "translateY(-2px)";
                       if (pkg.isAccelerator) {
-                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(212,175,55,0.6), 0 12px 48px rgba(212,175,55,0.45), 0 4px 16px rgba(0,0,0,0.5)";
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.7), 0 12px 48px rgba(0,212,255,0.45), 0 4px 16px rgba(0,0,0,0.5)";
+                      } else if (pkg.isEmpire) {
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(123,97,255,0.4), 0 8px 40px rgba(123,97,255,0.25), 0 4px 16px rgba(0,0,0,0.4)";
                       } else {
                         e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.3), 0 8px 40px rgba(0,212,255,0.2), 0 4px 16px rgba(0,0,0,0.4)";
                       }
@@ -933,9 +936,9 @@ export default function Presentation() {
                     onMouseLeave={e => {
                       e.currentTarget.style.transform = "translateY(0)";
                       if (pkg.isAccelerator) {
-                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(212,175,55,0.4), 0 8px 32px rgba(212,175,55,0.3), 0 2px 8px rgba(0,0,0,0.4)";
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.5), 0 8px 32px rgba(0,212,255,0.3), 0 2px 8px rgba(0,0,0,0.5)";
                       } else if (pkg.isEmpire) {
-                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.1), inset 0 1px 0 rgba(0,212,255,0.08), 0 4px 24px rgba(0,212,255,0.12)";
+                        e.currentTarget.style.boxShadow = "0 0 0 1px rgba(123,97,255,0.12), inset 0 1px 0 rgba(123,97,255,0.1), 0 4px 24px rgba(123,97,255,0.15)";
                       } else {
                         e.currentTarget.style.boxShadow = "0 0 0 1px rgba(0,212,255,0.06), inset 0 1px 0 rgba(0,212,255,0.05), 0 4px 16px rgba(0,0,0,0.3)";
                       }
@@ -982,15 +985,15 @@ export default function Presentation() {
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                   {/* Step row */}
                   <div
-                    style={{ display: "flex", alignItems: "center", gap: 28, width: "100%", background: "rgba(255,255,255,0.02)", border: `1px solid rgba(34,211,238,${0.12 - i * 0.01})`, borderRadius: 18, padding: "32px 40px", transition: "border-color 0.25s, background 0.25s" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = `rgba(34,211,238,0.3)`; (e.currentTarget as HTMLDivElement).style.background = "rgba(34,211,238,0.025)"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = `rgba(34,211,238,${0.12 - i * 0.01})`; (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.02)"; }}>
+                    style={{ display: "flex", alignItems: "center", gap: 28, width: "100%", background: "rgba(255,255,255,0.02)", border: `1px solid rgba(0,212,255,${0.12 - i * 0.01})`, borderRadius: 18, padding: "32px 40px", transition: "border-color 0.25s, background 0.25s" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = `rgba(0,212,255,0.3)`; (e.currentTarget as HTMLDivElement).style.background = "rgba(0,212,255,0.025)"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = `rgba(0,212,255,${0.12 - i * 0.01})`; (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.02)"; }}>
                     {/* Step number */}
-                    <div style={{ fontFamily: "'Space Grotesk'", fontSize: 42, fontWeight: 700, letterSpacing: "-0.04em", color: `rgba(34,211,238,${0.15 + (6 - i) * 0.04})`, lineHeight: 1, minWidth: 52, flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'Space Grotesk'", fontSize: 42, fontWeight: 700, letterSpacing: "-0.04em", color: `rgba(0,212,255,${0.15 + (6 - i) * 0.04})`, lineHeight: 1, minWidth: 52, flexShrink: 0 }}>
                       {String(i + 1).padStart(2, "0")}
                     </div>
                     {/* Icon */}
-                    <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(34,211,238,0.06)", border: `1px solid rgba(34,211,238,0.14)`, display: "flex", alignItems: "center", justifyContent: "center", color: CYAN, flexShrink: 0 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(0,212,255,0.06)", border: `1px solid rgba(0,212,255,0.14)`, display: "flex", alignItems: "center", justifyContent: "center", color: CYAN, flexShrink: 0 }}>
                       {step.icon}
                     </div>
                     {/* Content */}
@@ -1002,8 +1005,8 @@ export default function Presentation() {
                   {/* Arrow connector — not after last item */}
                   {i < ENROLLMENT_STEPS.length - 1 && (
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "8px 0", gap: 3 }}>
-                      <div style={{ width: 1, height: 16, background: `rgba(34,211,238,0.2)` }} />
-                      <div style={{ width: 0, height: 0, borderLeft: "6px solid transparent", borderRight: "6px solid transparent", borderTop: `8px solid rgba(34,211,238,0.3)` }} />
+                      <div style={{ width: 1, height: 16, background: `rgba(0,212,255,0.2)` }} />
+                      <div style={{ width: 0, height: 0, borderLeft: "6px solid transparent", borderRight: "6px solid transparent", borderTop: `8px solid rgba(0,212,255,0.3)` }} />
                     </div>
                   )}
                 </div>
@@ -1020,7 +1023,7 @@ export default function Presentation() {
       ══════════════════════════════════════════════════════════════ */}
       <section id="enroll" style={{ padding: "160px 48px 180px", position: "relative" }}>
         <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px)", backgroundSize: "80px 80px", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 1100, height: 700, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(201,168,108,0.07) 0%, transparent 65%)`, filter: "blur(100px)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: 1100, height: 700, borderRadius: "50%", background: `radial-gradient(ellipse, rgba(0,212,255,0.07) 0%, transparent 65%)`, filter: "blur(100px)", pointerEvents: "none" }} />
 
         <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 10 }}>
           <FadeUp>
@@ -1043,7 +1046,7 @@ export default function Presentation() {
 
           {/* Checklist */}
           <FadeUp delay={0.18} style={{ marginBottom: 64 }}>
-            <div style={{ display: "inline-flex", flexDirection: "column", gap: 20, textAlign: "left", background: "rgba(255,255,255,0.02)", border: `1px solid rgba(201,168,108,0.16)`, borderRadius: 20, padding: "44px 56px" }}>
+            <div style={{ display: "inline-flex", flexDirection: "column", gap: 20, textAlign: "left", background: "rgba(255,255,255,0.02)", border: `1px solid rgba(0,212,255,0.16)`, borderRadius: 20, padding: "44px 56px" }}>
               {[
                 "Complete Your Agreement",
                 "Activate Your Package",
@@ -1059,7 +1062,7 @@ export default function Presentation() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.55, delay: 0.18 + i * 0.08 }}
                   style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: `rgba(201,168,108,0.08)`, border: `1px solid rgba(201,168,108,0.18)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, flexShrink: 0 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: `rgba(0,212,255,0.08)`, border: `1px solid rgba(0,212,255,0.18)`, display: "flex", alignItems: "center", justifyContent: "center", color: GOLD, flexShrink: 0 }}>
                     <CheckCircle2 style={{ width: 18, height: 18 }} />
                   </div>
                   <span style={{ fontFamily: "'Inter'", fontSize: 22, color: "rgba(255,255,255,0.72)" }}>{item}</span>
