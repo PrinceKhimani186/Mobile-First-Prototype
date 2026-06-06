@@ -1,0 +1,447 @@
+Update the App Squad post-enrollment Game Selection page.
+
+This page is for customers who already enrolled and are choosing their app template.
+
+Do NOT make it look like the old ClickFunnels page.
+
+Make it feel like a premium app template marketplace / digital product catalog.
+
+Route:
+/onboarding/game-selection
+
+==================================================
+PAGE PURPOSE
+============
+
+The customer has already:
+
+1. Signed agreement
+2. Paid
+3. Entered onboarding
+4. Now needs to choose a game template
+
+This page should feel exciting and professional.
+
+It should NOT feel like a sales page.
+
+==================================================
+DESIGN STYLE
+============
+
+Use:
+
+* Premium dark tech background
+* Large game cards
+* Attractive game icon artwork
+* Category filters
+* Search bar
+* Featured templates section
+* Premium / upgraded template badges
+* Smooth hover animations
+* Mobile-friendly layout
+
+The page should feel like:
+
+App Store + Steam + Netflix game browsing experience
+
+NOT:
+
+ClickFunnels
+
+==================================================
+HEADER
+======
+
+Headline:
+
+Choose Your Game Template
+
+Subheadline:
+
+Select the mobile game category that best fits your brand, audience, and app ownership goals.
+
+Add small helper text:
+
+You can preview templates, compare categories, and select the game direction you want App Squad to customize.
+
+==================================================
+FILTERS
+=======
+
+Create category filters:
+
+All Games
+Puzzle
+Word Games
+Arcade
+Action
+Shooting
+Racing
+Simulator
+Sports
+Casino-Style Entertainment
+Kids / Educational
+Fashion / Lifestyle
+Medical / Learning
+Trivia
+Adventure
+
+==================================================
+GAME CARD DESIGN
+================
+
+Each card should include:
+
+* Attractive AI-generated icon image placeholder
+* Game title
+* Category
+* Short description
+* Badge if upgraded/premium
+* Button: Select This Template
+
+When customer clicks Select This Template:
+
+Save selected template to localStorage:
+
+selectedGameTemplate
+selectedGameCategory
+selectedGameTitle
+
+Then route to:
+
+/onboarding/customization
+
+==================================================
+IMPORTANT COMPLIANCE
+====================
+
+For casino-style templates, display this notice:
+
+Casino-style templates are entertainment-only and do not include real-money gambling, wagering, cash prizes, sweepstakes, or regulated gaming functionality.
+
+Do not use language about winning real money.
+
+==================================================
+GAME TEMPLATE LIST
+==================
+
+Add the following game templates as selectable cards:
+
+1. Xtetris™: Block Puzzle Games
+   Category: Puzzle
+   Description: Classic block puzzle gameplay focused on clearing lines and building score.
+
+2. Metal Soldiers
+   Category: Action / Shooting
+   Badge: Premium Template
+   Description: Action platform shooter template with weapons, levels, and fast-paced combat style.
+
+3. Squid Survival Player 456
+   Category: Survival / Adventure
+   Badge: Premium Template
+   Description: Challenge-based survival game template inspired by obstacle and level progression gameplay.
+
+4. Blackjack
+   Category: Casino-Style Entertainment
+   Badge: Premium Template
+   Description: Entertainment-only blackjack style card game template.
+
+5. Galaxy Attack: Alien Shooting
+   Category: Arcade / Shooting
+   Description: Space shooter template with enemy waves, upgrades, and arcade-style gameplay.
+
+6. Crossy Word Search
+   Category: Word Games
+   Description: Word search puzzle template with level progression and brain-training gameplay.
+
+7. Bus Simulator: Ultimate
+   Category: Simulator
+   Badge: Premium Template
+   Description: Bus driving simulation template with routes, vehicles, and travel-style gameplay.
+
+8. Truck Simulator USA - Evolution
+   Category: Simulator
+   Badge: Premium Template
+   Description: Truck driving simulation template with transportation and road-based gameplay.
+
+9. Dental Simulator
+   Category: Medical / Learning
+   Badge: Premium Template
+   Description: Educational dental simulation template with treatment-style interactions.
+
+10. Word Search Puzzle
+    Category: Word Games
+    Description: Classic word puzzle template for vocabulary and brain-training experiences.
+
+11. Word Chef
+    Category: Word Games
+    Description: Word puzzle template where users connect letters to create words.
+
+12. Word Connect
+    Category: Word Games
+    Description: Word connection template for spelling, vocabulary, and puzzle gameplay.
+
+13. Crossy Word
+    Category: Word Games
+    Description: Crossword-style word connection template with level progression.
+
+14. Hexa Puzzle
+    Category: Puzzle
+    Description: Hexa block puzzle template with geometric strategy gameplay.
+
+15. Unroll Ball Slide Puzzle
+    Category: Puzzle
+    Description: Slide puzzle template where users guide the ball through connected paths.
+
+16. Tetris Block Puzzle
+    Category: Puzzle
+    Description: Classic block puzzle template with line-clearing gameplay.
+
+17. Bubble Shooter
+    Category: Arcade / Puzzle
+    Description: Match bubbles, clear levels, and score stars through casual gameplay.
+
+18. Match 3 Candy Crush Style
+    Category: Puzzle / Match 3
+    Description: Match-three puzzle template with candy-style game mechanics and level progression.
+
+19. Flight Pilot: 3D Simulator
+    Category: Simulator
+    Badge: Premium Template
+    Description: Flight simulator template with missions, aircraft, and 3D-style gameplay.
+
+20. Run Forrest Run: Running Games
+    Category: Running / Adventure
+    Badge: Premium Template
+    Description: Endless runner-style template with obstacles, coins, and adventure gameplay.
+
+21. Crossy Road
+    Category: Arcade
+    Badge: Premium Template
+    Description: Arcade crossing template focused on movement, timing, and obstacle avoidance.
+
+22. Fashion Competition Dress Up And Make Up Game
+    Category: Fashion / Lifestyle
+    Badge: Premium Template
+    Description: Dress-up and makeover game template for fashion and beauty-focused audiences.
+
+23. Ear Doctor
+    Category: Medical / Kids
+    Badge: Premium Template
+    Description: Doctor simulation template with treatment tools and interactive procedures.
+
+24. Mandala Coloring Book
+    Category: Kids / Educational / Lifestyle
+    Description: Coloring app template with drawing modes, brushes, stickers, and palettes.
+
+25. 3D Bowling
+    Category: Sports
+    Badge: Premium Template
+    Description: Bowling game template with 3D-style gameplay and score tracking.
+
+26. Marble Zuma
+    Category: Arcade / Puzzle
+    Description: Marble matching game template with chain reactions and score progression.
+
+27. 8 Ball Pool
+    Category: Sports
+    Badge: Premium Template
+    Description: Pool game template with realistic billiards-style gameplay.
+
+28. FoxOne Special Missions
+    Category: Action / Flight
+    Badge: Premium Template
+    Description: Air combat template with fighter jets, missions, and battle gameplay.
+
+29. Soccer Game 3D
+    Category: Sports
+    Badge: Premium Template
+    Description: Soccer game template with fast-paced football gameplay.
+
+30. Huge Casino Slots Vegas 777
+    Category: Casino-Style Entertainment
+    Badge: Premium Template
+    Description: Entertainment-only slot-style template with casino-inspired visuals.
+
+31. Billionaire Casino Slots 777
+    Category: Casino-Style Entertainment
+    Badge: Premium Template
+    Description: Entertainment-only slot-style template with reels, bonus visuals, and casino-inspired design.
+
+32. Brother Squad - Metal Shooter
+    Category: Action / Shooting
+    Description: Side-scrolling shooter template with missions, enemies, and action gameplay.
+
+33. Sniper Warrior: PvP Sniper
+    Category: Shooting
+    Badge: Premium Template
+    Description: Sniper shooting template with competitive-style gameplay.
+
+34. Real Gangster Crime
+    Category: Action / Open World
+    Badge: Premium Template
+    Description: Open-world action template with missions, vehicles, and city-style gameplay.
+
+35. Limo Parking Simulator 3D
+    Category: Simulator / Driving
+    Badge: Premium Template
+    Description: Luxury limousine parking and driving simulation template.
+
+36. Head Soccer - Star League
+    Category: Sports
+    Description: Fun soccer-style template with character-based football gameplay.
+
+37. Basketball Strike
+    Category: Sports
+    Description: Basketball game template focused on dribbling, dunking, and scoring.
+
+38. 88 Fortunes Slots Casino Games
+    Category: Casino-Style Entertainment
+    Badge: Premium Template
+    Description: Entertainment-only slot-style template with themed visuals.
+
+39. Twerk Race 3D Running Game
+    Category: Running / Casual
+    Badge: Premium Template
+    Description: Fun runner-style template with obstacle-based gameplay.
+
+40. Stickman Ping Pong
+    Category: Sports / Arcade
+    Description: Stickman table-tennis template with quick competitive gameplay.
+
+41. Spider Robot Car Transform War
+    Category: Action / Robot
+    Badge: Premium Template
+    Description: Robot transformation action template with combat and vehicle-style gameplay.
+
+42. Millionaire Trivia Game Quiz
+    Category: Trivia
+    Badge: Premium Template
+    Description: Trivia quiz template with question categories, score tracking, and knowledge gameplay.
+
+43. Gangster Crime City War Games
+    Category: Action / Open World
+    Badge: Premium Template
+    Description: City action template with driving, missions, and open-world gameplay.
+
+44. Farming Simulator 20
+    Category: Simulator
+    Badge: Premium Template
+    Description: Farming simulation template with crops, animals, and management-style gameplay.
+
+45. Truck Simulator Offroad 2
+    Category: Simulator / Driving
+    Badge: Premium Template
+    Description: Offroad truck simulator template with routes, missions, and challenging terrain.
+
+46. Ninja Archer Assassin Shooter
+    Category: Action / Shooting
+    Badge: Premium Template
+    Description: Archer shooting template with combat missions and action gameplay.
+
+47. Death Moto 3: Fighting Rider
+    Category: Racing / Action
+    Badge: Premium Template
+    Description: Motorcycle racing and combat-style game template.
+
+48. Race Master 3D - Car Racing
+    Category: Racing
+    Badge: Premium Template
+    Description: High-speed racing template with cars, obstacles, and arcade racing gameplay.
+
+49. Sniper 3D: Gun Shooting Games
+    Category: Shooting
+    Badge: Premium Template
+    Description: Sniper shooting template with missions, targets, and action gameplay.
+
+50. Toy Blast
+    Category: Puzzle / Match 3
+    Badge: Premium Template
+    Description: Cube matching puzzle template with levels and colorful gameplay.
+
+==================================================
+ICON / IMAGE REQUIREMENTS
+=========================
+
+Each game card should have an attractive icon image placeholder.
+
+Use AI-style illustrated icons or high-quality gradient artwork.
+
+Examples:
+
+Puzzle games:
+blocks, gems, candy, tiles
+
+Word games:
+letters, crossword grids, books
+
+Action games:
+soldiers, robots, space ships
+
+Simulator games:
+bus, truck, plane, farm, doctor tools
+
+Casino-style:
+cards, chips, slot reels
+NO real-money imagery
+
+Sports:
+basketball, soccer ball, bowling pins, pool table
+
+Racing:
+cars, motorcycles, speed trails
+
+Kids / educational:
+coloring tools, learning icons, friendly characters
+
+==================================================
+FEATURED SECTION
+================
+
+At the top, add:
+
+Featured Templates
+
+Show 6 cards:
+
+Match 3 Candy Crush Style
+Word Connect
+Galaxy Attack
+Race Master 3D
+Millionaire Trivia
+Huge Casino Slots Vegas 777
+
+==================================================
+SELECTED TEMPLATE PANEL
+=======================
+
+After customer selects a template, show a confirmation panel:
+
+Selected Template:
+[template name]
+
+Category:
+[category]
+
+Next Step:
+Customize your app name, colors, logo, audience, and monetization preferences.
+
+Button:
+Continue To Customization
+
+Route:
+/onboarding/customization
+
+==================================================
+FINAL GOAL
+==========
+
+The customer should feel like they are browsing a serious app template marketplace.
+
+The selection page should create excitement after payment and make the customer feel like:
+
+“I’m actually choosing my digital product now.”
+
+Do not make this look like a ClickFunnels list.
+
+Make it feel like a premium App Squad client portal.
