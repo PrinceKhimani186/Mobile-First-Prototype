@@ -2,25 +2,83 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle2, Clock, Circle, Gamepad2, Palette,
-  BarChart3, Store, Rocket, Layers, TestTube2, LifeBuoy, User,
+  Store, Rocket, Layers, TestTube2, LifeBuoy, User,
+  Eye, PhoneCall, PackageCheck, Wand2,
 } from "lucide-react";
 import { updateProjectStatusInCRM } from "@/lib/crm";
+
+const CALENDLY_URL = "https://calendly.com/appguyofficial/30min";
 
 interface TimelineStage {
   label: string;
   icon: React.ElementType;
   status: "complete" | "active" | "pending";
+  pct: number;
+  description?: string;
+  cta?: { label: string; href: string };
 }
 
 const buildTimeline = (hasGameSelection: boolean, hasCustomization: boolean): TimelineStage[] => [
-  { label: "Intake Received",          icon: CheckCircle2,  status: "complete" },
-  { label: "Game Selected",            icon: Gamepad2,      status: hasGameSelection ? "complete" : "pending" },
-  { label: "Branding Submitted",       icon: Palette,       status: hasCustomization ? "complete" : hasGameSelection ? "active" : "pending" },
-  { label: "Monetization Setup Pending", icon: BarChart3,   status: hasCustomization ? "active" : "pending" },
-  { label: "Development Queued",       icon: Layers,        status: "pending" },
-  { label: "Testing",                  icon: TestTube2,     status: "pending" },
-  { label: "App Store Preparation",    icon: Store,         status: "pending" },
-  { label: "Launch Support",           icon: Rocket,        status: "pending" },
+  {
+    label: "Project Received",
+    icon: CheckCircle2,
+    status: "complete",
+    pct: 10,
+  },
+  {
+    label: "Brand Review",
+    icon: Palette,
+    status: hasGameSelection ? "complete" : "active",
+    pct: 20,
+  },
+  {
+    label: "Customization",
+    icon: Wand2,
+    status: hasCustomization ? "complete" : hasGameSelection ? "active" : "pending",
+    pct: 35,
+  },
+  {
+    label: "Development",
+    icon: Layers,
+    status: hasCustomization ? "active" : "pending",
+    pct: 60,
+    description: "Our development team is building your app.",
+  },
+  {
+    label: "Testing",
+    icon: TestTube2,
+    status: "pending",
+    pct: 75,
+  },
+  {
+    label: "Demo Ready For Review",
+    icon: Eye,
+    status: "pending",
+    pct: 85,
+    description: "Your app demo is ready for review. Please review functionality, branding, and overall experience before publishing.",
+  },
+  {
+    label: "Publish Strategy Call",
+    icon: PhoneCall,
+    status: "pending",
+    pct: 90,
+    description: "Before publishing your app, we need to complete a Publish Strategy Call to review App Store & Google Play requirements, developer account setup, store assets, and your launch timeline.",
+    cta: { label: "Schedule Publish Strategy Call", href: CALENDLY_URL },
+  },
+  {
+    label: "Store Submission",
+    icon: Store,
+    status: "pending",
+    pct: 95,
+    description: "Your app is being prepared and submitted to the selected app marketplaces.",
+  },
+  {
+    label: "App Launch",
+    icon: Rocket,
+    status: "pending",
+    pct: 100,
+    description: "Congratulations — your app is live and available for download.",
+  },
 ];
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
@@ -39,7 +97,7 @@ export default function Dashboard() {
   const [phone, setPhone] = useState("");
   const [source, setSource] = useState("");
   const [gameSelection, setGameSelection] = useState<{ selectedGameType: string; gameCategory: string; templateName: string } | null>(null);
-  const [customization, setCustomization] = useState<{ appName: string; brandName: string; monetizationPreference: string } | null>(null);
+  const [customization, setCustomization] = useState<{ appName: string; tagline?: string; monetization?: string } | null>(null);
 
   useEffect(() => {
     const lead = JSON.parse(localStorage.getItem("as_lead") || "{}");
@@ -69,6 +127,11 @@ export default function Dashboard() {
   }, []);
 
   const timeline = buildTimeline(!!gameSelection, !!customization);
+
+  // Progress = percentage of the last completed/active stage
+  const activeStage = [...timeline].reverse().find(s => s.status === "complete" || s.status === "active");
+  const progressPct = activeStage?.pct ?? 10;
+
   const completedCount = timeline.filter(t => t.status === "complete").length;
 
   return (
@@ -106,8 +169,8 @@ export default function Dashboard() {
                 <StatCard label="Client Name" value={clientName || "Not set"} />
                 <StatCard label="Game Type" value={gameSelection?.selectedGameType || "Pending"} sub={gameSelection?.gameCategory} />
                 <StatCard label="App Name" value={customization?.appName || "Pending"} />
-                <StatCard label="Brand Name" value={customization?.brandName || "Pending"} />
-                <StatCard label="Monetization" value={customization?.monetizationPreference || "Pending"} />
+                <StatCard label="Tagline" value={customization?.tagline || "Pending"} />
+                <StatCard label="Monetization" value={customization?.monetization || "Pending"} />
                 <StatCard label="Source" value={source || "Direct"} />
               </div>
             </motion.div>
@@ -123,44 +186,91 @@ export default function Dashboard() {
                 {timeline.map((stage, i) => {
                   const Icon = stage.icon;
                   const isLast = i === timeline.length - 1;
+                  const isComplete = stage.status === "complete";
+                  const isActive = stage.status === "active";
+
                   return (
                     <div key={stage.label} className="flex gap-4">
                       {/* Line + icon */}
                       <div className="flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10`}
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10"
                           style={{
-                            background: stage.status === "complete" ? "hsl(142 76% 55% / 0.12)" : stage.status === "active" ? "hsl(35 90% 55% / 0.12)" : "hsl(226 28% 7%)",
-                            border: `1.5px solid ${stage.status === "complete" ? "hsl(142 76% 55% / 0.4)" : stage.status === "active" ? "hsl(35 90% 55% / 0.4)" : "hsl(224 22% 14%)"}`,
+                            background: isComplete ? "hsl(142 76% 55% / 0.12)" : isActive ? "hsl(35 90% 55% / 0.12)" : "hsl(226 28% 7%)",
+                            border: `1.5px solid ${isComplete ? "hsl(142 76% 55% / 0.4)" : isActive ? "hsl(35 90% 55% / 0.4)" : "hsl(224 22% 14%)"}`,
                           }}>
                           <Icon className="w-3.5 h-3.5" style={{
-                            color: stage.status === "complete" ? "hsl(142 76% 55%)" : stage.status === "active" ? "hsl(35 90% 62%)" : "hsl(218 16% 32%)"
+                            color: isComplete ? "hsl(142 76% 55%)" : isActive ? "hsl(35 90% 62%)" : "hsl(218 16% 32%)"
                           }} />
                         </div>
-                        {!isLast && <div className="w-px flex-1 mt-1 mb-1" style={{ background: stage.status === "complete" ? "hsl(142 76% 55% / 0.2)" : "hsl(224 22% 12%)" }} />}
+                        {!isLast && (
+                          <div className="w-px flex-1 mt-1 mb-1" style={{
+                            background: isComplete ? "hsl(142 76% 55% / 0.2)" : "hsl(224 22% 12%)",
+                          }} />
+                        )}
                       </div>
 
-                      {/* Label */}
+                      {/* Label + description + CTA */}
                       <div className="pb-5 pt-1.5 flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
                           <p style={{
                             fontFamily: "'Inter'",
                             fontSize: 13.5,
                             fontWeight: stage.status === "pending" ? 300 : 500,
-                            color: stage.status === "complete" ? "hsl(220 20% 82%)" : stage.status === "active" ? "hsl(35 90% 65%)" : "hsl(218 16% 36%)"
+                            color: isComplete ? "hsl(220 20% 82%)" : isActive ? "hsl(35 90% 65%)" : "hsl(218 16% 36%)",
                           }}>
                             {stage.label}
                           </p>
-                          {stage.status === "complete" && (
+                          {isComplete && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(142 76% 55% / 0.1)", color: "hsl(142 76% 55%)", border: "1px solid hsl(142 76% 55% / 0.25)" }}>
                               Complete
                             </span>
                           )}
-                          {stage.status === "active" && (
+                          {isActive && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(35 90% 55% / 0.12)", color: "hsl(35 90% 62%)", border: "1px solid hsl(35 90% 55% / 0.28)" }}>
                               In Progress
                             </span>
                           )}
+                          <span style={{
+                            fontFamily: "'Inter'", fontSize: 10, fontWeight: 500,
+                            color: isComplete ? "hsl(142 76% 55% / 0.6)" : isActive ? "hsl(35 90% 55% / 0.6)" : "hsl(218 16% 26%)",
+                            marginLeft: "auto",
+                          }}>
+                            {stage.pct}%
+                          </span>
                         </div>
+
+                        {isActive && stage.description && (
+                          <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.6, color: "hsl(218 16% 44%)", fontWeight: 300, marginBottom: stage.cta ? 10 : 0 }}>
+                            {stage.description}
+                          </p>
+                        )}
+
+                        {isActive && stage.cta && (
+                          <a
+                            href={stage.cta.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 7,
+                              padding: "9px 16px",
+                              borderRadius: 9,
+                              fontFamily: "'Space Grotesk'",
+                              fontSize: 12,
+                              fontWeight: 600,
+                              letterSpacing: "0.02em",
+                              background: "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)",
+                              color: "#050505",
+                              textDecoration: "none",
+                              boxShadow: "0 0 24px rgba(245,158,11,0.2)",
+                              transition: "opacity 0.15s",
+                            }}
+                          >
+                            <PhoneCall style={{ width: 12, height: 12 }} />
+                            {stage.cta.label}
+                          </a>
+                        )}
                       </div>
                     </div>
                   );
@@ -169,7 +279,7 @@ export default function Dashboard() {
             </motion.div>
           </div>
 
-          {/* Right — progress + contact */}
+          {/* Right — progress ring + contact + support */}
           <div className="flex flex-col gap-4">
 
             {/* Progress ring */}
@@ -186,7 +296,7 @@ export default function Dashboard() {
                     stroke="url(#prog)" strokeWidth="6"
                     strokeLinecap="round"
                     strokeDasharray={`${2 * Math.PI * 38}`}
-                    strokeDashoffset={`${2 * Math.PI * 38 * (1 - completedCount / timeline.length)}`}
+                    strokeDashoffset={`${2 * Math.PI * 38 * (1 - progressPct / 100)}`}
                     transform="rotate(-90 50 50)"
                     style={{ transition: "stroke-dashoffset 1s ease" }}
                   />
@@ -199,14 +309,33 @@ export default function Dashboard() {
                 </svg>
                 <div className="absolute flex flex-col items-center">
                   <span style={{ fontFamily: "'Space Grotesk'", fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em" }}>
-                    {Math.round((completedCount / timeline.length) * 100)}%
+                    {progressPct}%
                   </span>
                 </div>
               </div>
 
               <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 44%)", fontWeight: 300 }}>
-                {completedCount} of {timeline.length} stages
+                {completedCount} of {timeline.length} stages complete
               </p>
+
+              {/* Stage breakdown */}
+              <div style={{ marginTop: 16, borderTop: "1px solid hsl(224 22% 11%)", paddingTop: 14, display: "flex", flexDirection: "column", gap: 7 }}>
+                {timeline.map(s => (
+                  <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{
+                      width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
+                      background: s.status === "complete" ? "hsl(142 76% 55%)" : s.status === "active" ? "hsl(38 95% 54%)" : "hsl(224 22% 18%)",
+                    }} />
+                    <p style={{
+                      fontFamily: "'Inter'", fontSize: 10.5,
+                      color: s.status === "complete" ? "hsl(218 16% 52%)" : s.status === "active" ? "hsl(35 90% 62%)" : "hsl(218 16% 28%)",
+                      fontWeight: s.status === "pending" ? 300 : 400,
+                      flex: 1, textAlign: "left",
+                    }}>{s.label}</p>
+                    <p style={{ fontFamily: "'Inter'", fontSize: 10, color: s.status === "pending" ? "hsl(218 16% 22%)" : "hsl(218 16% 40%)" }}>{s.pct}%</p>
+                  </div>
+                ))}
+              </div>
             </motion.div>
 
             {/* Contact info */}
