@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  CheckCircle2, Clock, Circle, Gamepad2, Palette,
+  CheckCircle2, Gamepad2, Palette,
   Store, Rocket, Layers, TestTube2, LifeBuoy, User,
-  Eye, PhoneCall, PackageCheck, Wand2,
+  Eye, PhoneCall, Wand2, ClipboardEdit, ArrowRight, Send,
 } from "lucide-react";
 import { updateProjectStatusInCRM } from "@/lib/crm";
 
 const CALENDLY_URL = "https://calendly.com/appguyofficial/30min";
 
+type RevisionStatus = "" | "form-open" | "submitted" | "approved";
+
 interface TimelineStage {
+  id: string;
   label: string;
   icon: React.ElementType;
   status: "complete" | "active" | "pending";
@@ -18,54 +21,73 @@ interface TimelineStage {
   cta?: { label: string; href: string };
 }
 
-const buildTimeline = (hasGameSelection: boolean, hasCustomization: boolean): TimelineStage[] => [
+const buildTimeline = (
+  hasGameSelection: boolean,
+  hasCustomization: boolean,
+  revisionStatus: RevisionStatus,
+): TimelineStage[] => [
   {
+    id: "project-received",
     label: "Project Received",
     icon: CheckCircle2,
     status: "complete",
     pct: 10,
   },
   {
+    id: "brand-review",
     label: "Brand Review",
     icon: Palette,
     status: hasGameSelection ? "complete" : "active",
     pct: 20,
   },
   {
+    id: "customization",
     label: "Customization",
     icon: Wand2,
     status: hasCustomization ? "complete" : hasGameSelection ? "active" : "pending",
     pct: 35,
   },
   {
+    id: "development",
     label: "Development",
     icon: Layers,
     status: hasCustomization ? "active" : "pending",
     pct: 60,
-    description: "Our development team is building your app.",
   },
   {
+    id: "testing",
     label: "Testing",
     icon: TestTube2,
     status: "pending",
     pct: 75,
   },
   {
+    id: "demo-ready",
     label: "Demo Ready For Review",
     icon: Eye,
     status: "pending",
-    pct: 85,
+    pct: 82,
     description: "Your app demo is ready for review. Please review functionality, branding, and overall experience before publishing.",
   },
   {
+    id: "revision-window",
+    label: "Revision Request Window",
+    icon: ClipboardEdit,
+    status: revisionStatus === "approved" ? "complete" : revisionStatus !== "" ? "active" : "pending",
+    pct: 87,
+    description: "Your demo is now available for review. As part of your package, you may submit one revision request before final publishing preparation.",
+  },
+  {
+    id: "publish-strategy",
     label: "Publish Strategy Call",
     icon: PhoneCall,
-    status: "pending",
+    status: revisionStatus === "approved" ? "active" : "pending",
     pct: 90,
     description: "Before publishing your app, we need to complete a Publish Strategy Call to review App Store & Google Play requirements, developer account setup, store assets, and your launch timeline.",
     cta: { label: "Schedule Publish Strategy Call", href: CALENDLY_URL },
   },
   {
+    id: "store-submission",
     label: "Store Submission",
     icon: Store,
     status: "pending",
@@ -73,6 +95,7 @@ const buildTimeline = (hasGameSelection: boolean, hasCustomization: boolean): Ti
     description: "Your app is being prepared and submitted to the selected app marketplaces.",
   },
   {
+    id: "app-launch",
     label: "App Launch",
     icon: Rocket,
     status: "pending",
@@ -99,12 +122,18 @@ export default function Dashboard() {
   const [gameSelection, setGameSelection] = useState<{ selectedGameType: string; gameCategory: string; templateName: string } | null>(null);
   const [customization, setCustomization] = useState<{ appName: string; tagline?: string; monetization?: string } | null>(null);
 
+  const [revisionStatus, setRevisionStatus] = useState<RevisionStatus>("");
+  const [revisionNotes, setRevisionNotes] = useState("");
+  const [revisionDraft, setRevisionDraft] = useState("");
+
   useEffect(() => {
     const lead = JSON.parse(localStorage.getItem("as_lead") || "{}");
     const application = JSON.parse(localStorage.getItem("as_application") || "{}");
     const game = JSON.parse(localStorage.getItem("as_game_selection") || "null");
     const custom = JSON.parse(localStorage.getItem("as_customization") || "null");
     const src = localStorage.getItem("as_source") || "Direct";
+    const savedRevisionStatus = (localStorage.getItem("as_revision_status") || "") as RevisionStatus;
+    const savedRevisionNotes = localStorage.getItem("as_revision_notes") || "";
 
     const name = application.name || lead.name || "";
     const em = application.email || lead.email || "";
@@ -116,6 +145,9 @@ export default function Dashboard() {
     setSource(src);
     setGameSelection(game);
     setCustomization(custom);
+    setRevisionStatus(savedRevisionStatus);
+    setRevisionNotes(savedRevisionNotes);
+    setRevisionDraft(savedRevisionNotes);
 
     updateProjectStatusInCRM({
       clientName: name,
@@ -126,12 +158,28 @@ export default function Dashboard() {
     });
   }, []);
 
-  const timeline = buildTimeline(!!gameSelection, !!customization);
+  const handleOpenRevisionForm = () => {
+    setRevisionStatus("form-open");
+    localStorage.setItem("as_revision_status", "form-open");
+  };
 
-  // Progress = percentage of the last completed/active stage
+  const handleSubmitRevision = () => {
+    if (!revisionDraft.trim()) return;
+    setRevisionNotes(revisionDraft);
+    setRevisionStatus("submitted");
+    localStorage.setItem("as_revision_status", "submitted");
+    localStorage.setItem("as_revision_notes", revisionDraft);
+  };
+
+  const handleApproveDemo = () => {
+    setRevisionStatus("approved");
+    localStorage.setItem("as_revision_status", "approved");
+  };
+
+  const timeline = buildTimeline(!!gameSelection, !!customization, revisionStatus);
+
   const activeStage = [...timeline].reverse().find(s => s.status === "complete" || s.status === "active");
   const progressPct = activeStage?.pct ?? 10;
-
   const completedCount = timeline.filter(t => t.status === "complete").length;
 
   return (
@@ -188,10 +236,11 @@ export default function Dashboard() {
                   const isLast = i === timeline.length - 1;
                   const isComplete = stage.status === "complete";
                   const isActive = stage.status === "active";
+                  const isRevision = stage.id === "revision-window";
 
                   return (
-                    <div key={stage.label} className="flex gap-4">
-                      {/* Line + icon */}
+                    <div key={stage.id} className="flex gap-4">
+                      {/* Icon + connector line */}
                       <div className="flex flex-col items-center">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10"
                           style={{
@@ -209,8 +258,9 @@ export default function Dashboard() {
                         )}
                       </div>
 
-                      {/* Label + description + CTA */}
+                      {/* Content */}
                       <div className="pb-5 pt-1.5 flex-1 min-w-0">
+                        {/* Row: label + badges + pct */}
                         <div className="flex items-center gap-2 flex-wrap mb-1">
                           <p style={{
                             fontFamily: "'Inter'",
@@ -225,9 +275,19 @@ export default function Dashboard() {
                               Complete
                             </span>
                           )}
-                          {isActive && (
+                          {isActive && !isRevision && (
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(35 90% 55% / 0.12)", color: "hsl(35 90% 62%)", border: "1px solid hsl(35 90% 55% / 0.28)" }}>
                               In Progress
+                            </span>
+                          )}
+                          {isRevision && revisionStatus === "submitted" && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(217 85% 60% / 0.12)", color: "hsl(217 85% 65%)", border: "1px solid hsl(217 85% 60% / 0.28)" }}>
+                              Revision Submitted
+                            </span>
+                          )}
+                          {isRevision && (revisionStatus === "" || revisionStatus === "form-open") && isActive && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(35 90% 55% / 0.12)", color: "hsl(35 90% 62%)", border: "1px solid hsl(35 90% 55% / 0.28)" }}>
+                              Action Required
                             </span>
                           )}
                           <span style={{
@@ -239,32 +299,164 @@ export default function Dashboard() {
                           </span>
                         </div>
 
-                        {isActive && stage.description && (
+                        {/* Revision stage — interactive block */}
+                        {isRevision && isActive && (
+                          <AnimatePresence mode="wait">
+                            {revisionStatus === "submitted" ? (
+                              <motion.div
+                                key="submitted"
+                                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                                style={{
+                                  marginTop: 8, padding: "14px 16px", borderRadius: 11,
+                                  background: "hsl(217 85% 60% / 0.05)",
+                                  border: "1px solid hsl(217 85% 60% / 0.15)",
+                                }}
+                              >
+                                <p style={{ fontFamily: "'Inter'", fontSize: 12, fontWeight: 600, color: "hsl(217 85% 65%)", marginBottom: 6 }}>
+                                  Revision request submitted
+                                </p>
+                                <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.65, color: "hsl(218 16% 44%)", fontWeight: 300 }}>
+                                  Your App Squad team will review your feedback and apply the requested changes. You will be notified when revisions are complete.
+                                </p>
+                                {revisionNotes && (
+                                  <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                                    <p style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "hsl(218 16% 34%)", marginBottom: 4 }}>Your notes</p>
+                                    <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.6, color: "hsl(218 16% 52%)", fontWeight: 300, whiteSpace: "pre-wrap" }}>{revisionNotes}</p>
+                                  </div>
+                                )}
+                              </motion.div>
+                            ) : revisionStatus === "form-open" ? (
+                              <motion.div
+                                key="form"
+                                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                                style={{ marginTop: 8 }}
+                              >
+                                <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.6, color: "hsl(218 16% 44%)", fontWeight: 300, marginBottom: 10 }}>
+                                  Describe your revision request. Examples: text updates, graphic changes, color adjustments, branding revisions, minor configuration updates. Major feature additions are not included.
+                                </p>
+                                <textarea
+                                  value={revisionDraft}
+                                  onChange={e => setRevisionDraft(e.target.value)}
+                                  rows={4}
+                                  placeholder="Describe the changes you'd like to see..."
+                                  style={{
+                                    width: "100%", borderRadius: 10, padding: "12px 14px",
+                                    fontFamily: "'Inter'", fontSize: 13, lineHeight: 1.55,
+                                    background: "rgba(255,255,255,0.03)",
+                                    border: "1px solid rgba(255,255,255,0.1)",
+                                    color: "rgba(255,255,255,0.8)",
+                                    outline: "none", resize: "none", marginBottom: 10,
+                                    boxSizing: "border-box",
+                                  }}
+                                  onFocus={e => { e.target.style.borderColor = "hsl(35 90% 55% / 0.4)"; }}
+                                  onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.1)"; }}
+                                />
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  <button
+                                    type="button"
+                                    onClick={handleSubmitRevision}
+                                    disabled={!revisionDraft.trim()}
+                                    style={{
+                                      display: "inline-flex", alignItems: "center", gap: 7,
+                                      padding: "10px 16px", borderRadius: 9, border: "none",
+                                      fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
+                                      background: revisionDraft.trim()
+                                        ? "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)"
+                                        : "rgba(255,255,255,0.06)",
+                                      color: revisionDraft.trim() ? "#050505" : "hsl(218 16% 32%)",
+                                      cursor: revisionDraft.trim() ? "pointer" : "not-allowed",
+                                      transition: "all 0.15s",
+                                    }}
+                                  >
+                                    <Send style={{ width: 11, height: 11 }} />
+                                    Submit Revision Request
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => { setRevisionStatus(""); localStorage.setItem("as_revision_status", ""); }}
+                                    style={{
+                                      display: "inline-flex", alignItems: "center", gap: 6,
+                                      padding: "10px 14px", borderRadius: 9,
+                                      fontFamily: "'Inter'", fontSize: 12, fontWeight: 400,
+                                      background: "transparent",
+                                      border: "1px solid rgba(255,255,255,0.08)",
+                                      color: "hsl(218 16% 40%)",
+                                      cursor: "pointer",
+                                    }}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </motion.div>
+                            ) : (
+                              <motion.div
+                                key="cta"
+                                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                                style={{ marginTop: 8 }}
+                              >
+                                <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.65, color: "hsl(218 16% 44%)", fontWeight: 300, marginBottom: 12 }}>
+                                  {stage.description}
+                                  {" "}Examples: text updates, graphic changes, color adjustments, branding revisions, minor configuration updates. Major feature additions are not included.
+                                </p>
+                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                  <button
+                                    type="button"
+                                    onClick={handleOpenRevisionForm}
+                                    style={{
+                                      display: "inline-flex", alignItems: "center", gap: 7,
+                                      padding: "10px 16px", borderRadius: 9, border: "none",
+                                      fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
+                                      background: "rgba(255,255,255,0.06)",
+                                      border: "1px solid rgba(255,255,255,0.1)",
+                                      color: "hsl(220 20% 75%)",
+                                      cursor: "pointer",
+                                      transition: "all 0.15s",
+                                    } as React.CSSProperties}
+                                  >
+                                    <ClipboardEdit style={{ width: 12, height: 12 }} />
+                                    Submit Revision Request
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleApproveDemo}
+                                    style={{
+                                      display: "inline-flex", alignItems: "center", gap: 7,
+                                      padding: "10px 16px", borderRadius: 9, border: "none",
+                                      fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
+                                      background: "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)",
+                                      color: "#050505",
+                                      cursor: "pointer",
+                                      boxShadow: "0 0 20px rgba(245,158,11,0.18)",
+                                      transition: "all 0.15s",
+                                    }}
+                                  >
+                                    <ArrowRight style={{ width: 12, height: 12 }} />
+                                    Approve Demo & Continue
+                                  </button>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        )}
+
+                        {/* Other active stages — description + optional CTA link */}
+                        {!isRevision && isActive && stage.description && (
                           <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.6, color: "hsl(218 16% 44%)", fontWeight: 300, marginBottom: stage.cta ? 10 : 0 }}>
                             {stage.description}
                           </p>
                         )}
-
-                        {isActive && stage.cta && (
+                        {!isRevision && isActive && stage.cta && (
                           <a
                             href={stage.cta.href}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 7,
-                              padding: "9px 16px",
-                              borderRadius: 9,
-                              fontFamily: "'Space Grotesk'",
-                              fontSize: 12,
-                              fontWeight: 600,
-                              letterSpacing: "0.02em",
+                              display: "inline-flex", alignItems: "center", gap: 7,
+                              padding: "9px 16px", borderRadius: 9,
+                              fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
                               background: "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)",
-                              color: "#050505",
-                              textDecoration: "none",
+                              color: "#050505", textDecoration: "none",
                               boxShadow: "0 0 24px rgba(245,158,11,0.2)",
-                              transition: "opacity 0.15s",
                             }}
                           >
                             <PhoneCall style={{ width: 12, height: 12 }} />
@@ -321,7 +513,7 @@ export default function Dashboard() {
               {/* Stage breakdown */}
               <div style={{ marginTop: 16, borderTop: "1px solid hsl(224 22% 11%)", paddingTop: 14, display: "flex", flexDirection: "column", gap: 7 }}>
                 {timeline.map(s => (
-                  <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{
                       width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
                       background: s.status === "complete" ? "hsl(142 76% 55%)" : s.status === "active" ? "hsl(38 95% 54%)" : "hsl(224 22% 18%)",
