@@ -150,12 +150,13 @@ export function sendCustomizationToCRM(payload: {
   email: string;
   phone: string;
   appName: string;
-  brandName: string;
-  preferredColors: string;
+  tagline: string;
+  appConcept: string;
   targetAudience: string;
-  appDescription: string;
-  monetizationPreference: string;
-  notesForDevelopmentTeam: string;
+  brandPersonality: string;
+  colorDirection: string;
+  iconStyle: string;
+  designNotes: string;
   source: string;
 }) {
   const { firstName, lastName } = splitName(payload.clientName);
@@ -169,12 +170,13 @@ export function sendCustomizationToCRM(payload: {
       stage: "customization_submitted",
       source: "post_payment_onboarding",
       app_name: payload.appName,
-      brand_name: payload.brandName,
-      preferred_colors: payload.preferredColors,
+      app_tagline: payload.tagline,
+      app_concept: payload.appConcept,
       target_audience: payload.targetAudience,
-      app_description: payload.appDescription,
-      monetization_preference: payload.monetizationPreference,
-      notes_for_dev_team: payload.notesForDevelopmentTeam,
+      brand_personality: payload.brandPersonality,
+      color_direction: payload.colorDirection,
+      icon_style: payload.iconStyle,
+      design_notes: payload.designNotes,
     },
   });
 }
