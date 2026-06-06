@@ -17,12 +17,21 @@ const BRAND_PERSONALITY_OPTIONS = [
 ];
 
 const COLOR_DIRECTION_OPTIONS = [
-  { label: "Blue / Technology", emoji: "🔵", value: "Blue / Technology" },
-  { label: "Purple / Premium", emoji: "🟣", value: "Purple / Premium" },
-  { label: "Red / Energy", emoji: "🔴", value: "Red / Energy" },
-  { label: "Green / Growth", emoji: "🟢", value: "Green / Growth" },
-  { label: "Black / Luxury", emoji: "⚫", value: "Black / Luxury" },
-  { label: "Not Sure", emoji: "💭", value: "Not Sure" },
+  { label: "Blue / Technology", color: "#2563EB" },
+  { label: "Purple / Premium", color: "#7B61FF" },
+  { label: "Red / Energy", color: "#DC2626" },
+  { label: "Orange / Bold", color: "#EA580C" },
+  { label: "Yellow / Bright", color: "#D97706" },
+  { label: "Green / Growth", color: "#16A34A" },
+  { label: "Teal / Fresh", color: "#0D9488" },
+  { label: "Cyan / Electric", color: "#00D4FF" },
+  { label: "Pink / Playful", color: "#DB2777" },
+  { label: "Gold / Luxury", color: "#B8860B" },
+  { label: "Navy / Professional", color: "#1E3A5F" },
+  { label: "Black / Minimal", color: "#111111" },
+  { label: "White / Clean", color: "#E5E7EB" },
+  { label: "Gray / Modern", color: "#6B7280" },
+  { label: "Not Sure — Let Us Decide", color: "linear-gradient(135deg, #7B61FF, #00D4FF, #16A34A)" },
 ];
 
 const ICON_STYLE_OPTIONS = [
@@ -97,7 +106,7 @@ export default function Customize() {
   const [appConcept, setAppConcept] = useState("");
   const [targetAudience, setTargetAudience] = useState<string[]>([]);
   const [brandPersonality, setBrandPersonality] = useState<string[]>([]);
-  const [colorDirection, setColorDirection] = useState("");
+  const [colorDirection, setColorDirection] = useState<string[]>([]);
   const [iconStyle, setIconStyle] = useState("");
   const [designNotes, setDesignNotes] = useState("");
 
@@ -111,6 +120,14 @@ export default function Customize() {
 
   const togglePersonality = (opt: string) => {
     setBrandPersonality(prev => {
+      if (prev.includes(opt)) return prev.filter(v => v !== opt);
+      if (prev.length >= 3) return prev;
+      return [...prev, opt];
+    });
+  };
+
+  const toggleColor = (opt: string) => {
+    setColorDirection(prev => {
       if (prev.includes(opt)) return prev.filter(v => v !== opt);
       if (prev.length >= 3) return prev;
       return [...prev, opt];
@@ -140,7 +157,7 @@ export default function Customize() {
       appConcept,
       targetAudience: targetAudience.join(", "),
       brandPersonality: brandPersonality.join(", "),
-      colorDirection,
+      colorDirection: colorDirection.join(", "),
       iconStyle,
       designNotes,
     };
@@ -156,7 +173,7 @@ export default function Customize() {
       appConcept,
       targetAudience: data.targetAudience,
       brandPersonality: data.brandPersonality,
-      colorDirection,
+      colorDirection: data.colorDirection,
       iconStyle,
       designNotes,
       source,
@@ -357,38 +374,61 @@ export default function Customize() {
 
           {/* ── Color Direction ── */}
           <SectionCard title="Preferred Color Direction">
-            <Label text="Select one" />
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            <Label text="Select up to 3 colors" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
               {COLOR_DIRECTION_OPTIONS.map(opt => {
-                const active = colorDirection === opt.value;
+                const active = colorDirection.includes(opt.label);
+                const maxed = colorDirection.length >= 3 && !active;
+                const isGradient = opt.color.startsWith("linear-gradient");
                 return (
                   <button
-                    key={opt.value}
+                    key={opt.label}
                     type="button"
-                    onClick={() => setColorDirection(opt.value)}
+                    onClick={() => toggleColor(opt.label)}
+                    disabled={maxed}
                     style={{
-                      padding: "12px 14px",
+                      padding: "11px 14px",
                       borderRadius: 11,
                       fontFamily: "'Inter'",
                       fontSize: 12.5,
                       fontWeight: active ? 600 : 400,
-                      cursor: "pointer",
-                      border: active ? "1px solid hsl(35 90% 55% / 0.5)" : "1px solid rgba(255,255,255,0.07)",
+                      cursor: maxed ? "not-allowed" : "pointer",
+                      border: active ? "1px solid hsl(35 90% 55% / 0.55)" : "1px solid rgba(255,255,255,0.07)",
                       background: active ? "hsl(35 90% 55% / 0.09)" : "rgba(255,255,255,0.02)",
-                      color: active ? "hsl(35 90% 65%)" : "rgba(255,255,255,0.45)",
+                      color: active ? "hsl(35 90% 65%)" : maxed ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.5)",
                       display: "flex",
                       alignItems: "center",
-                      gap: 8,
+                      gap: 10,
                       transition: "all 0.15s",
                       textAlign: "left" as const,
+                      opacity: maxed ? 0.45 : 1,
                     }}
                   >
-                    <span style={{ fontSize: 16, lineHeight: 1 }}>{opt.emoji}</span>
+                    <div style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      flexShrink: 0,
+                      background: isGradient ? opt.color : opt.color,
+                      border: opt.color === "#E5E7EB" || opt.color === "#111111"
+                        ? "1px solid rgba(255,255,255,0.15)"
+                        : "none",
+                      boxShadow: active ? `0 0 8px ${isGradient ? "rgba(123,97,255,0.5)" : opt.color + "88"}` : "none",
+                      transition: "box-shadow 0.15s",
+                    }} />
                     {opt.label}
+                    {active && (
+                      <CheckCircle2 style={{ width: 12, height: 12, marginLeft: "auto", flexShrink: 0 }} />
+                    )}
                   </button>
                 );
               })}
             </div>
+            {colorDirection.length === 3 && (
+              <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "hsl(35 90% 60%)", marginTop: 10 }}>
+                Maximum of 3 colors selected
+              </p>
+            )}
           </SectionCard>
 
           {/* ── Icon Style ── */}
