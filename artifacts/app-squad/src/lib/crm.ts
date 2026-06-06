@@ -155,6 +155,7 @@ export function sendCustomizationToCRM(payload: {
   targetAudience: string;
   brandPersonality: string;
   colorDirection: string;
+  monetization: string;
   iconStyle: string;
   designNotes: string;
   source: string;
@@ -175,6 +176,7 @@ export function sendCustomizationToCRM(payload: {
       target_audience: payload.targetAudience,
       brand_personality: payload.brandPersonality,
       color_direction: payload.colorDirection,
+      monetization_preference: payload.monetization,
       icon_style: payload.iconStyle,
       design_notes: payload.designNotes,
     },

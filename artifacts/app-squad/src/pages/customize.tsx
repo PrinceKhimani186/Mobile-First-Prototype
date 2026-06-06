@@ -34,6 +34,29 @@ const COLOR_DIRECTION_OPTIONS = [
   { label: "Not Sure — Let Us Decide", color: "linear-gradient(135deg, #7B61FF, #00D4FF, #16A34A)" },
 ];
 
+const MONETIZATION_OPTIONS = [
+  {
+    label: "In-App Purchases",
+    emoji: "💰",
+    desc: "Virtual currency, premium content, power-ups & remove-ads upgrades. Best for engaged, recurring audiences.",
+  },
+  {
+    label: "In-App Ads",
+    emoji: "📣",
+    desc: "Earn revenue from ad impressions. Free-to-play model with banner, interstitial & rewarded ads. Best for high-volume installs.",
+  },
+  {
+    label: "Both",
+    emoji: "⚡",
+    desc: "Combine ads for free users with optional purchases to unlock premium features — maximises revenue across all user types.",
+  },
+  {
+    label: "Not Sure — Let App Squad Decide",
+    emoji: "🤔",
+    desc: "Our team will recommend the monetization strategy that best fits your game type and target audience.",
+  },
+];
+
 const ICON_STYLE_OPTIONS = [
   { label: "Modern Flat Design", emoji: "✦" },
   { label: "3D Style", emoji: "🎲" },
@@ -107,6 +130,7 @@ export default function Customize() {
   const [targetAudience, setTargetAudience] = useState<string[]>([]);
   const [brandPersonality, setBrandPersonality] = useState<string[]>([]);
   const [colorDirection, setColorDirection] = useState<string[]>([]);
+  const [monetization, setMonetization] = useState("");
   const [iconStyle, setIconStyle] = useState("");
   const [designNotes, setDesignNotes] = useState("");
 
@@ -158,6 +182,7 @@ export default function Customize() {
       targetAudience: targetAudience.join(", "),
       brandPersonality: brandPersonality.join(", "),
       colorDirection: colorDirection.join(", "),
+      monetization,
       iconStyle,
       designNotes,
     };
@@ -174,6 +199,7 @@ export default function Customize() {
       targetAudience: data.targetAudience,
       brandPersonality: data.brandPersonality,
       colorDirection: data.colorDirection,
+      monetization,
       iconStyle,
       designNotes,
       source,
@@ -472,6 +498,61 @@ export default function Customize() {
                     {opt.label}
                     {active && (
                       <CheckCircle2 style={{ width: 15, height: 15, color: "hsl(35 90% 62%)", marginLeft: "auto" }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </SectionCard>
+
+          {/* ── Monetization ── */}
+          <SectionCard title="Monetization Add-On">
+            <Label text="How would you like your app to generate revenue?" />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {MONETIZATION_OPTIONS.map(opt => {
+                const active = monetization === opt.label;
+                return (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    onClick={() => setMonetization(opt.label)}
+                    style={{
+                      padding: "16px 18px",
+                      borderRadius: 13,
+                      fontFamily: "'Inter'",
+                      cursor: "pointer",
+                      border: active ? "1px solid hsl(35 90% 55% / 0.5)" : "1px solid rgba(255,255,255,0.07)",
+                      background: active ? "hsl(35 90% 55% / 0.08)" : "rgba(255,255,255,0.02)",
+                      color: "rgba(255,255,255,0.88)",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 14,
+                      transition: "all 0.15s",
+                      textAlign: "left" as const,
+                    }}
+                  >
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: active ? "hsl(35 90% 55% / 0.15)" : "rgba(255,255,255,0.04)",
+                      border: active ? "1px solid hsl(35 90% 55% / 0.3)" : "1px solid rgba(255,255,255,0.07)",
+                      fontSize: 18, transition: "all 0.15s",
+                    }}>
+                      {opt.emoji}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{
+                        fontFamily: "'Space Grotesk'", fontSize: 14, fontWeight: 600,
+                        color: active ? "hsl(35 90% 65%)" : "rgba(255,255,255,0.75)",
+                        margin: "0 0 4px", transition: "color 0.15s",
+                      }}>{opt.label}</p>
+                      <p style={{
+                        fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.55,
+                        color: "rgba(255,255,255,0.35)", margin: 0,
+                      }}>{opt.desc}</p>
+                    </div>
+                    {active && (
+                      <CheckCircle2 style={{ width: 16, height: 16, color: "hsl(35 90% 62%)", flexShrink: 0, marginTop: 2 }} />
                     )}
                   </button>
                 );
