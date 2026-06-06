@@ -377,8 +377,9 @@ export default function Customize() {
             <Label text="Select up to 3 colors" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 8 }}>
               {COLOR_DIRECTION_OPTIONS.map(opt => {
-                const active = colorDirection.includes(opt.label);
-                const maxed = colorDirection.length >= 3 && !active;
+                const safeColors = Array.isArray(colorDirection) ? colorDirection : [];
+                const active = safeColors.includes(opt.label);
+                const maxed = safeColors.length >= 3 && !active;
                 const isGradient = opt.color.startsWith("linear-gradient");
                 return (
                   <button
