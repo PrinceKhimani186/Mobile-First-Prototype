@@ -1,11 +1,17 @@
 // CRM integration — proxies through the API server to GoHighLevel V2.
 // The backend route is POST /api/ghl/contact.
 //
-// GHL custom field IDs (quiz answers):
-//   goal          → yNkDeB2x3gykjpzISYk9
-//   game_interest → XMINgcDYkyeA7WtinhbD
-//   budget_range  → 8zDiIiTk1TxHlNvZrOUU
+// GHL custom field IDs — warm traffic quiz:
+//   goal            → yNkDeB2x3gykjpzISYk9
+//   game_interest   → XMINgcDYkyeA7WtinhbD
+//   budget_range    → 8zDiIiTk1TxHlNvZrOUU
 //   launch_timeline → 3KqLQ7tkgokS14sjF7X3
+//
+// GHL custom field IDs — cold traffic quiz:
+//   interest        → 08tFAZ1FAo0smFNtArSn
+//   game_style      → 99Xb7QXH5O0tVhNCbzhB
+//   budget          → elPxjX2AZpllZiGb4jZB
+//   start_timeline  → sLISUfNGXIrXXuz82jef
 
 const GHL_PROXY = "/api/ghl/contact";
 
