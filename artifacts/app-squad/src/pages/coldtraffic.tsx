@@ -521,6 +521,10 @@ export default function ColdTraffic() {
   const [screenIdx, setScreenIdx] = useState(0);
 
   useEffect(() => {
+    localStorage.setItem("as_source", "Cold Calling");
+  }, []);
+
+  useEffect(() => {
     const id = setInterval(() => {
       setScreenIdx(i => (i + 1) % SCREEN_COMPONENTS.length);
     }, 4500);

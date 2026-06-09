@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, CheckCircle2, Shield } from "lucide-react";
 import { useLocation } from "wouter";
-import { sendApplicationToCRM } from "@/lib/crm";
+import { sendColdApplicationToCRM } from "@/lib/crm";
 
 const inputStyle = {
   fontFamily: "'Inter', sans-serif",
@@ -111,7 +111,7 @@ export default function ColdTrafficApply() {
   const handleSubmit = () => {
     const source = localStorage.getItem("as_source") || "Direct";
     localStorage.setItem("as_application", JSON.stringify({ name, email, phone, goal, game, budget, timeline, source }));
-    sendApplicationToCRM({ name, email, phone, goal, game, budget, timeline, source });
+    sendColdApplicationToCRM({ name, email, phone, goal, game, budget, timeline, source });
     navigate("/book-call");
     window.scrollTo({ top: 0 });
   };

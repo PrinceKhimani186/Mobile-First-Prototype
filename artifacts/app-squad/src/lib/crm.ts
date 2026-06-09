@@ -52,6 +52,54 @@ function splitName(full: string): { firstName: string; lastName: string } {
   return { firstName, lastName };
 }
 
+// ─── Cold traffic lead capture (/coldtraffic form) ──────────────────────────
+// Tag: "cold calling - form submitted"
+export function sendColdLeadToCRM(payload: {
+  name: string;
+  email: string;
+  phone: string;
+  source: string;
+}) {
+  const { firstName, lastName } = splitName(payload.name);
+  upsertGHLContact({
+    firstName,
+    lastName,
+    email: payload.email,
+    phone: payload.phone,
+    tags: ["lead", "cold calling - form submitted", payload.source],
+    customFields: { stage: "lead_captured", source: payload.source },
+  });
+}
+
+// ─── Cold traffic quiz submission (/coldtraffic-apply) ───────────────────────
+// Tag: "cold calling - survey submitted"
+// Uses the cold-traffic-specific GHL field IDs.
+export function sendColdApplicationToCRM(payload: {
+  name: string;
+  email: string;
+  phone: string;
+  goal: string;
+  game: string;
+  budget: string;
+  timeline: string;
+  source: string;
+}) {
+  const { firstName, lastName } = splitName(payload.name);
+  upsertGHLContact({
+    firstName,
+    lastName,
+    email: payload.email,
+    phone: payload.phone,
+    tags: ["application", "cold calling - survey submitted", payload.source],
+    customFields: [
+      { id: "08tFAZ1FAo0smFNtArSn", field_value: payload.goal },
+      { id: "99Xb7QXH5O0tVhNCbzhB", field_value: payload.game },
+      { id: "elPxjX2AZpllZiGb4jZB", field_value: payload.budget },
+      { id: "sLISUfNGXIrXXuz82jef", field_value: payload.timeline },
+    ],
+  });
+}
+
 // ─── Lead capture (video presentation / start page) ─────────────────────────
 // Tag: "ads - form submitted"
 export function sendLeadToCRM(payload: {

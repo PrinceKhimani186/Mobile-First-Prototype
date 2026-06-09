@@ -38,7 +38,7 @@ export default function Start() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
-    const source = "Ads / Cold Traffic";
+    const source = localStorage.getItem("as_source") || "Ads / Cold Traffic";
     localStorage.setItem("as_lead", JSON.stringify({ name, email, phone }));
     localStorage.setItem("as_source", source);
     sendLeadToCRM({ name, email, phone, source });
