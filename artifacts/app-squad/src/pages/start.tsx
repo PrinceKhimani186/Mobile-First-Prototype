@@ -5,7 +5,7 @@ import {
   Apple, BarChart3, Layers, Rocket, Zap
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { sendLeadToCRM } from "@/lib/crm";
+import { sendLeadToCRM, sendColdLeadToCRM } from "@/lib/crm";
 
 const TRUST_POINTS = [
   "No coding experience needed",
@@ -41,7 +41,11 @@ export default function Start() {
     const source = localStorage.getItem("as_source") || "Ads / Cold Traffic";
     localStorage.setItem("as_lead", JSON.stringify({ name, email, phone }));
     localStorage.setItem("as_source", source);
-    sendLeadToCRM({ name, email, phone, source });
+    if (source === "Cold Calling") {
+      sendColdLeadToCRM({ name, email, phone, source });
+    } else {
+      sendLeadToCRM({ name, email, phone, source });
+    }
     navigate("/presentation");
     window.scrollTo({ top: 0 });
   };
