@@ -24,6 +24,58 @@ function toCustomFieldsArray(
   );
 }
 
+// Fetch current tags on a contact so we can delete them before setting new ones.
+async function getContactTags(contactId: string, apiKey: string): Promise<string[]> {
+  try {
+    const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+      headers: ghlHeaders(apiKey),
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { contact?: { tags?: string[] } };
+    return data?.contact?.tags ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// Delete specific tags from a contact.
+async function deleteTagsFromContact(
+  contactId: string,
+  tags: string[],
+  apiKey: string,
+): Promise<void> {
+  if (!tags.length) return;
+  await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+    method: "DELETE",
+    headers: ghlHeaders(apiKey),
+    body: JSON.stringify({ tags }),
+  });
+}
+
+// Add tags to a contact.
+async function addTagsToContact(
+  contactId: string,
+  tags: string[],
+  apiKey: string,
+): Promise<void> {
+  if (!tags.length) return;
+  await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+    method: "POST",
+    headers: ghlHeaders(apiKey),
+    body: JSON.stringify({ tags }),
+  });
+}
+
+// Replace all tags on a contact: wipe existing ones then set the new set.
+async function replaceContactTags(
+  contactId: string,
+  newTags: string[],
+  apiKey: string,
+): Promise<void> {
+  const existing = await getContactTags(contactId, apiKey);
+  if (existing.length) await deleteTagsFromContact(contactId, existing, apiKey);
+  if (newTags.length) await addTagsToContact(contactId, newTags, apiKey);
+}
 
 router.post("/ghl/contact", async (req, res) => {
   const { firstName, lastName, email, phone, tags, customFields } = req.body;
@@ -38,6 +90,7 @@ router.post("/ghl/contact", async (req, res) => {
   }
 
   const customFieldsArray = toCustomFieldsArray(customFields);
+  const newTags: string[] = tags ?? [];
 
   // POST (create) includes locationId and tags in the body.
   const createPayload = {
@@ -46,19 +99,16 @@ router.post("/ghl/contact", async (req, res) => {
     lastName: lastName ?? "",
     email: email ?? "",
     phone: phone ?? "",
-    ...(tags?.length ? { tags } : {}),
+    ...(newTags.length ? { tags: newTags } : {}),
     ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
   };
 
-  // PUT (update) must NOT include locationId.
-  // Tags are included in the PUT body so GHL replaces (not appends) them,
-  // keeping each funnel's tag set clean and isolated.
+  // PUT (update) — no tags here; we handle them separately via the tags endpoints.
   const updatePayload = {
     firstName: firstName ?? "",
     lastName: lastName ?? "",
     email: email ?? "",
     phone: phone ?? "",
-    ...(tags?.length ? { tags } : {}),
     ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
   };
 
@@ -77,14 +127,14 @@ router.post("/ghl/contact", async (req, res) => {
       statusCode?: number;
     };
 
-    // Step 2: if GHL says duplicate, grab the existing contactId and PUT + add tags
+    // Step 2: duplicate — update existing contact
     if (!createRes.ok) {
       const existingId = createData?.meta?.contactId;
 
       if (existingId) {
         req.log.info({ contactId: existingId }, "GHL: contact exists — updating");
 
-        // Update fields (no tags in body — would replace existing ones)
+        // Update fields
         const updateRes = await fetch(`${GHL_BASE}/contacts/${existingId}`, {
           method: "PUT",
           headers: ghlHeaders(apiKey),
@@ -98,6 +148,10 @@ router.post("/ghl/contact", async (req, res) => {
           res.status(updateRes.status).json({ error: "GHL update error", details: updateData });
           return;
         }
+
+        // Replace tags: delete all existing, then add the new set
+        await replaceContactTags(existingId, newTags, apiKey);
+        req.log.info({ contactId: existingId, tags: newTags }, "GHL: tags replaced");
 
         res.json({ ok: true, action: "updated", contactId: existingId, contact: updateData });
         return;
