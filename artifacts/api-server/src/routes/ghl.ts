@@ -24,19 +24,6 @@ function toCustomFieldsArray(
   );
 }
 
-// Add tags without replacing existing ones using the dedicated GHL tags endpoint.
-async function addTagsToContact(
-  contactId: string,
-  tags: string[],
-  apiKey: string,
-): Promise<void> {
-  if (!tags?.length) return;
-  await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
-    method: "POST",
-    headers: ghlHeaders(apiKey),
-    body: JSON.stringify({ tags }),
-  });
-}
 
 router.post("/ghl/contact", async (req, res) => {
   const { firstName, lastName, email, phone, tags, customFields } = req.body;
@@ -64,13 +51,14 @@ router.post("/ghl/contact", async (req, res) => {
   };
 
   // PUT (update) must NOT include locationId.
-  // Tags are intentionally excluded — we add them separately via the tags endpoint
-  // so existing tags are preserved (not replaced).
+  // Tags are included in the PUT body so GHL replaces (not appends) them,
+  // keeping each funnel's tag set clean and isolated.
   const updatePayload = {
     firstName: firstName ?? "",
     lastName: lastName ?? "",
     email: email ?? "",
     phone: phone ?? "",
+    ...(tags?.length ? { tags } : {}),
     ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
   };
 
@@ -110,9 +98,6 @@ router.post("/ghl/contact", async (req, res) => {
           res.status(updateRes.status).json({ error: "GHL update error", details: updateData });
           return;
         }
-
-        // Append new tags without touching existing ones
-        await addTagsToContact(existingId, tags ?? [], apiKey);
 
         res.json({ ok: true, action: "updated", contactId: existingId, contact: updateData });
         return;
