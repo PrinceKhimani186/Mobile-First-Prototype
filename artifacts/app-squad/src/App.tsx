@@ -17,6 +17,8 @@ import OnboardingAccess from "@/pages/onboarding-access";
 import GameSelection from "@/pages/game-selection";
 import Customize from "@/pages/customize";
 import Dashboard from "@/pages/dashboard";
+import ColdTraffic from "@/pages/coldtraffic";
+import ColdTrafficApply from "@/pages/coldtraffic-apply";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,9 @@ function Router() {
       <Route path="/apply" component={Apply} />
       <Route path="/book-call" component={BookCall} />
       <Route path="/partner-program" component={PartnerProgram} />
+      {/* Cold traffic variants */}
+      <Route path="/coldtraffic" component={ColdTraffic} />
+      <Route path="/coldtraffic-apply" component={ColdTrafficApply} />
       {/* Hidden post-enrollment */}
       <Route path="/enrollment" component={Enrollment} />
       <Route path="/onboarding/access" component={OnboardingAccess} />
