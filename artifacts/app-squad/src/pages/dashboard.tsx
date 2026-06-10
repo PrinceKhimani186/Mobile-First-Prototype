@@ -245,8 +245,7 @@ export default function Dashboard() {
     setGameSelection(game);
     setCustomization(custom);
 
-    // ?stage= URL param lets admins preview or set any stage directly.
-    // It also persists to localStorage so the client sees the correct stage.
+    // ?stage= URL param lets admins preview any stage directly (persists to localStorage).
     const urlStage = new URLSearchParams(window.location.search).get("stage") as ProjectStage | null;
     const savedStage = localStorage.getItem("as_project_stage") as ProjectStage | null;
 
@@ -263,6 +262,20 @@ export default function Dashboard() {
         ? "Customization Review"
         : "Brand Review";
       setProjectStage(derived);
+    }
+
+    // Fetch server-side stage — admin updates override localStorage on next load.
+    if (em) {
+      fetch(`/api/projects/stage?email=${encodeURIComponent(em.toLowerCase())}`)
+        .then(r => r.ok ? r.json() : null)
+        .then((data: { currentStage?: string } | null) => {
+          if (data?.currentStage && STAGE_ORDER.includes(data.currentStage as ProjectStage)) {
+            const serverStage = data.currentStage as ProjectStage;
+            setProjectStage(serverStage);
+            localStorage.setItem("as_project_stage", serverStage);
+          }
+        })
+        .catch(() => { /* non-fatal: fall back to localStorage */ });
     }
 
     if (savedRevision) {

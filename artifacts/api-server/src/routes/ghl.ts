@@ -1,4 +1,6 @@
 import { Router, type IRouter } from "express";
+import { db, projectsTable } from "@workspace/db";
+import { sql } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -12,8 +14,6 @@ function ghlHeaders(apiKey: string) {
   };
 }
 
-// GHL requires customFields as an array: [{ key, field_value }] or [{ id, field_value }]
-// crm.ts may send a plain object — convert here; arrays are passed through unchanged.
 function toCustomFieldsArray(
   customFields: unknown,
 ): { key?: string; id?: string; field_value: string }[] {
@@ -24,7 +24,6 @@ function toCustomFieldsArray(
   );
 }
 
-// Fetch current tags on a contact so we can delete them before setting new ones.
 async function getContactTags(contactId: string, apiKey: string): Promise<string[]> {
   try {
     const res = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
@@ -38,12 +37,7 @@ async function getContactTags(contactId: string, apiKey: string): Promise<string
   }
 }
 
-// Delete specific tags from a contact.
-async function deleteTagsFromContact(
-  contactId: string,
-  tags: string[],
-  apiKey: string,
-): Promise<void> {
+async function deleteTagsFromContact(contactId: string, tags: string[], apiKey: string): Promise<void> {
   if (!tags.length) return;
   await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
     method: "DELETE",
@@ -52,12 +46,7 @@ async function deleteTagsFromContact(
   });
 }
 
-// Add tags to a contact.
-async function addTagsToContact(
-  contactId: string,
-  tags: string[],
-  apiKey: string,
-): Promise<void> {
+async function addTagsToContact(contactId: string, tags: string[], apiKey: string): Promise<void> {
   if (!tags.length) return;
   await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
     method: "POST",
@@ -66,19 +55,71 @@ async function addTagsToContact(
   });
 }
 
-// Replace all tags on a contact: wipe existing ones then set the new set.
-async function replaceContactTags(
-  contactId: string,
-  newTags: string[],
-  apiKey: string,
-): Promise<void> {
+async function replaceContactTags(contactId: string, newTags: string[], apiKey: string): Promise<void> {
   const existing = await getContactTags(contactId, apiKey);
   if (existing.length) await deleteTagsFromContact(contactId, existing, apiKey);
   if (newTags.length) await addTagsToContact(contactId, newTags, apiKey);
 }
 
+async function generateProjectId(): Promise<string> {
+  const result = await db.select({ count: sql<number>`cast(count(*) as int)` }).from(projectsTable);
+  const total = result[0]?.count ?? 0;
+  return `AS-${String(total + 1).padStart(3, "0")}`;
+}
+
+// Upsert a project record whenever a GHL contact is created or updated.
+async function upsertProject(opts: {
+  email: string;
+  customerName: string;
+  phone: string;
+  source: string;
+  tags: string[];
+  appName?: string;
+  gameTemplate?: string;
+  package?: string;
+}) {
+  if (!opts.email) return;
+
+  const source = opts.tags.some(t => t.toLowerCase().includes("cold"))
+    ? "Cold Calling"
+    : opts.source || "Direct";
+
+  try {
+    const projectId = await generateProjectId();
+    await db
+      .insert(projectsTable)
+      .values({
+        projectId,
+        customerName: opts.customerName,
+        email: opts.email.toLowerCase(),
+        phone: opts.phone,
+        source,
+        gameTemplate: opts.gameTemplate ?? "",
+        appName: opts.appName ?? "",
+        package: opts.package ?? "",
+        currentStage: "Project Received",
+        notes: "",
+      })
+      .onConflictDoUpdate({
+        target: projectsTable.email,
+        set: {
+          customerName: opts.customerName || sql`projects.customer_name`,
+          phone: opts.phone || sql`projects.phone`,
+          source,
+          ...(opts.appName ? { appName: opts.appName } : {}),
+          ...(opts.gameTemplate ? { gameTemplate: opts.gameTemplate } : {}),
+          ...(opts.package ? { package: opts.package } : {}),
+          updatedAt: new Date(),
+        },
+      });
+  } catch {
+    // Non-fatal: GHL sync still succeeds even if DB upsert fails.
+  }
+}
+
 router.post("/ghl/contact", async (req, res) => {
-  const { firstName, lastName, email, phone, tags, customFields } = req.body;
+  const { firstName, lastName, email, phone, tags, customFields, source, appName, gameTemplate } =
+    req.body as Record<string, unknown>;
 
   const apiKey = process.env.GHL_API_KEY;
   const locationId = process.env.GHL_LOCATION_ID;
@@ -90,30 +131,29 @@ router.post("/ghl/contact", async (req, res) => {
   }
 
   const customFieldsArray = toCustomFieldsArray(customFields);
-  const newTags: string[] = tags ?? [];
+  const newTags: string[] = Array.isArray(tags) ? tags : [];
+  const emailStr = String(email ?? "");
+  const customerName = [firstName, lastName].filter(Boolean).join(" ");
 
-  // POST (create) includes locationId and tags in the body.
   const createPayload = {
     locationId,
     firstName: firstName ?? "",
     lastName: lastName ?? "",
-    email: email ?? "",
+    email: emailStr,
     phone: phone ?? "",
     ...(newTags.length ? { tags: newTags } : {}),
     ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
   };
 
-  // PUT (update) — no tags here; we handle them separately via the tags endpoints.
   const updatePayload = {
     firstName: firstName ?? "",
     lastName: lastName ?? "",
-    email: email ?? "",
+    email: emailStr,
     phone: phone ?? "",
     ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
   };
 
   try {
-    // Step 1: attempt to create the contact
     const createRes = await fetch(`${GHL_BASE}/contacts/`, {
       method: "POST",
       headers: ghlHeaders(apiKey),
@@ -127,14 +167,12 @@ router.post("/ghl/contact", async (req, res) => {
       statusCode?: number;
     };
 
-    // Step 2: duplicate — update existing contact
     if (!createRes.ok) {
       const existingId = createData?.meta?.contactId;
 
       if (existingId) {
         req.log.info({ contactId: existingId }, "GHL: contact exists — updating");
 
-        // Update fields
         const updateRes = await fetch(`${GHL_BASE}/contacts/${existingId}`, {
           method: "PUT",
           headers: ghlHeaders(apiKey),
@@ -149,22 +187,42 @@ router.post("/ghl/contact", async (req, res) => {
           return;
         }
 
-        // Replace tags: delete all existing, then add the new set
         await replaceContactTags(existingId, newTags, apiKey);
         req.log.info({ contactId: existingId, tags: newTags }, "GHL: tags replaced");
+
+        // Upsert project in DB
+        await upsertProject({
+          email: emailStr,
+          customerName,
+          phone: String(phone ?? ""),
+          source: String(source ?? ""),
+          tags: newTags,
+          appName: appName ? String(appName) : undefined,
+          gameTemplate: gameTemplate ? String(gameTemplate) : undefined,
+        });
 
         res.json({ ok: true, action: "updated", contactId: existingId, contact: updateData });
         return;
       }
 
-      // Some other error — pass it through
       req.log.warn({ status: createRes.status, createData }, "GHL create error");
       res.status(createRes.status).json({ error: "GHL API error", details: createData });
       return;
     }
 
-    // Step 3: fresh contact created successfully
     req.log.info("GHL: new contact created");
+
+    // Upsert project in DB
+    await upsertProject({
+      email: emailStr,
+      customerName,
+      phone: String(phone ?? ""),
+      source: String(source ?? ""),
+      tags: newTags,
+      appName: appName ? String(appName) : undefined,
+      gameTemplate: gameTemplate ? String(gameTemplate) : undefined,
+    });
+
     res.json({ ok: true, action: "created", contact: createData });
   } catch (err) {
     req.log.error({ err }, "GHL proxy fetch failed");

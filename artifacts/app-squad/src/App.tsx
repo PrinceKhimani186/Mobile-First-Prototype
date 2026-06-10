@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,32 +19,49 @@ import Customize from "@/pages/customize";
 import Dashboard from "@/pages/dashboard";
 import ColdTraffic from "@/pages/coldtraffic";
 import ColdTrafficApply from "@/pages/coldtraffic-apply";
+import AdminLogin from "@/pages/admin-login";
+import AdminProjects from "@/pages/admin-projects";
+import AdminProjectDetail from "@/pages/admin-project-detail";
 
 const queryClient = new QueryClient();
 
-function Router() {
+function AppShell() {
+  const [location] = useLocation();
+  const isAdmin = location.startsWith("/admin");
+
   return (
-    <Switch>
-      {/* Public funnel */}
-      <Route path="/" component={Landing} />
-      <Route path="/start" component={Start} />
-      <Route path="/presentation" component={Presentation} />
-      <Route path="/scheduled-leads" component={ScheduledLeads} />
-      <Route path="/representative" component={Representative} />
-      <Route path="/apply" component={Apply} />
-      <Route path="/book-call" component={BookCall} />
-      <Route path="/partner-program" component={PartnerProgram} />
-      {/* Cold traffic variants */}
-      <Route path="/coldtraffic" component={ColdTraffic} />
-      <Route path="/coldtraffic-apply" component={ColdTrafficApply} />
-      {/* Hidden post-enrollment */}
-      <Route path="/enrollment" component={Enrollment} />
-      <Route path="/onboarding/access" component={OnboardingAccess} />
-      <Route path="/onboarding/game-selection" component={GameSelection} />
-      <Route path="/onboarding/customization" component={Customize} />
-      <Route path="/onboarding/dashboard" component={Dashboard} />
-      <Route component={NotFound} />
-    </Switch>
+    <div className="flex flex-col min-h-[100dvh] bg-background">
+      {!isAdmin && <Nav />}
+      <main className={isAdmin ? "flex-1" : "flex-1"}>
+        <Switch>
+          {/* Public funnel */}
+          <Route path="/" component={Landing} />
+          <Route path="/start" component={Start} />
+          <Route path="/presentation" component={Presentation} />
+          <Route path="/scheduled-leads" component={ScheduledLeads} />
+          <Route path="/representative" component={Representative} />
+          <Route path="/apply" component={Apply} />
+          <Route path="/book-call" component={BookCall} />
+          <Route path="/partner-program" component={PartnerProgram} />
+          {/* Cold traffic variants */}
+          <Route path="/coldtraffic" component={ColdTraffic} />
+          <Route path="/coldtraffic-apply" component={ColdTrafficApply} />
+          {/* Hidden post-enrollment */}
+          <Route path="/enrollment" component={Enrollment} />
+          <Route path="/onboarding/access" component={OnboardingAccess} />
+          <Route path="/onboarding/game-selection" component={GameSelection} />
+          <Route path="/onboarding/customization" component={Customize} />
+          <Route path="/onboarding/dashboard" component={Dashboard} />
+          {/* Admin */}
+          <Route path="/admin" component={AdminLogin} />
+          <Route path="/admin/projects" component={AdminProjects} />
+          <Route path="/admin/projects/:id">
+            {(params) => <AdminProjectDetail id={params.id} />}
+          </Route>
+          <Route component={NotFound} />
+        </Switch>
+      </main>
+    </div>
   );
 }
 
@@ -53,12 +70,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <div className="flex flex-col min-h-[100dvh] bg-background">
-            <Nav />
-            <main className="flex-1">
-              <Router />
-            </main>
-          </div>
+          <AppShell />
         </WouterRouter>
         <Toaster />
       </TooltipProvider>
