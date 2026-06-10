@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Save, CheckCircle2, ExternalLink, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Save, CheckCircle2, ExternalLink, Loader2, AlertTriangle, ChevronDown } from "lucide-react";
 
 const PROJECT_STAGES = [
   "Project Received",
@@ -48,6 +48,79 @@ const inputSx: React.CSSProperties = {
   background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.09)",
   color: "rgba(255,255,255,0.8)", outline: "none", boxSizing: "border-box",
 };
+
+function StageSelect({ value, onChange, stages, pct }: {
+  value: string;
+  onChange: (v: string) => void;
+  stages: readonly string[];
+  pct: Record<string, number>;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: "relative", width: "100%" }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", borderRadius: 9, padding: "9px 36px 9px 12px",
+          fontFamily: "'Inter'", fontSize: 13,
+          background: "hsl(226 32% 10%)", border: `1px solid ${open ? "hsl(35 90% 55% / 0.5)" : "rgba(255,255,255,0.12)"}`,
+          color: "rgba(255,255,255,0.9)", outline: "none", boxSizing: "border-box",
+          cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center",
+          justifyContent: "space-between", transition: "border-color 0.15s",
+        } as React.CSSProperties}
+      >
+        <span>{value} — {pct[value]}%</span>
+        <ChevronDown size={14} style={{ opacity: 0.5, transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s", flexShrink: 0 }} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            style={{
+              position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 100,
+              background: "hsl(226 32% 10%)", border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 10, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+            }}
+          >
+            {stages.map(s => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => { onChange(s); setOpen(false); }}
+                style={{
+                  width: "100%", padding: "9px 12px", textAlign: "left",
+                  fontFamily: "'Inter'", fontSize: 13, cursor: "pointer", border: "none",
+                  background: s === value ? "hsl(35 90% 55% / 0.12)" : "transparent",
+                  color: s === value ? "hsl(35 90% 65%)" : "rgba(255,255,255,0.8)",
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  transition: "background 0.1s",
+                } as React.CSSProperties}
+                onMouseEnter={e => { if (s !== value) (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)"; }}
+                onMouseLeave={e => { if (s !== value) (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+              >
+                <span>{s}</span>
+                <span style={{ fontSize: 11, opacity: 0.45 }}>{pct[s]}%</span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
@@ -228,15 +301,12 @@ export default function AdminProjectDetail({ id }: { id: string }) {
               <label style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", color: "hsl(218 16% 36%)", display: "block", marginBottom: 8 }}>
                 Update Stage
               </label>
-              <select
+              <StageSelect
                 value={stage}
-                onChange={e => setStage(e.target.value)}
-                style={{ ...inputSx, appearance: "none" } as React.CSSProperties}
-              >
-                {PROJECT_STAGES.map(s => (
-                  <option key={s} value={s}>{s} — {STAGE_PCT[s]}%</option>
-                ))}
-              </select>
+                onChange={setStage}
+                stages={PROJECT_STAGES}
+                pct={STAGE_PCT}
+              />
 
               <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "hsl(218 16% 34%)", fontWeight: 300, marginTop: 10 }}>
                 Saving will immediately update the customer's dashboard. The change takes effect on their next page load.
