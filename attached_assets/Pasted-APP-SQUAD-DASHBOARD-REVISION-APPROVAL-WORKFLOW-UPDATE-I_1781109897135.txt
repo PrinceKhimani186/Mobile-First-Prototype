@@ -1,0 +1,292 @@
+APP SQUAD DASHBOARD REVISION + APPROVAL WORKFLOW UPDATE
+
+IMPORTANT:
+Do NOT redesign the entire dashboard.
+Do NOT remove the current dashboard layout.
+Update the project timeline so the customer has clear action buttons when the demo is ready.
+
+==================================================
+UPDATED TIMELINE STAGES
+==================================================
+
+Project Received - 10%
+Brand Review - 20%
+Customization Review - 30%
+Development - 50%
+Testing - 65%
+Demo Ready For Review - 75%
+Revision Window - 85%
+Final Approval - 90%
+Publishing Requirements - 95%
+Store Submission - 98%
+App Launch - 100%
+
+==================================================
+DEMO READY FOR REVIEW STAGE
+==================================================
+
+When projectStage = "Demo Ready For Review"
+
+Display headline:
+Your Demo Is Ready For Review
+
+Display text:
+Your app demo is now ready for review. Please review the design, branding, text, colors, and functionality before we move into publishing preparation.
+
+Show 2 buttons:
+
+Button 1:
+Approve Demo
+
+Button 2:
+Submit Revision Request
+
+==================================================
+APPROVE DEMO BUTTON
+==================================================
+
+When customer clicks Approve Demo:
+
+Show confirmation modal:
+
+Headline:
+Approve Demo?
+
+Text:
+By approving your demo, you confirm that you are ready to move forward toward publishing preparation. If you approve now, your included revision round will be marked as unused and the project will move to Final Approval.
+
+Buttons:
+Cancel
+Yes, Approve Demo
+
+When confirmed:
+Set projectStage = "Final Approval"
+Set demoApproved = true
+Set revisionRequested = false
+Set approvedAt = current timestamp
+
+Show success message:
+Your demo has been approved. Your project is now moving toward final approval and publishing preparation.
+
+==================================================
+SUBMIT REVISION REQUEST BUTTON
+==================================================
+
+When customer clicks Submit Revision Request:
+
+Open Revision Request Form.
+
+Form headline:
+Submit Your Included Revision Request
+
+Form helper text:
+Your package includes one revision round before publishing preparation. Please include all requested changes in this submission.
+
+Revision request form fields:
+
+1. Revision Type
+Checkboxes:
+- Text / wording updates
+- Color changes
+- Graphic adjustments
+- App icon adjustment
+- Branding updates
+- Minor layout changes
+- Minor configuration adjustment
+- Other
+
+2. Revision Details
+Large text area:
+Please describe all changes requested.
+
+3. Specific Screens / Areas
+Large text area:
+Which screens, images, buttons, colors, or sections need changes?
+
+4. Priority Level
+Dropdown:
+- Low
+- Normal
+- High
+
+5. Upload Reference Image
+File upload placeholder:
+Optional reference image or example
+
+6. Confirmation Checkbox
+Text:
+I understand this is my included revision round and major feature additions, new game mechanics, new templates, or out-of-scope changes may require additional fees.
+
+Submit Button:
+Submit Revision Request
+
+==================================================
+AFTER REVISION REQUEST SUBMISSION
+==================================================
+
+When revision form is submitted:
+
+Set projectStage = "Revision Window"
+Set revisionRequested = true
+Set revisionSubmittedAt = current timestamp
+
+Save revision payload:
+
+{
+  revisionType: [],
+  revisionDetails: "",
+  specificAreas: "",
+  priorityLevel: "",
+  referenceUpload: "",
+  submittedAt: "",
+  clientName: "",
+  selectedGameTemplate: "",
+  appName: "",
+  package: ""
+}
+
+Show success message:
+Your revision request has been submitted. Our team will review your notes and update your project status once revisions are complete.
+
+==================================================
+REVISION WINDOW STAGE
+==================================================
+
+When projectStage = "Revision Window"
+
+Display headline:
+Revision Request Received
+
+Display text:
+Our team is reviewing your included revision request. Once the requested updates are completed, your project will move to Final Approval.
+
+Display submitted revision summary:
+- Revision Type
+- Priority Level
+- Submitted Date
+- Revision Details
+
+Do not allow additional revision requests unless admin resets revision eligibility.
+
+Show badge:
+Revision Round Used
+
+==================================================
+FINAL APPROVAL STAGE
+==================================================
+
+When projectStage = "Final Approval"
+
+Display headline:
+Final Approval Needed
+
+Display text:
+Your app is ready for final approval before publishing preparation.
+
+Show button:
+Approve For Publishing
+
+When clicked:
+
+Show confirmation modal:
+
+Headline:
+Approve For Publishing?
+
+Text:
+By approving for publishing, you confirm that your app is ready to move into publishing requirements and store submission preparation.
+
+Buttons:
+Cancel
+Yes, Approve For Publishing
+
+When confirmed:
+Set projectStage = "Publishing Requirements"
+Set finalApproval = true
+Set finalApprovedAt = current timestamp
+
+==================================================
+PUBLISHING REQUIREMENTS STAGE
+==================================================
+
+When projectStage = "Publishing Requirements"
+
+Display headline:
+Complete Publishing Requirements
+
+Display text:
+Before App Squad can prepare your app for submission, we need your publishing details and developer account information.
+
+Show button:
+Complete Publishing Requirements
+
+Open publishing form.
+
+Publishing form fields:
+
+1. Publish To Apple App Store?
+Yes / No
+
+2. Apple Developer Account Created?
+Yes / No / Need Help
+
+3. Apple Developer Account Email
+Text field
+
+4. Publish To Google Play?
+Yes / No
+
+5. Google Play Developer Account Created?
+Yes / No / Need Help
+
+6. Google Play Developer Account Email
+Text field
+
+7. Publishing Contact Name
+
+8. Publishing Contact Email
+
+9. Additional Publishing Notes
+
+Submit Button:
+Submit Publishing Requirements
+
+After submission:
+Set projectStage = "Store Submission"
+Set publishingRequirementsSubmitted = true
+Set publishingSubmittedAt = current timestamp
+
+==================================================
+CRM / WEBHOOK PREP
+==================================================
+
+Create placeholder functions:
+
+sendRevisionRequestToCRM()
+sendDemoApprovalToCRM()
+sendFinalApprovalToCRM()
+sendPublishingRequirementsToCRM()
+
+For now:
+console.log payload
+Add TODO:
+Replace with GoHighLevel webhook endpoint.
+
+==================================================
+FINAL GOAL
+==================================================
+
+The customer dashboard should clearly support:
+
+Demo review
+Demo approval
+One included revision request
+Final approval
+Publishing requirement collection
+Store submission preparation
+
+The customer should never have to email support asking:
+- How do I request changes?
+- How do I approve my demo?
+- What happens after testing?
+- What do you need to publish my app?
