@@ -231,7 +231,6 @@ export default function Dashboard() {
     const game = JSON.parse(localStorage.getItem("as_game_selection") || "null");
     const custom = JSON.parse(localStorage.getItem("as_customization") || "null");
     const src = localStorage.getItem("as_source") || "Direct";
-    const savedStage = localStorage.getItem("as_project_stage") as ProjectStage | null;
     const savedRevision = localStorage.getItem("as_revision_data");
     const savedPublishing = localStorage.getItem("as_publishing_data");
 
@@ -246,7 +245,15 @@ export default function Dashboard() {
     setGameSelection(game);
     setCustomization(custom);
 
-    if (savedStage && STAGE_ORDER.includes(savedStage)) {
+    // ?stage= URL param lets admins preview or set any stage directly.
+    // It also persists to localStorage so the client sees the correct stage.
+    const urlStage = new URLSearchParams(window.location.search).get("stage") as ProjectStage | null;
+    const savedStage = localStorage.getItem("as_project_stage") as ProjectStage | null;
+
+    if (urlStage && STAGE_ORDER.includes(urlStage)) {
+      setProjectStage(urlStage);
+      localStorage.setItem("as_project_stage", urlStage);
+    } else if (savedStage && STAGE_ORDER.includes(savedStage)) {
       setProjectStage(savedStage);
     } else {
       // Derive default stage from onboarding progress
