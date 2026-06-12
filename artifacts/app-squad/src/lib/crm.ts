@@ -237,7 +237,7 @@ export function sendCustomizationToCRM(payload: {
     lastName,
     email: payload.email,
     phone: payload.phone,
-    tags: ["onboarding", "customization-submitted"],
+    tags: ["onboarding", "customization-submitted", "onbording-submited"],
     customFields: fields,
   });
 }
