@@ -12,6 +12,17 @@
 //   game_style      → 99Xb7QXH5O0tVhNCbzhB
 //   budget          → elPxjX2AZpllZiGb4jZB
 //   start_timeline  → sLISUfNGXIrXXuz82jef
+//
+// GHL custom field IDs — onboarding / customization:
+//   app_name              → FZBa9ADCLKQWPhmEIk6j
+//   app_tagline           → rhBCPC8RdX09mtNGl8r6
+//   who_is_app_for        → JfHuVa8do6kqYtf2VelL
+//   brand_personality     → K9zxY9OHeXPieU99mDSi
+//   color_direction       → V6biP3RQANu8jA6KzuoZ
+//   icon_style            → 8rllYdtvo9pJRow7bcS0
+//   monetization          → HHedLCiTwIT3U9r0Azs6
+//   design_notes          → UTFc9fAbyJj6mHv4TyeF
+//   game_template         → R6LEvxoM1oh7RuIi7059
 
 const GHL_PROXY = "/api/ghl/contact";
 
@@ -189,13 +200,9 @@ export function sendGameSelectionToCRM(payload: {
     email: payload.email,
     phone: payload.phone,
     tags: ["onboarding", "game-selected"],
-    customFields: {
-      stage: "game_selected",
-      source: "post_payment_onboarding",
-      selected_game_type: payload.selectedGameType,
-      game_category: payload.gameCategory,
-      template_name: payload.templateName,
-    },
+    customFields: [
+      { id: "R6LEvxoM1oh7RuIi7059", field_value: payload.templateName },
+    ],
   });
 }
 
@@ -215,25 +222,23 @@ export function sendCustomizationToCRM(payload: {
   source: string;
 }) {
   const { firstName, lastName } = splitName(payload.clientName);
+  const fields: GHLField[] = [
+    { id: "FZBa9ADCLKQWPhmEIk6j", field_value: payload.appName },
+    { id: "rhBCPC8RdX09mtNGl8r6", field_value: payload.tagline },
+    { id: "JfHuVa8do6kqYtf2VelL", field_value: payload.targetAudience },
+    { id: "K9zxY9OHeXPieU99mDSi", field_value: payload.brandPersonality },
+    { id: "V6biP3RQANu8jA6KzuoZ", field_value: payload.colorDirection },
+    { id: "8rllYdtvo9pJRow7bcS0", field_value: payload.iconStyle },
+    { id: "HHedLCiTwIT3U9r0Azs6", field_value: payload.monetization },
+    { id: "UTFc9fAbyJj6mHv4TyeF", field_value: payload.designNotes },
+  ].filter(f => f.field_value.trim() !== "");
   upsertGHLContact({
     firstName,
     lastName,
     email: payload.email,
     phone: payload.phone,
     tags: ["onboarding", "customization-submitted"],
-    customFields: {
-      stage: "customization_submitted",
-      source: "post_payment_onboarding",
-      app_name: payload.appName,
-      app_tagline: payload.tagline,
-      app_concept: payload.appConcept,
-      target_audience: payload.targetAudience,
-      brand_personality: payload.brandPersonality,
-      color_direction: payload.colorDirection,
-      monetization_preference: payload.monetization,
-      icon_style: payload.iconStyle,
-      design_notes: payload.designNotes,
-    },
+    customFields: fields,
   });
 }
 
