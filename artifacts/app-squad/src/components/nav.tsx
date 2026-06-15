@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { Menu, X, Zap, Code2, ChevronDown } from "lucide-react";
+import { Menu, X, Zap, Code2, ChevronDown, LogIn, LogOut } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+
+const ADMIN_STORAGE_KEY = "as_admin_auth";
 
 const LINKS = [
   { href: "/", label: "Home" },
@@ -19,6 +21,27 @@ const DEV_LINKS = [
   { href: "/onboarding/customization",  label: "Customization Form" },
   { href: "/onboarding/dashboard",      label: "Client Dashboard" },
 ];
+
+function useAdminAuth() {
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem(ADMIN_STORAGE_KEY) === "true");
+
+  useEffect(() => {
+    const sync = () => setIsAdmin(localStorage.getItem(ADMIN_STORAGE_KEY) === "true");
+    window.addEventListener("as_admin_auth_change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("as_admin_auth_change", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem(ADMIN_STORAGE_KEY);
+    window.dispatchEvent(new Event("as_admin_auth_change"));
+  };
+
+  return { isAdmin, logout };
+}
 
 function DevDropdown({ location }: { location: string }) {
   const [open, setOpen] = useState(false);
@@ -97,8 +120,13 @@ function DevDropdown({ location }: { location: string }) {
 
 export function Nav() {
   const [isOpen, setIsOpen] = useState(false);
-  const [devOpen, setDevOpen] = useState(false);
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
+  const { isAdmin, logout } = useAdminAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-background/70 backdrop-blur-xl">
@@ -129,16 +157,38 @@ export function Nav() {
               </span>
             </Link>
           ))}
-          <span className="mx-1.5 w-px h-4 bg-white/10" />
-          <DevDropdown location={location} />
+          {isAdmin && (
+            <>
+              <span className="mx-1.5 w-px h-4 bg-white/10" />
+              <DevDropdown location={location} />
+            </>
+          )}
         </nav>
 
-        <Link href="/start" className="hidden md:flex">
-          <span className="btn-gold h-9 px-5 text-[13px] font-semibold rounded-xl flex items-center gap-2 text-white cursor-pointer">
-            Watch Presentation
-            <Zap className="w-3.5 h-3.5" />
-          </span>
-        </Link>
+        <div className="hidden md:flex items-center gap-2">
+          {isAdmin ? (
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Logout
+            </button>
+          ) : (
+            <Link href="/login">
+              <span className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer">
+                <LogIn className="w-3.5 h-3.5" />
+                Admin Login
+              </span>
+            </Link>
+          )}
+          <Link href="/start">
+            <span className="btn-gold h-9 px-5 text-[13px] font-semibold rounded-xl flex items-center gap-2 text-white cursor-pointer">
+              Watch Presentation
+              <Zap className="w-3.5 h-3.5" />
+            </span>
+          </Link>
+        </div>
 
         <button
           className="md:hidden p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -173,41 +223,62 @@ export function Nav() {
                 </Link>
               ))}
 
-              {/* Dev section separator */}
-              <div className="flex items-center gap-2 px-1 mt-2 mb-1">
-                <div className="flex-1 h-px" style={{ background: "hsl(35 90% 55% / 0.18)" }} />
-                <span className="flex items-center gap-1.5" style={{ fontFamily: "'Inter'", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "hsl(35 90% 50%)" }}>
-                  <Code2 className="w-2.5 h-2.5" />
-                  Dev / Onboarding
-                </span>
-                <div className="flex-1 h-px" style={{ background: "hsl(35 90% 55% / 0.18)" }} />
-              </div>
-
-              {DEV_LINKS.map((link, i) => (
-                <Link key={link.href} href={link.href} onClick={() => setIsOpen(false)}>
-                  <span
-                    className={cn(
-                      "flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
-                      location === link.href
-                        ? "bg-amber-500/15 text-amber-400"
-                        : "text-amber-500/60 hover:text-amber-400 hover:bg-amber-500/10"
-                    )}
-                  >
-                    <span className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold shrink-0"
-                      style={{ background: "hsl(224 22% 12%)", color: "hsl(35 90% 55%)" }}>
-                      {i + 1}
+              {isAdmin && (
+                <>
+                  <div className="flex items-center gap-2 px-1 mt-2 mb-1">
+                    <div className="flex-1 h-px" style={{ background: "hsl(35 90% 55% / 0.18)" }} />
+                    <span className="flex items-center gap-1.5" style={{ fontFamily: "'Inter'", fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "hsl(35 90% 50%)" }}>
+                      <Code2 className="w-2.5 h-2.5" />
+                      Dev / Onboarding
                     </span>
-                    {link.label}
+                    <div className="flex-1 h-px" style={{ background: "hsl(35 90% 55% / 0.18)" }} />
+                  </div>
+
+                  {DEV_LINKS.map((link, i) => (
+                    <Link key={link.href} href={link.href} onClick={() => setIsOpen(false)}>
+                      <span
+                        className={cn(
+                          "flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer",
+                          location === link.href
+                            ? "bg-amber-500/15 text-amber-400"
+                            : "text-amber-500/60 hover:text-amber-400 hover:bg-amber-500/10"
+                        )}
+                      >
+                        <span className="w-4 h-4 rounded flex items-center justify-center text-[9px] font-bold shrink-0"
+                          style={{ background: "hsl(224 22% 12%)", color: "hsl(35 90% 55%)" }}>
+                          {i + 1}
+                        </span>
+                        {link.label}
+                      </span>
+                    </Link>
+                  ))}
+                </>
+              )}
+
+              <div className="flex flex-col gap-2 mt-2">
+                {isAdmin ? (
+                  <button
+                    onClick={() => { setIsOpen(false); handleLogout(); }}
+                    className="flex items-center justify-center gap-2 h-11 text-[14px] font-semibold rounded-xl border border-white/10 text-white/50 cursor-pointer bg-transparent"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                ) : (
+                  <Link href="/login" onClick={() => setIsOpen(false)}>
+                    <span className="flex items-center justify-center gap-2 h-11 text-[14px] font-semibold rounded-xl border border-white/10 text-white/50 cursor-pointer">
+                      <LogIn className="w-4 h-4" />
+                      Admin Login
+                    </span>
+                  </Link>
+                )}
+                <Link href="/start" onClick={() => setIsOpen(false)}>
+                  <span className="btn-gold h-11 text-[14px] font-semibold rounded-xl flex items-center justify-center gap-2 text-white cursor-pointer">
+                    Watch Presentation
+                    <Zap className="w-4 h-4" />
                   </span>
                 </Link>
-              ))}
-
-              <Link href="/start" onClick={() => setIsOpen(false)}>
-                <span className="btn-gold mt-2 h-11 text-[14px] font-semibold rounded-xl flex items-center justify-center gap-2 text-white cursor-pointer">
-                  Watch Presentation
-                  <Zap className="w-4 h-4" />
-                </span>
-              </Link>
+              </div>
             </nav>
           </motion.div>
         )}

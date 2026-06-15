@@ -22,6 +22,7 @@ import ColdTrafficApply from "@/pages/coldtraffic-apply";
 import AdminLogin from "@/pages/admin-login";
 import AdminProjects from "@/pages/admin-projects";
 import AdminProjectDetail from "@/pages/admin-project-detail";
+import StaffLogin from "@/pages/staff-login";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,8 @@ function AppShell() {
           <Route path="/onboarding/game-selection" component={GameSelection} />
           <Route path="/onboarding/customization" component={Customize} />
           <Route path="/onboarding/dashboard" component={Dashboard} />
+          {/* Staff login */}
+          <Route path="/login" component={StaffLogin} />
           {/* Admin */}
           <Route path="/admin" component={AdminLogin} />
           <Route path="/admin/projects" component={AdminProjects} />
