@@ -42,3 +42,11 @@ externalPort = 3000
 [[ports]]
 localPort = 25380
 externalPort = 3002
+
+[userenv]
+
+[userenv.shared]
+MONDAY_API_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY3MDkwNzEyNCwiYWFpIjoxMSwidWlkIjoxMDU1OTM1NzAsImlhZCI6IjIwMjYtMDYtMTVUMDc6NDk6MzQuMjY1WiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM1NjAzMTY1LCJyZ24iOiJhcHNlMiJ9.-y0P0KzUI85ou8ew9X38pk8Mvl4f1qPQhAzh_x9HyLw"
+
+[userenv.development]
+MONDAY_BOARD_ID = "5029246685"
