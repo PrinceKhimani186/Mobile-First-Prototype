@@ -166,8 +166,9 @@ router.get("/monday/project", async (req: Request, res: Response) => {
       return statusCol?.text?.toLowerCase().includes("working on it");
     });
 
-    // 3. Determine which item to use for metadata (prefer matched client, else active)
-    const metaItem = clientItem ?? activeItem ?? items[0];
+    // 3. Client metadata lives on items[0] ("Project Received") where all client columns are stored.
+    //    If we matched a specific client item by email, prefer that. Otherwise always use items[0].
+    const metaItem = clientItem ?? items[0];
 
     // 4. Current stage = the name of the first "Working on it" task,
     //    resolved to a known stage label
@@ -182,8 +183,10 @@ router.get("/monday/project", async (req: Request, res: Response) => {
     const tagline    = colText(cols, "tagline", "slogan");
     const monetization = colText(cols, "monetization", "revenue", "monetize");
 
-    // 6. Progress — from column or derived from stage
-    const progressCol = colNumber(cols, "progress", "%", "percent");
+    // 6. Progress — read from the active stage item's column first, then derive from stage name
+    const activeCols = activeItem?.column_values ?? [];
+    const progressCol = colNumber(activeCols, "progress", "%", "percent")
+      ?? colNumber(cols, "progress", "%", "percent");
     const progressPct = progressCol !== null
       ? progressCol
       : (STAGE_PCT[currentStage] ?? 10);
