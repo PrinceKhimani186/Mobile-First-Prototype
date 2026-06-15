@@ -199,6 +199,18 @@ export default function Dashboard() {
   // Project stage
   const [projectStage, setProjectStage] = useState<ProjectStage>("Project Received");
 
+  // Monday.com live data
+  const [mondayData, setMondayData] = useState<{
+    currentStage?: string;
+    progressPct?: number;
+    clientName?: string;
+    appName?: string;
+    gameType?: string;
+    tagline?: string;
+    monetization?: string;
+  } | null>(null);
+  const [mondayLoading, setMondayLoading] = useState(false);
+
   // Modals
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showFinalModal, setShowFinalModal] = useState(false);
@@ -264,7 +276,7 @@ export default function Dashboard() {
       setProjectStage(derived);
     }
 
-    // Fetch server-side stage — admin updates override localStorage on next load.
+    // Fetch server-side stage (admin DB) — overrides localStorage.
     if (em) {
       fetch(`/api/projects/stage?email=${encodeURIComponent(em.toLowerCase())}`)
         .then(r => r.ok ? r.json() : null)
@@ -275,8 +287,34 @@ export default function Dashboard() {
             localStorage.setItem("as_project_stage", serverStage);
           }
         })
-        .catch(() => { /* non-fatal: fall back to localStorage */ });
+        .catch(() => { /* non-fatal */ });
     }
+
+    // Fetch Monday.com live project data — highest-priority source of truth.
+    setMondayLoading(true);
+    fetch(`/api/monday/project${em ? `?email=${encodeURIComponent(em.toLowerCase())}` : ""}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((data: {
+        ok?: boolean; fallback?: boolean;
+        currentStage?: string; progressPct?: number;
+        clientName?: string; appName?: string;
+        gameType?: string; tagline?: string; monetization?: string;
+      } | null) => {
+        if (data?.ok && !data.fallback) {
+          setMondayData(data);
+          // Override stage with Monday's live stage if it's a known stage
+          if (data.currentStage && STAGE_ORDER.includes(data.currentStage as ProjectStage)) {
+            // Only override if no URL ?stage= param was set
+            const urlStageCheck = new URLSearchParams(window.location.search).get("stage");
+            if (!urlStageCheck) {
+              setProjectStage(data.currentStage as ProjectStage);
+              localStorage.setItem("as_project_stage", data.currentStage);
+            }
+          }
+        }
+      })
+      .catch(() => { /* non-fatal: dashboard shows localStorage data */ })
+      .finally(() => setMondayLoading(false));
 
     if (savedRevision) {
       try { setRevisionData(JSON.parse(savedRevision)); } catch { /* ignore */ }
@@ -419,14 +457,27 @@ export default function Dashboard() {
 
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "hsl(142 76% 55%)" }} />
-            <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(142 76% 55%)" }}>
-              Client Portal — Live
-            </span>
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "hsl(142 76% 55%)" }} />
+              <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(142 76% 55%)" }}>
+                Client Portal — Live
+              </span>
+            </div>
+            {mondayLoading && (
+              <span style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(218 16% 38%)", letterSpacing: "0.06em" }}>
+                Syncing with Monday…
+              </span>
+            )}
+            {mondayData && !mondayLoading && (
+              <span style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", color: "hsl(35 90% 55%)", display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "hsl(35 90% 55%)", display: "inline-block" }} />
+                Monday.com Live
+              </span>
+            )}
           </div>
           <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 8 }}>
-            {clientName ? `Welcome back, ${clientName.split(" ")[0]}.` : "App Launch Dashboard"}
+            {(mondayData?.clientName || clientName) ? `Welcome back, ${(mondayData?.clientName || clientName).split(" ")[0]}.` : "App Launch Dashboard"}
           </h1>
           <p style={{ fontFamily: "'Inter'", fontSize: 14, color: "hsl(218 16% 48%)", fontWeight: 300 }}>
             {completedCount} of {timeline.length} launch stages complete.
@@ -441,11 +492,11 @@ export default function Dashboard() {
             {/* Client stats */}
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <StatCard label="Client Name" value={clientName || "Not set"} />
-                <StatCard label="Game Type" value={gameSelection?.selectedGameType || "Pending"} sub={gameSelection?.gameCategory} />
-                <StatCard label="App Name" value={customization?.appName || "Pending"} />
-                <StatCard label="Tagline" value={customization?.tagline || "Pending"} />
-                <StatCard label="Monetization" value={customization?.monetization || "Pending"} />
+                <StatCard label="Client Name" value={mondayData?.clientName || clientName || "Not set"} />
+                <StatCard label="Game Type" value={mondayData?.gameType || gameSelection?.selectedGameType || "Pending"} sub={!mondayData?.gameType ? gameSelection?.gameCategory : undefined} />
+                <StatCard label="App Name" value={mondayData?.appName || customization?.appName || "Pending"} />
+                <StatCard label="Tagline" value={mondayData?.tagline || customization?.tagline || "Pending"} />
+                <StatCard label="Monetization" value={mondayData?.monetization || customization?.monetization || "Pending"} />
                 <StatCard label="Source" value={source || "Direct"} />
               </div>
             </motion.div>
