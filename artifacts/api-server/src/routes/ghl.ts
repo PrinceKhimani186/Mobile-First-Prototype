@@ -187,8 +187,12 @@ router.post("/ghl/contact", async (req, res) => {
           return;
         }
 
-        await replaceContactTags(existingId, newTags, apiKey);
-        req.log.info({ contactId: existingId, tags: newTags }, "GHL: tags replaced");
+        if (newTags.length > 0) {
+          await replaceContactTags(existingId, newTags, apiKey);
+          req.log.info({ contactId: existingId, tags: newTags }, "GHL: tags replaced");
+        } else {
+          req.log.info({ contactId: existingId }, "GHL: no tags provided — existing tags preserved");
+        }
 
         // Upsert project in DB
         await upsertProject({

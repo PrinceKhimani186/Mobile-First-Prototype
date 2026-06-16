@@ -290,7 +290,6 @@ export function updateProjectStatusInCRM(payload: {
     lastName,
     email: payload.email,
     phone: "",
-    tags: ["project-update", payload.stage],
     customFields: {
       stage: payload.stage,
       status: payload.status,
