@@ -3,17 +3,17 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Zap, Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
 
-const ADMIN_USERNAME = "Admin";
-const ADMIN_PASSWORD = "Admin@123";
-const STORAGE_KEY = "as_admin_auth";
+const ADMIN_EMAIL    = "princekhimani186@gmail.com";
+const ADMIN_PASSWORD = "Prince@123";
+const STORAGE_KEY    = "as_admin_auth";
 
 export default function StaffLogin() {
   const [, navigate] = useLocation();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError]           = useState("");
+  const [loading, setLoading]       = useState(false);
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
@@ -29,22 +29,54 @@ export default function StaffLogin() {
     transition: "border-color 0.2s",
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        localStorage.setItem(STORAGE_KEY, "true");
-        window.dispatchEvent(new Event("as_admin_auth_change"));
-        navigate("/onboarding/dashboard");
-      } else {
-        setError("Incorrect username or password. Please try again.");
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log("[Auth] Login attempt:", normalizedEmail);
+
+    try {
+      // Step 1 — Check credentials locally (fast-fail before GHL round-trip)
+      if (normalizedEmail !== ADMIN_EMAIL.toLowerCase() || password !== ADMIN_PASSWORD) {
+        console.log("[Auth] Login failure: invalid credentials");
+        setError("Incorrect email or password. Please try again.");
+        setLoading(false);
+        return;
       }
+
+      // Step 2 — Verify contact exists in GHL (server-side, key never exposed)
+      console.log("[Auth] Checking GHL contact for:", normalizedEmail);
+      const res = await fetch("/api/auth/check-ghl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+
+      const data = (await res.json()) as { exists?: boolean; error?: string };
+
+      if (!data.exists) {
+        console.log("[Auth] GHL contact not found — login blocked");
+        setError("Your account is not authorized. Please contact App Squad support.");
+        setLoading(false);
+        return;
+      }
+
+      // Step 3 — Grant access
+      console.log("[Auth] GHL contact found — login success");
+      localStorage.setItem(STORAGE_KEY, "true");
+      window.dispatchEvent(new Event("as_admin_auth_change"));
+      navigate("/onboarding/dashboard");
+    } catch (err) {
+      console.error("[Auth] Login error:", err);
+      setError("Login check failed. Please try again.");
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
+
+  const canSubmit = email.trim() && password && !loading;
 
   return (
     <div style={{
@@ -147,7 +179,7 @@ export default function StaffLogin() {
           </p>
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Username */}
+            {/* Email */}
             <div>
               <label style={{
                 display: "block",
@@ -159,14 +191,14 @@ export default function StaffLogin() {
                 color: "rgba(255,255,255,0.35)",
                 marginBottom: 7,
               }}>
-                Username
+                Email
               </label>
               <input
-                type="text"
-                value={username}
-                onChange={e => { setUsername(e.target.value); setError(""); }}
-                placeholder="Enter username"
-                autoComplete="username"
+                type="email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError(""); }}
+                placeholder="Enter your email"
+                autoComplete="email"
                 required
                 style={inputStyle}
                 onFocus={e => (e.target.style.borderColor = "hsl(35 90% 55% / 0.5)")}
@@ -232,7 +264,7 @@ export default function StaffLogin() {
                 animate={{ opacity: 1, y: 0 }}
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                   gap: 8,
                   padding: "10px 14px",
                   borderRadius: 10,
@@ -240,12 +272,13 @@ export default function StaffLogin() {
                   border: "1px solid rgba(239,68,68,0.25)",
                 }}
               >
-                <AlertCircle style={{ width: 14, height: 14, color: "#f87171", flexShrink: 0 }} />
+                <AlertCircle style={{ width: 14, height: 14, color: "#f87171", flexShrink: 0, marginTop: 1 }} />
                 <p style={{
                   fontFamily: "'Inter', sans-serif",
                   fontSize: 12.5,
                   color: "#f87171",
                   margin: 0,
+                  lineHeight: 1.5,
                 }}>
                   {error}
                 </p>
@@ -255,22 +288,22 @@ export default function StaffLogin() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading || !username || !password}
+              disabled={!canSubmit}
               style={{
                 width: "100%",
                 height: 46,
                 borderRadius: 12,
                 border: "none",
-                background: (!username || !password || loading)
+                background: !canSubmit
                   ? "hsl(35 90% 55% / 0.25)"
                   : "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))",
-                color: (!username || !password || loading)
+                color: !canSubmit
                   ? "rgba(255,255,255,0.35)"
                   : "white",
                 fontFamily: "'Space Grotesk', sans-serif",
                 fontSize: 14,
                 fontWeight: 600,
-                cursor: (!username || !password || loading) ? "not-allowed" : "pointer",
+                cursor: !canSubmit ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -280,7 +313,7 @@ export default function StaffLogin() {
               }}
             >
               {loading ? (
-                <span style={{ opacity: 0.7 }}>Signing in…</span>
+                <span style={{ opacity: 0.7 }}>Verifying…</span>
               ) : (
                 <>
                   Sign In

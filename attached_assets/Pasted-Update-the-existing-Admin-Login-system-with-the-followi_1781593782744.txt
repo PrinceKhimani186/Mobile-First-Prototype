@@ -1,0 +1,97 @@
+Update the existing Admin Login system with the following changes:
+
+### Authentication Changes
+
+1. Replace the Username field with an Email field.
+
+2. Use the following hardcoded credentials:
+
+Email:
+[princekhimani186@gmail.com](mailto:princekhimani186@gmail.com)
+
+Password:
+Prince@123
+
+3. Login validation should:
+
+* Check email and password.
+* Show a clean error message for invalid credentials.
+* Save admin authentication state in localStorage.
+* Keep admin logged in after page refresh.
+* Redirect back to the dashboard after successful login.
+
+### Navigation Updates
+
+1. Keep the "Admin Login" button beside the "Watch Presentation" button.
+
+2. If admin is logged in:
+
+* Replace "Admin Login" with "Logout".
+* Show the "Dev Access" menu/button.
+
+3. If admin is logged out:
+
+* Hide the "Dev Access" menu/button completely.
+* Show the "Admin Login" button.
+
+### GoHighLevel (GHL) Contact Verification
+
+Before allowing login:
+
+1. Check whether a contact exists in GoHighLevel with:
+
+Email:
+[princekhimani186@gmail.com](mailto:princekhimani186@gmail.com)
+
+2. If the contact exists:
+
+* Allow login using the hardcoded credentials above.
+
+3. If the contact does not exist:
+
+* Block login.
+* Show message:
+
+"Your account is not authorized. Please contact App Squad support."
+
+### GHL Integration
+
+Use existing environment variables already configured in the project:
+
+GHL_API_KEY
+GHL_LOCATION_ID
+
+Create a helper function:
+
+checkGHLContact(email)
+
+The function should:
+
+* Search GHL contacts by email.
+* Return true if contact exists.
+* Return false if contact is not found.
+
+### Security
+
+* Never expose API keys on the frontend.
+* Perform GHL API calls server-side only.
+* Keep login state stored in localStorage.
+* Preserve all existing routes, dashboard functionality, Monday.com integration, onboarding flow, and Dev Access functionality.
+
+### UI Requirements
+
+* Keep the existing App Squad dark theme.
+* Match current spacing, cards, typography, buttons, and rounded corners.
+* Login page should look native to the current dashboard design.
+
+### Logging
+
+Add console logging for:
+
+* Login attempt
+* GHL contact found/not found
+* Login success
+* Login failure
+
+Do not modify any Monday.com functionality.
+Do not break the current dashboard or project tracking system.
