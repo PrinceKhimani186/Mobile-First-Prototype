@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "PVIQDI0I0_9--y2_G-FXO"
+uri = "file://app-squad-monday-tasks.csv"
+type = "table"
+title = "App Squad — Monday.com Import (11 Tasks)"

@@ -1,0 +1,12 @@
+Name,Status,Progress %,Description,Client Name,App Name,Game Type,Tagline
+Project Received,Done,10,"Client intake complete. Lead captured in CRM. Project officially started.",,,,
+Brand Review,Not Started,20,"Review and approve brand assets: logo colors, fonts, and app icon direction.",,,,
+Customization Review,Not Started,30,"Review client customization form submission: app name, tagline, monetization model, and design preferences.",,,,
+Development,Not Started,50,"App is being actively built by the development team based on approved customization.",,,,
+Testing,Not Started,65,"Internal QA testing: functionality, performance, and platform compatibility checks.",,,,
+Demo Ready For Review,Not Started,75,"Client-facing demo is ready. Client reviews the live build and provides feedback.",,,,
+Revision Window,Not Started,85,"Approved revision requests are being implemented based on client demo feedback.",,,,
+Final Approval,Not Started,90,"Client gives final sign-off on the completed app before moving to publishing.",,,,
+Publishing Requirements,Not Started,95,"Collecting Apple and Google store credentials, app store listings, and publishing assets.",,,,
+Store Submission,Not Started,98,"App submitted to Apple App Store and/or Google Play Store for review.",,,,
+App Launch,Not Started,100,"App is live on the app stores. Launch complete.",,,,
