@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 import {
   PlayCircle, ArrowRight, Apple, Activity, Target,
   TrendingUp, Star, Layers, Code2, Rocket, Smartphone,
@@ -519,6 +520,7 @@ const cardVariants = {
 
 export default function Landing() {
   const [screenIdx, setScreenIdx] = useState(0);
+  const { toast } = useToast();
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -526,6 +528,18 @@ export default function Landing() {
     }, 4500);
     return () => clearInterval(id);
   }, []);
+
+  // Show success toast after Stripe payment redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") === "success") {
+      toast({
+        title: "🎉 Enrollment confirmed!",
+        description: "Welcome aboard! Check your email for next steps.",
+      });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [toast]);
 
   const CurrentScreen = SCREEN_COMPONENTS[screenIdx];
 

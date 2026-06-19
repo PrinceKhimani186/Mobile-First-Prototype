@@ -1,0 +1,202 @@
+Create a complete "Start Enrollment" flow for the App Squad website.
+
+When the user clicks the "Start Enrollment" button, open a dedicated Enrollment page that matches the current App Squad dark theme design, typography, spacing, glowing cyan accents, and card styles.
+
+========================================
+PAGE TITLE
+========================================
+
+Headline:
+Start Your App Ownership Journey
+
+Subheadline:
+Complete your details and secure your place today.
+
+----------------------------------------
+STEP 1: USER INFORMATION
+----------------------------------------
+
+Create a clean form with these fields:
+
+• First Name (required)
+• Last Name (required)
+• Email Address (required)
+• Phone Number (required)
+
+Use modern dark inputs with blue glow focus effects.
+
+Validate:
+
+- Email format
+- Phone required
+- All fields required
+
+----------------------------------------
+STEP 2: PLAN SELECTION
+----------------------------------------
+
+Show 3 pricing cards similar to the App Squad website.
+
+Card 1
+Plan Name:
+Essentials
+
+Tag after successful purchase:
+Purchased Plan - Essentials
+
+Stripe Price ID:
+(price id here)
+
+----------------------------------------
+
+Card 2
+Plan Name:
+Ownership Accelerator
+
+Tag after successful purchase:
+Purchased Plan - Ownership Accelerator
+
+Stripe Price ID:
+(price id here)
+
+----------------------------------------
+
+Card 3
+Plan Name:
+Digital Asset Empire
+
+Tag after successful purchase:
+Purchased Plan - Digital Asset Empire
+
+Stripe Price ID:
+(price id here)
+
+----------------------------------------
+STEP 3: SUBMIT CONTACT TO GHL
+----------------------------------------
+
+Before payment, create/update contact in GoHighLevel.
+
+Fields:
+
+firstName
+lastName
+email
+phone
+
+If contact already exists, update it.
+
+After successful Stripe payment, apply the corresponding tag:
+
+Purchased Plan - Essentials
+
+Purchased Plan - Ownership Accelerator
+
+Purchased Plan - Digital Asset Empire
+
+----------------------------------------
+STEP 4: STRIPE CHECKOUT
+----------------------------------------
+
+Use Stripe Checkout.
+
+Pass metadata:
+
+firstName
+lastName
+email
+phone
+selectedPlan
+
+After successful payment:
+
+Trigger Stripe success webhook.
+
+Webhook should:
+
+1. Verify payment succeeded.
+2. Find/create contact in GoHighLevel.
+3. Apply the correct tag.
+4. Save purchase information.
+
+----------------------------------------
+SUCCESS URL
+----------------------------------------
+
+After payment success:
+
+Redirect user back to the main App Squad website homepage.
+
+Example:
+
+https://appsquad.com
+
+Append:
+
+?payment=success
+
+Show success toast:
+
+"Welcome to App Squad. Your enrollment is complete."
+
+----------------------------------------
+CANCEL URL
+----------------------------------------
+
+If payment is cancelled:
+
+Return to enrollment page.
+
+Show:
+
+"Payment was cancelled. You can continue whenever you're ready."
+
+----------------------------------------
+BACKEND
+----------------------------------------
+
+Create:
+
+/enrollment
+
+API routes:
+
+POST /api/create-contact
+POST /api/create-checkout-session
+POST /api/stripe-webhook
+
+Environment variables:
+
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+GHL_API_KEY=
+GHL_LOCATION_ID=
+
+NEXT_PUBLIC_SITE_URL=
+
+----------------------------------------
+WORKFLOW
+----------------------------------------
+
+Start Enrollment
+↓
+Fill form
+↓
+Choose Plan
+↓
+Create/Update GHL Contact
+↓
+Stripe Checkout
+↓
+Payment Success
+↓
+Stripe Webhook
+↓
+Apply GHL Tag
+↓
+Redirect to Homepage
+↓
+Show Success Message
+
+Maintain existing routes and styling. Use responsive design for desktop and mobile. Use TypeScript and keep the code modular and production-ready.

@@ -1,62 +1,543 @@
-import { motion } from "framer-motion";
-import { Zap, CreditCard, FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
+import {
+  Zap, ArrowRight, CheckCircle2, User, Mail, Phone,
+  ChevronRight, Loader2, AlertCircle, X, Sparkles, Crown, Rocket,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+// ── Plan definitions ─────────────────────────────────────────────────────────
+const PLANS = [
+  {
+    id: "essentials",
+    name: "Essentials",
+    tag: "Purchased Plan - Essentials",
+    icon: Zap,
+    color: "hsl(218 76% 60%)",
+    glow: "hsl(218 76% 60% / 0.18)",
+    border: "hsl(218 76% 60% / 0.3)",
+    description: "Everything you need to launch your first mobile game app.",
+    features: [
+      "Custom mobile game app",
+      "App store submission",
+      "Brand & design review",
+      "3-month post-launch support",
+    ],
+    popular: false,
+  },
+  {
+    id: "accelerator",
+    name: "Ownership Accelerator",
+    tag: "Purchased Plan - Ownership Accelerator",
+    icon: Sparkles,
+    color: "hsl(35 90% 55%)",
+    glow: "hsl(35 90% 55% / 0.18)",
+    border: "hsl(35 90% 55% / 0.35)",
+    description: "Accelerate your digital asset ownership with premium features.",
+    features: [
+      "Everything in Essentials",
+      "Priority development queue",
+      "Advanced monetization setup",
+      "6-month post-launch support",
+      "Revenue optimization session",
+    ],
+    popular: true,
+  },
+  {
+    id: "empire",
+    name: "Digital Asset Empire",
+    tag: "Purchased Plan - Digital Asset Empire",
+    icon: Crown,
+    color: "hsl(280 70% 65%)",
+    glow: "hsl(280 70% 65% / 0.18)",
+    border: "hsl(280 70% 65% / 0.3)",
+    description: "Build a portfolio of digital assets with full-service support.",
+    features: [
+      "Everything in Ownership Accelerator",
+      "Multiple app launches",
+      "Dedicated account manager",
+      "12-month post-launch support",
+      "Marketing & growth strategy",
+      "VIP onboarding experience",
+    ],
+    popular: false,
+  },
+] as const;
+
+type PlanId = typeof PLANS[number]["id"];
+
+interface FormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+const inputBase: React.CSSProperties = {
+  width: "100%",
+  borderRadius: 10,
+  padding: "12px 14px",
+  fontFamily: "'Inter', sans-serif",
+  fontSize: 14,
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  color: "rgba(255,255,255,0.9)",
+  outline: "none",
+  boxSizing: "border-box",
+  transition: "border-color 0.2s",
+};
+
+function InputField({
+  label, type = "text", value, onChange, placeholder, required,
+}: {
+  label: string; type?: string; value: string;
+  onChange: (v: string) => void; placeholder: string; required?: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div>
+      <label style={{
+        display: "block", fontFamily: "'Inter'", fontSize: 11, fontWeight: 600,
+        letterSpacing: "0.07em", textTransform: "uppercase",
+        color: "rgba(255,255,255,0.35)", marginBottom: 7,
+      }}>
+        {label}{required && <span style={{ color: "hsl(35 90% 60%)", marginLeft: 3 }}>*</span>}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        required={required}
+        style={{
+          ...inputBase,
+          borderColor: focused ? "hsl(35 90% 55% / 0.5)" : "rgba(255,255,255,0.1)",
+        }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+      />
+    </div>
+  );
+}
 
 export default function Enrollment() {
   const [, navigate] = useLocation();
+  const { toast } = useToast();
+
+  const [step, setStep] = useState<1 | 2>(1);
+  const [form, setForm] = useState<FormData>({ firstName: "", lastName: "", email: "", phone: "" });
+  const [formError, setFormError] = useState("");
+  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+
+  // Handle payment=cancelled redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") === "cancelled") {
+      toast({
+        title: "Payment cancelled",
+        description: "You can continue whenever you're ready.",
+        variant: "destructive",
+      });
+      // Clean up URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [toast]);
+
+  function validateStep1() {
+    if (!form.firstName.trim()) return "First name is required.";
+    if (!form.lastName.trim()) return "Last name is required.";
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(form.email)) return "Please enter a valid email address.";
+    if (!form.phone.trim()) return "Phone number is required.";
+    return "";
+  }
+
+  function handleStep1Submit(e: React.FormEvent) {
+    e.preventDefault();
+    const err = validateStep1();
+    if (err) { setFormError(err); return; }
+    setFormError("");
+    setStep(2);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleEnroll() {
+    if (!selectedPlan) return;
+    const plan = PLANS.find(p => p.id === selectedPlan)!;
+    setLoading(true);
+    setCheckoutError("");
+
+    try {
+      const origin = window.location.origin;
+      const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+
+      const res = await fetch("/api/enrollment/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          phone: form.phone,
+          planName: plan.name,
+          planTag: plan.tag,
+          successUrl: `${origin}${base}/?payment=success`,
+          cancelUrl: `${origin}${base}/enrollment?payment=cancelled`,
+        }),
+      });
+
+      const data = (await res.json()) as { url?: string; error?: string };
+
+      if (!res.ok || !data.url) {
+        setCheckoutError(data.error ?? "Unable to start checkout. Please try again.");
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      setCheckoutError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-5 py-20 relative overflow-hidden">
-      <div className="absolute inset-0 grid-bg opacity-20" />
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 right-1/3 w-[500px] h-[400px] rounded-full opacity-10"
-          style={{ background: "radial-gradient(ellipse at center, hsl(35 90% 55% / 0.14) 0%, transparent 65%)", filter: "blur(80px)" }} />
-      </div>
+    <div style={{
+      minHeight: "100vh",
+      background: "#050507",
+      position: "relative",
+      overflowX: "hidden",
+      paddingBottom: 80,
+    }}>
+      <div className="absolute inset-0 grid-bg opacity-10" />
+      <div style={{
+        position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)",
+        width: 800, height: 600,
+        background: "radial-gradient(ellipse, hsl(35 90% 55% / 0.07) 0%, transparent 65%)",
+        filter: "blur(80px)", pointerEvents: "none",
+      }} />
 
-      <div className="relative z-10 text-center max-w-xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
+      <div className="relative z-10 max-w-3xl mx-auto px-4 pt-14">
 
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-8"
-            style={{ background: "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))", boxShadow: "0 0 32px -8px hsl(35 90% 55% / 0.5)" }}>
-            <Zap className="w-7 h-7 text-white" />
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full"
+            style={{ background: "hsl(35 90% 55% / 0.1)", border: "1px solid hsl(35 90% 55% / 0.2)" }}>
+            <Rocket style={{ width: 13, height: 13, color: "hsl(35 90% 62%)" }} />
+            <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(35 90% 62%)" }}>
+              App Launch Enrollment
+            </span>
           </div>
-
-          <p style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "hsl(35 90% 60%)", marginBottom: 14 }}>
-            App Launch Enrollment
-          </p>
-
-          <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 700, letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 14 }}>
-            Begin Your App Launch Enrollment
+          <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 700, letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 14 }}>
+            Start Your App Ownership Journey
           </h1>
-
-          <p style={{ fontFamily: "'Inter'", fontSize: 14, lineHeight: 1.75, color: "hsl(218 16% 52%)", fontWeight: 300, marginBottom: 36, maxWidth: 400, margin: "0 auto 36px" }}>
-            After your strategy call, you'll receive your agreement, payment link, and secure onboarding access.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <button className="btn-gold h-13 px-8 py-3.5 text-[14px] font-semibold rounded-xl inline-flex items-center gap-2.5 text-white justify-center">
-              <CreditCard className="w-4 h-4 opacity-85" />
-              Continue To Secure Enrollment
-            </button>
-            <button className="btn-ghost h-13 px-8 py-3.5 text-[14px] font-medium rounded-xl inline-flex items-center gap-2.5 justify-center text-white/70">
-              <FileText className="w-4 h-4 opacity-70" />
-              Review Agreement
-            </button>
-          </div>
-
-          <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 32%)", lineHeight: 1.65 }}>
-            This page is for clients who have completed a strategy call with the App Squad team.{" "}
-            <button
-              onClick={() => { navigate("/apply"); window.scrollTo({ top: 0 }); }}
-              style={{ color: "hsl(35 90% 58%)", cursor: "pointer", textDecoration: "underline" }}
-            >
-              Apply here
-            </button>{" "}
-            if you haven't started yet.
+          <p style={{ fontFamily: "'Inter'", fontSize: 15, color: "hsl(218 16% 48%)", fontWeight: 300, maxWidth: 480, margin: "0 auto" }}>
+            Complete your details and secure your place today.
           </p>
         </motion.div>
+
+        {/* Step indicator */}
+        <div className="flex items-center justify-center gap-3 mb-10">
+          {[1, 2].map(n => (
+            <div key={n} className="flex items-center gap-3">
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 700,
+                background: step >= n ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))" : "hsl(226 32% 10%)",
+                border: step >= n ? "none" : "1px solid rgba(255,255,255,0.1)",
+                color: step >= n ? "white" : "rgba(255,255,255,0.3)",
+                transition: "all 0.3s",
+              }}>
+                {step > n ? <CheckCircle2 style={{ width: 15, height: 15 }} /> : n}
+              </div>
+              <span style={{
+                fontFamily: "'Inter'", fontSize: 12, fontWeight: 500,
+                color: step >= n ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.3)",
+              }}>
+                {n === 1 ? "Your Details" : "Choose Plan"}
+              </span>
+              {n < 2 && (
+                <ChevronRight style={{ width: 14, height: 14, color: "rgba(255,255,255,0.2)" }} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <AnimatePresence mode="wait">
+
+          {/* ── Step 1: User info ── */}
+          {step === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}
+            >
+              <div style={{
+                background: "hsl(226 32% 7%)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 20,
+                padding: "36px 32px",
+              }}>
+                <div className="flex items-center gap-3 mb-8">
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 12,
+                    background: "hsl(35 90% 55% / 0.12)",
+                    border: "1px solid hsl(35 90% 55% / 0.25)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <User style={{ width: 18, height: 18, color: "hsl(35 90% 62%)" }} />
+                  </div>
+                  <div>
+                    <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em" }}>
+                      Your Information
+                    </h2>
+                    <p style={{ fontFamily: "'Inter'", fontSize: 12.5, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                      We'll use this to set up your account.
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleStep1Submit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <InputField label="First Name" value={form.firstName}
+                      onChange={v => { setForm(f => ({ ...f, firstName: v })); setFormError(""); }}
+                      placeholder="Prince" required />
+                    <InputField label="Last Name" value={form.lastName}
+                      onChange={v => { setForm(f => ({ ...f, lastName: v })); setFormError(""); }}
+                      placeholder="Khimani" required />
+                  </div>
+                  <InputField label="Email Address" type="email" value={form.email}
+                    onChange={v => { setForm(f => ({ ...f, email: v })); setFormError(""); }}
+                    placeholder="you@example.com" required />
+                  <InputField label="Phone Number" type="tel" value={form.phone}
+                    onChange={v => { setForm(f => ({ ...f, phone: v })); setFormError(""); }}
+                    placeholder="+1 (555) 000-0000" required />
+
+                  {formError && (
+                    <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "10px 14px", borderRadius: 10,
+                        background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+                      }}>
+                      <AlertCircle style={{ width: 14, height: 14, color: "#f87171", flexShrink: 0 }} />
+                      <p style={{ fontFamily: "'Inter'", fontSize: 12.5, color: "#f87171", margin: 0 }}>
+                        {formError}
+                      </p>
+                    </motion.div>
+                  )}
+
+                  <button type="submit"
+                    style={{
+                      width: "100%", height: 50, borderRadius: 14, border: "none",
+                      background: "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))",
+                      color: "white", fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 600,
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      gap: 8, marginTop: 4,
+                    }}
+                  >
+                    Continue to Plan Selection
+                    <ArrowRight style={{ width: 15, height: 15 }} />
+                  </button>
+                </form>
+              </div>
+
+              <p style={{ textAlign: "center", fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 30%)", marginTop: 20, lineHeight: 1.65 }}>
+                This page is for clients who have completed a strategy call with the App Squad team.{" "}
+                <button onClick={() => navigate("/apply")}
+                  style={{ color: "hsl(35 90% 58%)", cursor: "pointer", textDecoration: "underline", background: "none", border: "none", fontFamily: "'Inter'", fontSize: 12 }}>
+                  Apply here
+                </button>{" "}
+                if you haven't started yet.
+              </p>
+            </motion.div>
+          )}
+
+          {/* ── Step 2: Plan selection ── */}
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }}
+            >
+              <div className="grid md:grid-cols-3 gap-4 mb-6">
+                {PLANS.map(plan => {
+                  const Icon = plan.icon;
+                  const isSelected = selectedPlan === plan.id;
+                  return (
+                    <motion.button
+                      key={plan.id}
+                      onClick={() => setSelectedPlan(plan.id)}
+                      whileHover={{ y: -2 }}
+                      style={{
+                        position: "relative",
+                        padding: "24px 20px",
+                        borderRadius: 18,
+                        border: isSelected
+                          ? `2px solid ${plan.color}`
+                          : plan.popular
+                            ? `1px solid ${plan.border}`
+                            : "1px solid rgba(255,255,255,0.08)",
+                        background: isSelected
+                          ? plan.glow
+                          : plan.popular
+                            ? "hsl(226 32% 8%)"
+                            : "hsl(226 32% 7%)",
+                        cursor: "pointer",
+                        textAlign: "left",
+                        transition: "all 0.2s",
+                        boxShadow: isSelected ? `0 0 32px -8px ${plan.glow}` : "none",
+                      }}
+                    >
+                      {plan.popular && (
+                        <div style={{
+                          position: "absolute", top: -1, right: 16,
+                          background: "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))",
+                          color: "white", fontFamily: "'Space Grotesk'", fontSize: 10, fontWeight: 700,
+                          letterSpacing: "0.08em", textTransform: "uppercase",
+                          padding: "3px 10px", borderRadius: "0 0 8px 8px",
+                        }}>
+                          Most Popular
+                        </div>
+                      )}
+
+                      {/* Selected check */}
+                      {isSelected && (
+                        <div style={{
+                          position: "absolute", top: 14, right: 14,
+                          width: 22, height: 22, borderRadius: "50%",
+                          background: plan.color,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <CheckCircle2 style={{ width: 13, height: 13, color: "white" }} />
+                        </div>
+                      )}
+
+                      <div style={{
+                        width: 42, height: 42, borderRadius: 12, marginBottom: 14,
+                        background: `${plan.color}18`,
+                        border: `1px solid ${plan.color}40`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <Icon style={{ width: 20, height: 20, color: plan.color }} />
+                      </div>
+
+                      <h3 style={{
+                        fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700,
+                        letterSpacing: "-0.02em", marginBottom: 8, color: "rgba(255,255,255,0.95)",
+                      }}>
+                        {plan.name}
+                      </h3>
+                      <p style={{
+                        fontFamily: "'Inter'", fontSize: 12.5, color: "rgba(255,255,255,0.4)",
+                        lineHeight: 1.6, marginBottom: 16,
+                      }}>
+                        {plan.description}
+                      </p>
+
+                      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 7 }}>
+                        {plan.features.map(f => (
+                          <li key={f} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                            <CheckCircle2 style={{ width: 13, height: 13, color: plan.color, flexShrink: 0 }} />
+                            <span style={{ fontFamily: "'Inter'", fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+                              {f}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* Error */}
+              {checkoutError && (
+                <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
+                    padding: "12px 16px", borderRadius: 12,
+                    background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+                  }}>
+                  <AlertCircle style={{ width: 14, height: 14, color: "#f87171", flexShrink: 0 }} />
+                  <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "#f87171", margin: 0, flex: 1 }}>
+                    {checkoutError}
+                  </p>
+                  <button onClick={() => setCheckoutError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", padding: 2 }}>
+                    <X style={{ width: 14, height: 14 }} />
+                  </button>
+                </motion.div>
+              )}
+
+              {/* CTA row */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => { setStep(1); setSelectedPlan(null); setCheckoutError(""); }}
+                  style={{
+                    flex: "0 0 auto", height: 50, paddingInline: 24, borderRadius: 14,
+                    border: "1px solid rgba(255,255,255,0.1)", background: "transparent",
+                    color: "rgba(255,255,255,0.5)", fontFamily: "'Space Grotesk'", fontSize: 14,
+                    fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
+                >
+                  ← Back
+                </button>
+
+                <button
+                  onClick={handleEnroll}
+                  disabled={!selectedPlan || loading}
+                  style={{
+                    flex: 1, height: 50, borderRadius: 14, border: "none",
+                    background: selectedPlan && !loading
+                      ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))"
+                      : "hsl(35 90% 55% / 0.25)",
+                    color: selectedPlan && !loading ? "white" : "rgba(255,255,255,0.3)",
+                    fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 600,
+                    cursor: selectedPlan && !loading ? "pointer" : "not-allowed",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} />
+                      Preparing Checkout…
+                    </>
+                  ) : (
+                    <>
+                      {selectedPlan
+                        ? `Enroll in ${PLANS.find(p => p.id === selectedPlan)?.name}`
+                        : "Select a Plan to Continue"}
+                      {selectedPlan && <ArrowRight style={{ width: 15, height: 15 }} />}
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                marginTop: 20,
+              }}>
+                <span style={{ fontSize: 11, color: "hsl(218 16% 32%)", fontFamily: "'Inter'" }}>
+                  🔒 Secure checkout powered by Stripe. Cancel any time.
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      <style>{`
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }
