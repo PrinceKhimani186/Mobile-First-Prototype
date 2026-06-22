@@ -72,6 +72,7 @@ interface FormData {
   lastName: string;
   email: string;
   phone: string;
+  company: string;
 }
 
 const inputBase: React.CSSProperties = {
@@ -126,17 +127,17 @@ export default function Enrollment() {
   const { toast } = useToast();
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [form, setForm] = useState<FormData>({ firstName: "", lastName: "", email: "", phone: "" });
+  const [form, setForm] = useState<FormData>({ firstName: "", lastName: "", email: "", phone: "", company: "" });
   const [formError, setFormError] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
 
-  // Handle ?plan= pre-selection (from closer presentation CTA) and payment=cancelled
+  // Handle ?plan= pre-selection and payment=cancelled
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
-    // Pre-select plan and skip to Step 2
+    // Pre-select plan — stay on Step 1 so user fills contact info first
     const planParam = params.get("plan");
     if (planParam) {
       const planMap: Record<string, PlanId> = {
@@ -145,10 +146,7 @@ export default function Enrollment() {
         empire: "empire",
       };
       const matched = planMap[planParam.toLowerCase()];
-      if (matched) {
-        setSelectedPlan(matched);
-        setStep(2);
-      }
+      if (matched) setSelectedPlan(matched);
     }
 
     if (params.get("payment") === "cancelled") {
@@ -179,6 +177,17 @@ export default function Enrollment() {
     const err = validateStep1();
     if (err) { setFormError(err); return; }
     setFormError("");
+
+    // Save contact info + selected plan for the session
+    localStorage.setItem("appSquadEnrollment", JSON.stringify({
+      firstName: form.firstName,
+      lastName: form.lastName,
+      email: form.email,
+      phone: form.phone,
+      company: form.company,
+      selectedPlan,
+    }));
+
     setStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -342,6 +351,9 @@ export default function Enrollment() {
                   <InputField label="Phone Number" type="tel" value={form.phone}
                     onChange={v => { setForm(f => ({ ...f, phone: v })); setFormError(""); }}
                     placeholder="+1 (555) 000-0000" required />
+                  <InputField label="Company Name (optional)" value={form.company}
+                    onChange={v => setForm(f => ({ ...f, company: v }))}
+                    placeholder="Your company or business name" />
 
                   {formError && (
                     <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
