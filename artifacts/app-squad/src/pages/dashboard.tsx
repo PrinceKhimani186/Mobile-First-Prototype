@@ -301,10 +301,13 @@ export default function Dashboard() {
         .catch(() => { /* non-fatal */ });
     }
 
-    // Fetch /api/project-progress — count-based completion percentage
+    // Fetch /api/project-progress — count-based completion percentage (no cache)
     function fetchProjectProgress() {
-      fetch("/api/project-progress")
-        .then(r => r.ok ? r.json() : null)
+      fetch("/api/project-progress", { cache: "no-store" })
+        .then(r => {
+          if (!r.ok) { console.error("project-progress HTTP error:", r.status); return null; }
+          return r.json();
+        })
         .then((data: {
           completedStages: number; totalStages: number;
           percentage: number;
@@ -312,16 +315,22 @@ export default function Dashboard() {
         } | null) => {
           if (data?.stages) setProjectProgress(data);
         })
-        .catch(() => { /* non-fatal */ });
+        .catch((err) => { console.error("project-progress fetch error:", err); });
     }
 
     fetchProjectProgress();
 
-    // Fetch Monday.com live project data — highest-priority source of truth.
+    // Fetch Monday.com live project data — highest-priority source of truth (no cache)
     function fetchMonday(emailParam: string) {
       setMondayLoading(true);
-      fetch(`/api/monday/project${emailParam ? `?email=${encodeURIComponent(emailParam.toLowerCase())}` : ""}`)
-        .then(r => r.ok ? r.json() : null)
+      fetch(
+        `/api/monday/project${emailParam ? `?email=${encodeURIComponent(emailParam.toLowerCase())}` : ""}`,
+        { cache: "no-store" }
+      )
+        .then(r => {
+          if (!r.ok) { console.error("monday/project HTTP error:", r.status); return null; }
+          return r.json();
+        })
         .then((data: {
           ok?: boolean; fallback?: boolean;
           currentStage?: string; progressPct?: number;
@@ -341,7 +350,7 @@ export default function Dashboard() {
             }
           }
         })
-        .catch(() => { /* non-fatal */ })
+        .catch((err) => { console.error("monday/project fetch error:", err); })
         .finally(() => setMondayLoading(false));
     }
 

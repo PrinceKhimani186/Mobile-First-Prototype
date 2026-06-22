@@ -4,6 +4,14 @@ const router: IRouter = Router();
 
 const MONDAY_API = "https://api.monday.com/v2";
 
+// Never let browsers or proxies cache Monday data
+function noCache(res: Response) {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  res.set("Surrogate-Control", "no-store");
+}
+
 // ── Monday GraphQL fetch ─────────────────────────────────────────────────────
 async function mondayQuery(query: string, token: string): Promise<unknown> {
   const res = await fetch(MONDAY_API, {
@@ -12,6 +20,7 @@ async function mondayQuery(query: string, token: string): Promise<unknown> {
       "Content-Type": "application/json",
       Authorization: token,
       "API-Version": "2024-01",
+      "Cache-Control": "no-cache",
     },
     body: JSON.stringify({ query }),
   });
@@ -84,13 +93,10 @@ const STAGE_PCT: Record<string, number> = {
 // Fuzzy-match a Monday item name to a known dashboard stage
 function resolveStage(name: string): string {
   const lower = name.toLowerCase().trim();
-  // Exact match first
   const exact = STAGE_ORDER.find(s => s.toLowerCase() === lower);
   if (exact) return exact;
-  // Partial match
   const partial = STAGE_ORDER.find(s => lower.includes(s.toLowerCase()) || s.toLowerCase().includes(lower));
   if (partial) return partial;
-  // Return raw name as fallback
   return name;
 }
 
@@ -102,10 +108,43 @@ function mapStatus(raw: string): "Complete" | "In Progress" | "Pending" {
   return "Pending";
 }
 
+// ── Shared board item fetch ──────────────────────────────────────────────────
+async function fetchBoardItems(boardId: string, token: string) {
+  const query = `
+    {
+      boards(ids: [${boardId}]) {
+        name
+        items_page(limit: 500) {
+          items {
+            id
+            name
+            column_values {
+              id text value
+              column { title }
+            }
+          }
+        }
+      }
+    }
+  `;
+  const data = (await mondayQuery(query, token)) as {
+    boards: {
+      name: string;
+      items_page: {
+        items: { id: string; name: string; column_values: ColumnValue[] }[];
+      };
+    }[];
+  };
+  const board = data.boards?.[0];
+  return { board, items: board?.items_page?.items ?? [] };
+}
+
 // ── GET /api/project-progress ────────────────────────────────────────────────
 router.get("/project-progress", async (req: Request, res: Response) => {
   const token   = process.env.MONDAY_API_TOKEN;
   const boardId = process.env.MONDAY_BOARD_ID || "5029246685";
+
+  noCache(res);
 
   if (!token) {
     res.status(503).json({ error: "MONDAY_API_TOKEN not configured" });
@@ -113,11 +152,74 @@ router.get("/project-progress", async (req: Request, res: Response) => {
   }
 
   try {
-    console.log(`[project-progress] Board ID: ${boardId}`);
+    console.log(`MONDAY BOARD ID: ${boardId}`);
+    console.log("FETCHING MONDAY DATA...");
 
+    const { items } = await fetchBoardItems(boardId, token);
+
+    console.log(`ITEMS FOUND: ${items.length}`);
+
+    // Map each known stage to its Monday board item status
+    const stages = STAGE_ORDER.map(stageName => {
+      const item = items.find(i => {
+        const lower = i.name.toLowerCase().trim();
+        const stage = stageName.toLowerCase();
+        return lower === stage || lower.includes(stage) || stage.includes(lower);
+      });
+
+      const rawStatus = item?.column_values.find(
+        c => c.column.title.toLowerCase().includes("status")
+      )?.text ?? "Not Started";
+
+      const status = mapStatus(rawStatus);
+      return { name: stageName, status, rawStatus };
+    });
+
+    const statusValues = stages.map(s => `${s.name}: ${s.rawStatus} → ${s.status}`);
+    console.log("STATUS VALUES:", statusValues);
+
+    const completedStages = stages.filter(s => s.status === "Complete").length;
+    const totalStages     = stages.length;
+    const percentage      = Math.round((completedStages / totalStages) * 100);
+
+    console.log(`COMPLETED STAGES: ${completedStages}/${totalStages}`);
+    console.log(`PROGRESS PERCENTAGE: ${percentage}%`);
+
+    res.json({
+      completedStages,
+      totalStages,
+      percentage,
+      stages: stages.map(({ name, status }) => ({ name, status })),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("project-progress fetch FAILED:", message);
+    req.log.error({ err }, "project-progress fetch failed");
+    res.status(502).json({ error: "Monday API unavailable", detail: message });
+  }
+});
+
+// ── GET /api/debug-monday ────────────────────────────────────────────────────
+router.get("/debug-monday", async (req: Request, res: Response) => {
+  const token   = process.env.MONDAY_API_TOKEN;
+  const boardId = process.env.MONDAY_BOARD_ID || "5029246685";
+
+  noCache(res);
+
+  if (!token) {
+    res.status(503).json({
+      error: "MONDAY_API_TOKEN not set",
+      boardId,
+      tokenSet: false,
+    });
+    return;
+  }
+
+  try {
     const query = `
       {
         boards(ids: [${boardId}]) {
+          name
           items_page(limit: 500) {
             items {
               id
@@ -132,54 +234,49 @@ router.get("/project-progress", async (req: Request, res: Response) => {
       }
     `;
 
-    const data = (await mondayQuery(query, token)) as {
+    const rawData = (await mondayQuery(query, token)) as {
       boards: {
+        name: string;
         items_page: {
           items: { id: string; name: string; column_values: ColumnValue[] }[];
         };
       }[];
     };
 
-    const items = data.boards?.[0]?.items_page?.items ?? [];
-    console.log(`[project-progress] Fetched items: ${items.length}`);
+    const board = rawData.boards?.[0];
+    const items = board?.items_page?.items ?? [];
 
-    // For each known stage, find its Monday item and read status
-    const stages = STAGE_ORDER.map(stageName => {
-      const item = items.find(i => {
-        const lower = i.name.toLowerCase().trim();
-        const stage = stageName.toLowerCase();
-        return lower === stage || lower.includes(stage) || stage.includes(lower);
-      });
-
-      const rawStatus = item?.column_values.find(
+    const itemSummary = items.map(i => ({
+      id: i.id,
+      name: i.name,
+      statusText: i.column_values.find(
         c => c.column.title.toLowerCase().includes("status")
-      )?.text ?? "Not Started";
+      )?.text ?? "(no status column)",
+      allColumnTitles: i.column_values.map(c => c.column.title),
+    }));
 
-      const status = mapStatus(rawStatus);
-      return { name: stageName, status };
+    res.json({
+      boardId,
+      boardName: board?.name ?? "(board not found)",
+      tokenSet: true,
+      tokenPrefix: token.slice(0, 12) + "…",
+      itemCount: items.length,
+      items: itemSummary,
+      rawResponse: rawData,
     });
-
-    const statuses = stages.map(s => `${s.name}: ${s.status}`);
-    console.log(`[project-progress] Statuses found:`, statuses);
-
-    const completedStages = stages.filter(s => s.status === "Complete").length;
-    const totalStages     = stages.length;
-    const percentage      = Math.round((completedStages / totalStages) * 100);
-
-    console.log(`[project-progress] Completed stages: ${completedStages}/${totalStages}`);
-    console.log(`[project-progress] Progress percentage: ${percentage}%`);
-
-    res.json({ completedStages, totalStages, percentage, stages });
   } catch (err) {
-    req.log.error({ err }, "project-progress fetch failed");
-    res.status(502).json({ error: "Monday API unavailable" });
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("debug-monday FAILED:", message);
+    res.status(502).json({ error: message, boardId, tokenSet: true });
   }
 });
 
 // ── GET /api/monday/project?email=xxx ────────────────────────────────────────
 router.get("/monday/project", async (req: Request, res: Response) => {
-  const token = process.env.MONDAY_API_TOKEN;
+  const token   = process.env.MONDAY_API_TOKEN;
   const boardId = process.env.MONDAY_BOARD_ID || "5029246685";
+
+  noCache(res);
 
   if (!token) {
     res.status(503).json({ error: "MONDAY_API_TOKEN not configured", fallback: true });
@@ -189,49 +286,15 @@ router.get("/monday/project", async (req: Request, res: Response) => {
   const email = ((req.query.email as string) ?? "").trim().toLowerCase();
 
   try {
-    const query = `
-      {
-        boards(ids: [${boardId}]) {
-          name
-          items_page(limit: 500) {
-            items {
-              id
-              name
-              column_values {
-                id
-                text
-                value
-                column { title }
-              }
-            }
-          }
-        }
-      }
-    `;
+    const { board, items } = await fetchBoardItems(boardId, token);
 
-    const data = (await mondayQuery(query, token)) as {
-      boards: {
-        name: string;
-        items_page: {
-          items: {
-            id: string;
-            name: string;
-            column_values: ColumnValue[];
-          }[];
-        };
-      }[];
-    };
-
-    const board = data.boards?.[0];
     if (!board) {
       res.status(404).json({ error: "Board not found", fallback: true });
       return;
     }
 
-    const items = board.items_page.items;
-
     // 1. Try to find a specific client item by email
-    let clientItem = email
+    const clientItem = email
       ? items.find(item => {
           const emailCol = item.column_values.find(c =>
             c.column.title.toLowerCase().includes("email")
@@ -240,42 +303,69 @@ router.get("/monday/project", async (req: Request, res: Response) => {
         })
       : null;
 
-    // 2. Find the first item whose status is "Working on it" (the active stage)
+    // 2. Find the first item with status "Working on it" (active stage)
     const activeItem = items.find(item => {
       const statusCol = item.column_values.find(c =>
         c.column.title.toLowerCase().includes("status")
       );
-      return statusCol?.text?.toLowerCase().includes("working on it");
+      return statusCol?.text?.toLowerCase() === "working on it";
     });
 
-    // 3. Client metadata lives on items[0] ("Project Received") where all client columns are stored.
-    //    If we matched a specific client item by email, prefer that. Otherwise always use items[0].
+    // 3. If nothing is "Working on it", find the LAST "Done" item and treat the
+    //    next stage as active. This handles boards where stages are all Done or Not Started.
+    let currentStage: string;
+    if (activeItem) {
+      currentStage = resolveStage(activeItem.name);
+    } else {
+      // Find the last completed stage index
+      let lastDoneIdx = -1;
+      items.forEach((item, i) => {
+        const statusCol = item.column_values.find(c =>
+          c.column.title.toLowerCase().includes("status")
+        );
+        if (statusCol?.text?.toLowerCase() === "done") {
+          // Map to STAGE_ORDER index
+          const stageIdx = STAGE_ORDER.findIndex(s => resolveStage(item.name) === s);
+          if (stageIdx > lastDoneIdx) lastDoneIdx = stageIdx;
+        }
+      });
+
+      if (lastDoneIdx >= 0 && lastDoneIdx < STAGE_ORDER.length - 1) {
+        // Next stage after the last completed one is "active"
+        currentStage = STAGE_ORDER[lastDoneIdx + 1];
+      } else if (lastDoneIdx === STAGE_ORDER.length - 1) {
+        // All done
+        currentStage = STAGE_ORDER[STAGE_ORDER.length - 1];
+      } else {
+        // Nothing done yet
+        currentStage = STAGE_ORDER[0];
+      }
+    }
+
+    // 4. Client metadata from matched item or items[0]
     const metaItem = clientItem ?? items[0];
-
-    // 4. Current stage = the name of the first "Working on it" task,
-    //    resolved to a known stage label
-    const rawStageName = activeItem?.name ?? metaItem?.name ?? "Project Received";
-    const currentStage = resolveStage(rawStageName);
-
-    // 5. Extract client/app metadata from the matched item
     const cols = metaItem?.column_values ?? [];
-    const clientName = colText(cols, "client name", "client", "name");
-    const appName    = colText(cols, "app name", "app");
-    const gameType   = colText(cols, "game type", "game");
-    const tagline    = colText(cols, "tagline", "slogan");
+    const clientName   = colText(cols, "client name", "client", "name");
+    const appName      = colText(cols, "app name", "app");
+    const gameType     = colText(cols, "game type", "game");
+    const tagline      = colText(cols, "tagline", "slogan");
     const monetization = colText(cols, "monetization", "revenue", "monetize");
 
-    // 6. Progress — read from the active stage item's column first, then derive from stage name
-    const activeCols = activeItem?.column_values ?? [];
+    // 5. Progress pct derived from the active item's column, else from stage name
+    const activeCols  = (activeItem ?? metaItem)?.column_values ?? [];
     const progressCol = colNumber(activeCols, "progress", "%", "percent")
       ?? colNumber(cols, "progress", "%", "percent");
     const progressPct = progressCol !== null
       ? progressCol
       : (STAGE_PCT[currentStage] ?? 10);
 
-    // 7. Completed stages count
-    const currentIdx   = STAGE_ORDER.indexOf(currentStage as typeof STAGE_ORDER[number]);
-    const completedCount = currentIdx > 0 ? currentIdx : 0;
+    // 6. Completed stage count = how many stages are Done
+    const completedCount = items.filter(item => {
+      const statusCol = item.column_values.find(c =>
+        c.column.title.toLowerCase().includes("status")
+      );
+      return statusCol?.text?.toLowerCase() === "done";
+    }).length;
 
     res.json({
       ok: true,
@@ -289,7 +379,6 @@ router.get("/monday/project", async (req: Request, res: Response) => {
       gameType,
       tagline,
       monetization,
-      // All raw item names + statuses for debugging
       _items: items.map(i => ({
         id: i.id,
         name: i.name,
@@ -299,6 +388,8 @@ router.get("/monday/project", async (req: Request, res: Response) => {
       })),
     });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("monday/project fetch FAILED:", message);
     req.log.error({ err }, "Monday.com API fetch failed");
     res.status(502).json({ error: "Monday API unavailable", fallback: true });
   }
