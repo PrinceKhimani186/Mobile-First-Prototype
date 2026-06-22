@@ -94,6 +94,88 @@ function resolveStage(name: string): string {
   return name;
 }
 
+// ── Status text → dashboard label ───────────────────────────────────────────
+function mapStatus(raw: string): "Complete" | "In Progress" | "Pending" {
+  const t = (raw ?? "").trim().toLowerCase();
+  if (t === "done") return "Complete";
+  if (t === "working on it") return "In Progress";
+  return "Pending";
+}
+
+// ── GET /api/project-progress ────────────────────────────────────────────────
+router.get("/project-progress", async (req: Request, res: Response) => {
+  const token   = process.env.MONDAY_API_TOKEN;
+  const boardId = process.env.MONDAY_BOARD_ID || "5029246685";
+
+  if (!token) {
+    res.status(503).json({ error: "MONDAY_API_TOKEN not configured" });
+    return;
+  }
+
+  try {
+    console.log(`[project-progress] Board ID: ${boardId}`);
+
+    const query = `
+      {
+        boards(ids: [${boardId}]) {
+          items_page(limit: 500) {
+            items {
+              id
+              name
+              column_values {
+                id text value
+                column { title }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const data = (await mondayQuery(query, token)) as {
+      boards: {
+        items_page: {
+          items: { id: string; name: string; column_values: ColumnValue[] }[];
+        };
+      }[];
+    };
+
+    const items = data.boards?.[0]?.items_page?.items ?? [];
+    console.log(`[project-progress] Fetched items: ${items.length}`);
+
+    // For each known stage, find its Monday item and read status
+    const stages = STAGE_ORDER.map(stageName => {
+      const item = items.find(i => {
+        const lower = i.name.toLowerCase().trim();
+        const stage = stageName.toLowerCase();
+        return lower === stage || lower.includes(stage) || stage.includes(lower);
+      });
+
+      const rawStatus = item?.column_values.find(
+        c => c.column.title.toLowerCase().includes("status")
+      )?.text ?? "Not Started";
+
+      const status = mapStatus(rawStatus);
+      return { name: stageName, status };
+    });
+
+    const statuses = stages.map(s => `${s.name}: ${s.status}`);
+    console.log(`[project-progress] Statuses found:`, statuses);
+
+    const completedStages = stages.filter(s => s.status === "Complete").length;
+    const totalStages     = stages.length;
+    const percentage      = Math.round((completedStages / totalStages) * 100);
+
+    console.log(`[project-progress] Completed stages: ${completedStages}/${totalStages}`);
+    console.log(`[project-progress] Progress percentage: ${percentage}%`);
+
+    res.json({ completedStages, totalStages, percentage, stages });
+  } catch (err) {
+    req.log.error({ err }, "project-progress fetch failed");
+    res.status(502).json({ error: "Monday API unavailable" });
+  }
+});
+
 // ── GET /api/monday/project?email=xxx ────────────────────────────────────────
 router.get("/monday/project", async (req: Request, res: Response) => {
   const token = process.env.MONDAY_API_TOKEN;

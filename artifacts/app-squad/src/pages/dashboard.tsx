@@ -214,6 +214,14 @@ export default function Dashboard() {
   } | null>(null);
   const [mondayLoading, setMondayLoading] = useState(false);
 
+  // Project progress from /api/project-progress (count-based, replaces weighted STAGE_PCT)
+  const [projectProgress, setProjectProgress] = useState<{
+    completedStages: number;
+    totalStages: number;
+    percentage: number;
+    stages: Array<{ name: string; status: "Complete" | "In Progress" | "Pending" }>;
+  } | null>(null);
+
   // Modals
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showFinalModal, setShowFinalModal] = useState(false);
@@ -292,6 +300,22 @@ export default function Dashboard() {
         })
         .catch(() => { /* non-fatal */ });
     }
+
+    // Fetch /api/project-progress — count-based completion percentage
+    function fetchProjectProgress() {
+      fetch("/api/project-progress")
+        .then(r => r.ok ? r.json() : null)
+        .then((data: {
+          completedStages: number; totalStages: number;
+          percentage: number;
+          stages: Array<{ name: string; status: "Complete" | "In Progress" | "Pending" }>;
+        } | null) => {
+          if (data?.stages) setProjectProgress(data);
+        })
+        .catch(() => { /* non-fatal */ });
+    }
+
+    fetchProjectProgress();
 
     // Fetch Monday.com live project data — highest-priority source of truth.
     function fetchMonday(emailParam: string) {
@@ -405,16 +429,26 @@ export default function Dashboard() {
     advanceTo("Store Submission");
   }
 
-  // ── Timeline — driven by Monday.com _items when available ─────────────────
+  // ── Timeline — driven by /api/project-progress stages when available,
+  //    falling back to Monday _items, then local projectStage ─────────────────
+  const progressStageMap = new Map(
+    (projectProgress?.stages ?? []).map(s => [s.name, s.status])
+  );
   const mondayItemMap = new Map(
     (mondayData?._items ?? []).map(item => [item.name, item.status])
   );
-  const hasMondayItems = mondayItemMap.size > 0;
+  const hasProgressData = progressStageMap.size > 0;
+  const hasMondayItems  = mondayItemMap.size > 0;
 
   const currentIdx = STAGE_ORDER.indexOf(projectStage);
   const timeline = STAGE_ORDER.map((label, i) => {
     let status: "complete" | "active" | "pending";
-    if (hasMondayItems) {
+    if (hasProgressData) {
+      const ps = progressStageMap.get(label) ?? "Pending";
+      if (ps === "Complete") status = "complete";
+      else if (ps === "In Progress") status = "active";
+      else status = "pending";
+    } else if (hasMondayItems) {
       const mondayStatus = mondayItemMap.get(label) ?? "Not Started";
       if (mondayStatus === "Done") status = "complete";
       else if (mondayStatus === "Working on it") status = "active";
@@ -431,8 +465,9 @@ export default function Dashboard() {
     };
   });
 
-  const completedCount = timeline.filter(t => t.status === "complete").length;
-  const progressPct = mondayData?.progressPct ?? STAGE_PCT[projectStage];
+  // Count-based progress from /api/project-progress; fall back to weighted STAGE_PCT
+  const completedCount = projectProgress?.completedStages ?? timeline.filter(t => t.status === "complete").length;
+  const progressPct    = projectProgress?.percentage ?? mondayData?.progressPct ?? STAGE_PCT[projectStage];
 
   // ── Revision type checkboxes ──────────────────────────────────────────────
   const REVISION_TYPES = [
