@@ -16,48 +16,15 @@ function ghlHeaders(apiKey: string) {
   };
 }
 
-// Tag names must match exactly as stored in GHL (all lowercase)
+// Exact tag names as stored in GHL (all lowercase)
 const PLAN_TAG_MAP: Record<string, string> = {
   essentials:  "purchased plan - essentials",
   accelerator: "purchased plan - ownership accelerator",
   empire:      "purchased plan - digital asset",
 };
 
-type GhlTag = { id: string; name: string };
-
-// Fetch all tags defined in the GHL location
-async function fetchLocationTags(apiKey: string, locationId: string): Promise<GhlTag[]> {
-  const res = await fetch(`${GHL_BASE}/locations/${locationId}/tags`, {
-    headers: ghlHeaders(apiKey),
-  });
-  const body = await res.text();
-  logger.info({ status: res.status, body }, "GHL: location tags fetched");
-  if (!res.ok) return [];
-  try {
-    const data = JSON.parse(body) as { tags?: GhlTag[] };
-    return data.tags ?? [];
-  } catch {
-    return [];
-  }
-}
-
-// Create a tag in the GHL location; returns the new tag or null on failure
-async function createLocationTag(apiKey: string, locationId: string, name: string): Promise<GhlTag | null> {
-  const res = await fetch(`${GHL_BASE}/locations/${locationId}/tags`, {
-    method: "POST",
-    headers: ghlHeaders(apiKey),
-    body: JSON.stringify({ name }),
-  });
-  const body = await res.text();
-  logger.info({ status: res.status, body, name }, "GHL: tag creation response");
-  if (!res.ok) return null;
-  try {
-    const data = JSON.parse(body) as { tag?: GhlTag };
-    return data.tag ?? null;
-  } catch {
-    return null;
-  }
-}
+// All purchased-plan tags — used to strip old ones before applying the new one
+const ALL_PLAN_TAGS = Object.values(PLAN_TAG_MAP);
 
 async function handleGHLPostPayment(
   email: string,
@@ -69,46 +36,49 @@ async function handleGHLPostPayment(
   const apiKey     = process.env.GHL_API_KEY;
   const locationId = process.env.GHL_LOCATION_ID;
 
-  logger.info({ email, selectedPlan }, "GHL: handleGHLPostPayment started");
+  logger.info({ email, selectedPlan: `"${selectedPlan}"` }, "GHL: webhook received — selectedPlan value");
 
   if (!apiKey || !locationId) {
     logger.warn("GHL: GHL_API_KEY or GHL_LOCATION_ID not set — skipping");
     return;
   }
 
+  // Exact equality check — selectedPlan must be one of: essentials | accelerator | empire
   const planTagName = PLAN_TAG_MAP[selectedPlan];
   if (!planTagName) {
-    logger.warn({ selectedPlan, available: Object.keys(PLAN_TAG_MAP) },
-      "GHL: unknown selectedPlan — cannot map to tag");
+    logger.warn({ selectedPlan, valid: Object.keys(PLAN_TAG_MAP) },
+      "GHL: selectedPlan did not match any known key — tag not applied");
     return;
   }
-  logger.info({ selectedPlan, planTagName }, "GHL: plan → tag name resolved");
+  logger.info({ selectedPlan, planTagName }, "GHL: selected plan → tag resolved");
 
   try {
-    // ── Step 1: find or create GHL contact ────────────────────────────────────
+    // ── Step 1: find or create GHL contact, capture existing tags ─────────────
     const searchRes = await fetch(
       `${GHL_BASE}/contacts/search/duplicate?locationId=${encodeURIComponent(locationId)}&email=${encodeURIComponent(email)}`,
       { headers: ghlHeaders(apiKey) },
     );
     const searchBody = await searchRes.text();
-    logger.info({ email, status: searchRes.status, body: searchBody }, "GHL: contact search response");
 
     let contactId: string | undefined;
+    let existingTags: string[] = [];
 
     if (searchRes.ok) {
-      const searchData = JSON.parse(searchBody) as { contact?: { id?: string } | null };
-      contactId = searchData?.contact?.id;
+      const d = JSON.parse(searchBody) as { contact?: { id?: string; tags?: string[] } | null };
+      contactId   = d?.contact?.id;
+      existingTags = d?.contact?.tags ?? [];
     }
 
+    logger.info({ email, contactId, existingTags }, "GHL: existing contact tags");
+
     if (contactId) {
-      logger.info({ email, contactId }, "GHL: existing contact found — updating");
       const updateRes = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
         method: "PUT",
         headers: ghlHeaders(apiKey),
         body: JSON.stringify({ firstName, lastName, phone }),
       });
       const updateBody = await updateRes.text();
-      logger.info({ email, contactId, status: updateRes.status, body: updateBody }, "GHL: contact update response");
+      logger.info({ email, contactId, status: updateRes.status, body: updateBody }, "GHL: contact updated");
     } else {
       logger.info({ email }, "GHL: contact not found — creating");
       const createRes = await fetch(`${GHL_BASE}/contacts/`, {
@@ -117,51 +87,51 @@ async function handleGHLPostPayment(
         body: JSON.stringify({ locationId, firstName, lastName, email, phone }),
       });
       const createBody = await createRes.text();
-      logger.info({ email, status: createRes.status, body: createBody }, "GHL: contact create response");
-
       if (!createRes.ok) {
-        logger.error({ email, status: createRes.status, body: createBody }, "GHL: contact creation failed — tag not applied");
+        logger.error({ email, status: createRes.status, body: createBody }, "GHL: contact creation failed");
         return;
       }
-      const createData = JSON.parse(createBody) as { contact?: { id?: string } };
-      contactId = createData?.contact?.id;
+      const createData = JSON.parse(createBody) as { contact?: { id?: string; tags?: string[] } };
+      contactId    = createData?.contact?.id;
+      existingTags = createData?.contact?.tags ?? [];
+      logger.info({ email, contactId }, "GHL: contact created");
     }
 
     if (!contactId) {
-      logger.error({ email }, "GHL: could not obtain contactId — tag not applied");
+      logger.error({ email }, "GHL: no contactId available — tag not applied");
       return;
     }
-    logger.info({ email, contactId }, "GHL: contact ID confirmed");
 
-    // ── Step 2: fetch all location tags and find ours ─────────────────────────
-    const allTags = await fetchLocationTags(apiKey, locationId);
-    logger.info({ count: allTags.length, names: allTags.map(t => t.name) }, "GHL: all location tags");
+    // ── Step 2: remove any old purchased-plan tags ─────────────────────────────
+    const tagsToRemove = existingTags.filter(t => ALL_PLAN_TAGS.includes(t.toLowerCase()));
+    logger.info({ contactId, existingTags, tagsToRemove }, "GHL: removing old purchased-plan tags");
 
-    let targetTag = allTags.find(t => t.name.toLowerCase() === planTagName.toLowerCase());
-    logger.info({ planTagName, found: !!targetTag, tagId: targetTag?.id }, "GHL: tag search result");
-
-    // ── Step 3: create tag in location if it does not exist ───────────────────
-    if (!targetTag) {
-      logger.info({ planTagName }, "GHL: tag not found — creating in location");
-      targetTag = (await createLocationTag(apiKey, locationId, planTagName)) ?? undefined;
-      if (!targetTag) {
-        logger.warn({ planTagName }, "GHL: tag creation returned null — will attempt apply by name anyway");
-      } else {
-        logger.info({ planTagName, tagId: targetTag.id }, "GHL: tag created in location");
-      }
+    if (tagsToRemove.length > 0) {
+      const delRes = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+        method: "DELETE",
+        headers: ghlHeaders(apiKey),
+        body: JSON.stringify({ tags: tagsToRemove }),
+      });
+      const delBody = await delRes.text();
+      logger.info(
+        { contactId, tagsToRemove, status: delRes.status, body: delBody },
+        delRes.ok ? "GHL: old plan tags removed" : "GHL: tag removal failed",
+      );
+    } else {
+      logger.info({ contactId }, "GHL: no old purchased-plan tags to remove");
     }
 
-    // ── Step 4: apply tag to contact ──────────────────────────────────────────
-    logger.info({ contactId, planTagName }, "GHL: applying tag to contact");
-    const tagRes = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+    // ── Step 3: apply only the correct plan tag ────────────────────────────────
+    logger.info({ contactId, planTagName }, "GHL: applying selected plan tag");
+    const applyRes = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
       method: "POST",
       headers: ghlHeaders(apiKey),
       body: JSON.stringify({ tags: [planTagName] }),
     });
-    const tagBody = await tagRes.text();
+    const applyBody = await applyRes.text();
     logger.info(
-      { email, contactId, planTagName, status: tagRes.status, body: tagBody },
-      tagRes.ok ? "GHL: tag applied successfully" : "GHL: tag application failed",
+      { email, contactId, planTagName, status: applyRes.status, body: applyBody },
+      applyRes.ok ? "GHL: tag applied successfully" : "GHL: tag application failed",
     );
 
   } catch (err) {

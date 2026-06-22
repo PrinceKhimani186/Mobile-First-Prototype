@@ -12,15 +12,19 @@ function ghlHeaders(apiKey: string) {
   };
 }
 
+// Exact tag names as stored in GHL (all lowercase)
 const PLAN_TAG_MAP: Record<string, string> = {
-  essentials:  "Purchased Plan - Essentials",
-  accelerator: "Purchased Plan - Ownership Accelerator",
-  empire:      "Purchased Plan - Digital Asset",
+  essentials:  "purchased plan - essentials",
+  accelerator: "purchased plan - ownership accelerator",
+  empire:      "purchased plan - digital asset",
 };
+
+const ALL_PLAN_TAGS = Object.values(PLAN_TAG_MAP);
 
 /**
  * POST /api/debug/ghl-tag-test
- * Runs the full GHL tag flow and returns every raw response.
+ * Runs the full GHL tag flow (remove old plan tags, apply correct one) and
+ * returns every raw response for diagnostics.
  * Body: { email, firstName, lastName, phone, selectedPlan }
  */
 router.post("/debug/ghl-tag-test", async (req: Request, res: Response) => {
@@ -32,7 +36,7 @@ router.post("/debug/ghl-tag-test", async (req: Request, res: Response) => {
   const log: unknown[] = [];
 
   const step = (label: string, data: unknown) => {
-    log.push({ step: label, ...( typeof data === "object" && data !== null ? data : { value: data }) });
+    log.push({ step: label, ...(typeof data === "object" && data !== null ? data : { value: data }) });
   };
 
   if (!apiKey || !locationId) {
@@ -40,31 +44,36 @@ router.post("/debug/ghl-tag-test", async (req: Request, res: Response) => {
     return;
   }
 
+  // Exact equality — selectedPlan must be one of: essentials | accelerator | empire
+  step("selected_plan_received", { selectedPlan, validKeys: Object.keys(PLAN_TAG_MAP) });
   const planTagName = PLAN_TAG_MAP[selectedPlan];
-  step("plan_tag_resolved", { selectedPlan, planTagName: planTagName ?? null });
   if (!planTagName) {
-    res.status(400).json({ error: `Unknown selectedPlan: "${selectedPlan}". Valid: ${Object.keys(PLAN_TAG_MAP).join(", ")}`, log });
+    res.status(400).json({
+      error: `selectedPlan "${selectedPlan}" did not match any key. Valid: ${Object.keys(PLAN_TAG_MAP).join(", ")}`,
+      log,
+    });
     return;
   }
+  step("plan_tag_resolved", { selectedPlan, planTagName });
 
-  // ── 1. Find or create contact ─────────────────────────────────────────────
+  // ── 1. Find or create contact, capture existing tags ──────────────────────
   const searchRes = await fetch(
     `${GHL_BASE}/contacts/search/duplicate?locationId=${encodeURIComponent(locationId)}&email=${encodeURIComponent(email)}`,
     { headers: ghlHeaders(apiKey) },
   );
   const searchBody = await searchRes.text();
-  step("contact_search", { url: `${GHL_BASE}/contacts/search/duplicate`, status: searchRes.status, body: tryParse(searchBody) });
+  const searchData = tryParse(searchBody) as { contact?: { id?: string; tags?: string[] } | null };
+  step("contact_search", { status: searchRes.status, body: searchData });
 
   let contactId: string | undefined;
+  let existingTags: string[] = [];
   let contactAction = "none";
 
-  if (searchRes.ok) {
-    const d = tryParse(searchBody) as { contact?: { id?: string } | null };
-    contactId = d?.contact?.id;
-  }
-
-  if (contactId) {
+  if (searchRes.ok && searchData?.contact?.id) {
+    contactId    = searchData.contact.id;
+    existingTags = searchData.contact.tags ?? [];
     contactAction = "updated";
+
     const upRes = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
       method: "PUT",
       headers: ghlHeaders(apiKey),
@@ -80,8 +89,9 @@ router.post("/debug/ghl-tag-test", async (req: Request, res: Response) => {
       body: JSON.stringify({ locationId, firstName, lastName, email, phone }),
     });
     const crBody = await crRes.text();
-    const crData = tryParse(crBody) as { contact?: { id?: string } };
-    contactId = crData?.contact?.id;
+    const crData = tryParse(crBody) as { contact?: { id?: string; tags?: string[] } };
+    contactId    = crData?.contact?.id;
+    existingTags = crData?.contact?.tags ?? [];
     step("contact_create", { status: crRes.status, contactId, body: crData });
     if (!crRes.ok) {
       res.status(502).json({ error: "Contact creation failed", log });
@@ -89,49 +99,38 @@ router.post("/debug/ghl-tag-test", async (req: Request, res: Response) => {
     }
   }
 
-  step("contact_id_confirmed", { contactId, action: contactAction });
+  step("existing_tags", { contactId, existingTags });
 
   if (!contactId) {
     res.status(502).json({ error: "Could not obtain contactId", log });
     return;
   }
 
-  // ── 2. Fetch all location tags ────────────────────────────────────────────
-  const tagsRes = await fetch(`${GHL_BASE}/locations/${locationId}/tags`, {
-    headers: ghlHeaders(apiKey),
-  });
-  const tagsBody = await tagsRes.text();
-  const tagsData = tryParse(tagsBody) as { tags?: Array<{ id: string; name: string }> };
-  const allTags  = tagsData?.tags ?? [];
-  step("location_tags_fetched", { status: tagsRes.status, count: allTags.length, names: allTags.map(t => t.name), body: tagsData });
+  // ── 2. Remove old purchased-plan tags ─────────────────────────────────────
+  const tagsToRemove = existingTags.filter(t => ALL_PLAN_TAGS.includes(t.toLowerCase()));
+  step("tags_to_remove", { tagsToRemove, allPlanTags: ALL_PLAN_TAGS });
 
-  // ── 3. Find tag by name (case-insensitive) ────────────────────────────────
-  let targetTag = allTags.find(t => t.name.toLowerCase() === planTagName.toLowerCase());
-  step("tag_search", { planTagName, found: !!targetTag, tagId: targetTag?.id ?? null });
-
-  // ── 4. Create tag if it does not exist ───────────────────────────────────
-  if (!targetTag) {
-    const crTagRes = await fetch(`${GHL_BASE}/locations/${locationId}/tags`, {
-      method: "POST",
+  if (tagsToRemove.length > 0) {
+    const delRes = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+      method: "DELETE",
       headers: ghlHeaders(apiKey),
-      body: JSON.stringify({ name: planTagName }),
+      body: JSON.stringify({ tags: tagsToRemove }),
     });
-    const crTagBody = await crTagRes.text();
-    const crTagData = tryParse(crTagBody) as { tag?: { id: string; name: string } };
-    targetTag = crTagData?.tag;
-    step("tag_created", { status: crTagRes.status, tag: targetTag ?? null, body: crTagData });
+    const delBody = await delRes.text();
+    step("tags_removed", { status: delRes.status, ok: delRes.ok, body: tryParse(delBody), tagsToRemove });
+  } else {
+    step("tags_removed", { message: "no old purchased-plan tags found on contact" });
   }
 
-  // ── 5. Apply tag to contact ───────────────────────────────────────────────
+  // ── 3. Apply only the correct plan tag ────────────────────────────────────
   const applyRes = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
     method: "POST",
     headers: ghlHeaders(apiKey),
     body: JSON.stringify({ tags: [planTagName] }),
   });
   const applyBody = await applyRes.text();
-  step("tag_apply", {
-    url: `${GHL_BASE}/contacts/${contactId}/tags`,
-    payload: { tags: [planTagName] },
+  step("tag_applied", {
+    planTagName,
     status: applyRes.status,
     ok: applyRes.ok,
     body: tryParse(applyBody),
@@ -141,7 +140,10 @@ router.post("/debug/ghl-tag-test", async (req: Request, res: Response) => {
     success: applyRes.ok,
     contactId,
     contactAction,
+    selectedPlan,
     planTagName,
+    existingTagsBefore: existingTags,
+    tagsRemoved: tagsToRemove,
     tagApplyStatus: applyRes.status,
     log,
   });
