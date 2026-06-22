@@ -533,12 +533,45 @@ export default function Dashboard() {
   }, [revType, revDetails, revAreas, revPriority, revAgreed, submittingRevision, clientName, customization, email, phone, toast]);
 
   // ── Approve For Publishing ────────────────────────────────────────────────
-  function confirmFinalApproval() {
+  const [approvingFinal, setApprovingFinal] = useState(false);
+
+  const confirmFinalApproval = useCallback(async () => {
     setShowFinalModal(false);
-    const payload = { clientName, email, appName: customization?.appName ?? "", finalApprovedAt: new Date().toISOString() };
-    sendFinalApprovalToCRM(payload);
-    advanceTo("Publishing Requirements");
-  }
+    if (approvingFinal) return;
+    setApprovingFinal(true);
+    console.log("Approve For Publishing clicked");
+    console.log("Updating Monday Final Approval");
+
+    try {
+      const res = await fetch("/api/approve-final", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({}),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Unable to update Monday.com.");
+
+      console.log("Monday update success");
+      console.log("Publishing Requirements activated");
+
+      const payload = { clientName, email, appName: customization?.appName ?? "", finalApprovedAt: new Date().toISOString() };
+      sendFinalApprovalToCRM(payload);
+
+      toast({
+        title: "Final approval submitted successfully.",
+        description: "Publishing Requirements is now active.",
+      });
+
+      refreshMondayData(email);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("confirmFinalApproval error:", message);
+      toast({ title: "Unable to update Monday.com.", description: message, variant: "destructive" });
+    } finally {
+      setApprovingFinal(false);
+    }
+  }, [approvingFinal, clientName, email, customization, toast, refreshMondayData]);
 
   // ── Submit Publishing Requirements ────────────────────────────────────────
   function submitPublishing() {
@@ -996,22 +1029,37 @@ export default function Dashboard() {
                         )}
 
                         {/* ── FINAL APPROVAL ── */}
+                        {lbl === "Final Approval" && isComplete && (
+                          <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 6 }}>
+                            <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(142 76% 55%)", fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
+                              <Check style={{ width: 12, height: 12 }} />
+                              Final approval completed
+                            </p>
+                          </motion.div>
+                        )}
                         {lbl === "Final Approval" && isActive && (
                           <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 8 }}>
                             <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.65, color: "hsl(218 16% 44%)", fontWeight: 300, marginBottom: 12 }}>
                               Your app is ready for final approval before publishing preparation.
                             </p>
-                            <button type="button" onClick={() => setShowFinalModal(true)}
+                            <button type="button"
+                              onClick={approvingFinal ? undefined : () => setShowFinalModal(true)}
+                              disabled={approvingFinal}
                               style={{
                                 display: "inline-flex", alignItems: "center", gap: 7,
                                 padding: "10px 18px", borderRadius: 9, border: "none",
                                 fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
-                                background: "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)",
-                                color: "#050505", cursor: "pointer",
-                                boxShadow: "0 0 20px rgba(245,158,11,0.2)",
+                                background: approvingFinal
+                                  ? "rgba(255,255,255,0.06)"
+                                  : "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)",
+                                color: approvingFinal ? "hsl(218 16% 44%)" : "#050505",
+                                cursor: approvingFinal ? "wait" : "pointer",
+                                boxShadow: approvingFinal ? "none" : "0 0 20px rgba(245,158,11,0.2)",
+                                opacity: approvingFinal ? 0.6 : 1,
+                                transition: "opacity 0.15s",
                               }}>
                               <ShieldCheck style={{ width: 12, height: 12 }} />
-                              Approve For Publishing
+                              {approvingFinal ? "Submitting…" : "Approve For Publishing"}
                             </button>
                           </motion.div>
                         )}

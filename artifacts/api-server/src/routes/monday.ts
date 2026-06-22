@@ -532,6 +532,76 @@ router.post("/submit-revision", async (req: Request, res: Response) => {
   }
 });
 
+// ── POST /api/approve-final ──────────────────────────────────────────────────
+// Client clicks "Approve For Publishing" → Final Approval = Done + comment +
+// Publishing Requirements = Working on it + board normalization.
+router.post("/approve-final", async (req: Request, res: Response) => {
+  const token   = process.env.MONDAY_API_TOKEN;
+  const boardId = process.env.MONDAY_BOARD_ID || "5029246685";
+
+  noCache(res);
+
+  if (!token) {
+    res.status(503).json({ error: "MONDAY_API_TOKEN not configured" });
+    return;
+  }
+
+  console.log("Approve For Publishing clicked");
+  console.log("Updating Monday Final Approval");
+
+  try {
+    const { items } = await fetchBoardItems(boardId, token);
+
+    // Validate Final Approval exists
+    const finalFound = findStageItem(items, "Final Approval");
+    if (!finalFound) {
+      res.status(404).json({ error: "Final Approval stage not found in Monday board" });
+      return;
+    }
+
+    const { item: finalItem, statusCol: finalStatusCol } = finalFound;
+    const oldStatus = finalStatusCol.text ?? "Not Started";
+    console.log(`Current stage status: Final Approval = ${oldStatus}`);
+
+    // Set Final Approval → Done
+    await updateItemColumn(boardId, finalItem.id, finalStatusCol.id, "Done", token);
+
+    // Post approval comment
+    await createUpdate(
+      finalItem.id,
+      "Client approved final version. Ready for publishing preparation.",
+      token
+    );
+
+    console.log("Monday update success");
+
+    // Set Publishing Requirements → Working on it
+    let nextStageActivated: string | null = null;
+    const pubFound = findStageItem(items, "Publishing Requirements");
+    if (pubFound) {
+      await updateItemColumn(boardId, pubFound.item.id, pubFound.statusCol.id, "Working on it", token);
+      nextStageActivated = "Publishing Requirements";
+      console.log("Publishing Requirements activated");
+    }
+
+    // Normalize to ensure board consistency
+    await normalizeStageStatuses(boardId, token);
+
+    res.json({
+      ok: true,
+      finalApproved: true,
+      finalItemId: finalItem.id,
+      oldStatus,
+      nextStageActivated,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("approve-final FAILED:", message);
+    req.log.error({ err }, "approve-final failed");
+    res.status(502).json({ error: "Unable to update Monday.com." });
+  }
+});
+
 // ── GET /api/project-progress ────────────────────────────────────────────────
 router.get("/project-progress", async (req: Request, res: Response) => {
   const token   = process.env.MONDAY_API_TOKEN;
