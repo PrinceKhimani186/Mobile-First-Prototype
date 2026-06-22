@@ -38,7 +38,28 @@ export default function StaffLogin() {
     console.log("[Auth] Login attempt:", normalizedEmail);
 
     try {
-      // Step 1 — Check credentials locally (fast-fail before GHL round-trip)
+      // TODO: Replace localStorage demo auth with Supabase Auth
+      // Step 1 — Check demo account set up via /set-password (frontend-only flow)
+      const demoRaw = localStorage.getItem("appSquadDemoAccount");
+      if (demoRaw) {
+        try {
+          const demo = JSON.parse(demoRaw) as { email?: string; password?: string };
+          if (
+            demo.email?.toLowerCase() === normalizedEmail &&
+            demo.password === password
+          ) {
+            console.log("[Auth] Demo account match — login success");
+            localStorage.setItem("appSquadLoggedIn", "true");
+            localStorage.setItem("appSquadUserEmail", normalizedEmail);
+            navigate("/onboarding/dashboard");
+            return;
+          }
+        } catch {
+          // malformed entry — fall through to admin check
+        }
+      }
+
+      // Step 2 — Check hardcoded admin credentials
       if (normalizedEmail !== ADMIN_EMAIL.toLowerCase() || password !== ADMIN_PASSWORD) {
         console.log("[Auth] Login failure: invalid credentials");
         setError("Incorrect email or password. Please try again.");
@@ -46,7 +67,7 @@ export default function StaffLogin() {
         return;
       }
 
-      // Step 2 — Verify contact exists in GHL (server-side, key never exposed)
+      // Step 3 — Verify contact exists in GHL (server-side, key never exposed)
       console.log("[Auth] Checking GHL contact for:", normalizedEmail);
       const res = await fetch("/api/auth/check-ghl", {
         method: "POST",
@@ -63,7 +84,7 @@ export default function StaffLogin() {
         return;
       }
 
-      // Step 3 — Grant access
+      // Step 4 — Grant admin access
       console.log("[Auth] GHL contact found — login success");
       localStorage.setItem(STORAGE_KEY, "true");
       window.dispatchEvent(new Event("as_admin_auth_change"));

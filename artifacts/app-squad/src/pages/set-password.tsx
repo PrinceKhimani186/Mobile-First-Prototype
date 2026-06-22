@@ -80,14 +80,16 @@ export default function SetPassword() {
 
     setLoading(true);
     try {
-      // Placeholder — replace with real Supabase call when ready
+      // TODO: Replace localStorage demo auth with Supabase Auth
+      // TODO: Never store passwords in localStorage in production
       await createUserInSupabase(email.trim(), password);
 
-      // Store mock pending account (no real password stored)
+      // Demo-only: store credentials so /login can verify them locally
       localStorage.setItem(
-        "appSquadPendingAccount",
+        "appSquadDemoAccount",
         JSON.stringify({
           email: email.trim(),
+          password,
           passwordSet: true,
           createdAt: new Date().toISOString(),
         })
