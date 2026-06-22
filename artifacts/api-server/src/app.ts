@@ -16,35 +16,103 @@ function ghlHeaders(apiKey: string) {
   };
 }
 
-async function applyGHLPurchaseTag(email: string, planTag: string): Promise<void> {
-  const apiKey = process.env.GHL_API_KEY;
+const PLAN_TAG_MAP: Record<string, string> = {
+  essentials:  "Purchased Plan - Essentials",
+  accelerator: "Purchased Plan - Ownership Accelerator",
+  empire:      "Purchased Plan - Digital Asset Empire",
+};
+
+async function handleGHLPostPayment(
+  email: string,
+  firstName: string,
+  lastName: string,
+  phone: string,
+  selectedPlan: string,
+): Promise<void> {
+  const apiKey    = process.env.GHL_API_KEY;
   const locationId = process.env.GHL_LOCATION_ID;
-  if (!apiKey || !locationId) return;
+
+  if (!apiKey || !locationId) {
+    logger.warn("Stripe webhook: GHL_API_KEY or GHL_LOCATION_ID not set — skipping GHL");
+    return;
+  }
+
+  const planTag = PLAN_TAG_MAP[selectedPlan];
+  if (!planTag) {
+    logger.warn({ selectedPlan }, "Stripe webhook: unknown selectedPlan value — cannot map to GHL tag");
+    return;
+  }
 
   try {
-    // 1 — Find contact by email
+    // 1 — Check if contact already exists by email
     const searchRes = await fetch(
       `${GHL_BASE}/contacts/search/duplicate?locationId=${encodeURIComponent(locationId)}&email=${encodeURIComponent(email)}`,
-      { headers: ghlHeaders(apiKey) }
+      { headers: ghlHeaders(apiKey) },
     );
-    const searchData = (await searchRes.json()) as { contact?: { id?: string } | null };
-    const contactId = searchData?.contact?.id;
 
-    if (!contactId) {
-      logger.warn({ email }, "Stripe webhook: GHL contact not found — skipping tag");
+    if (!searchRes.ok) {
+      const body = await searchRes.text();
+      logger.error({ email, status: searchRes.status, body }, "Stripe webhook: GHL contact search failed");
       return;
     }
 
-    // 2 — Add the purchased plan tag (POST adds, does not replace)
-    await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+    const searchData = (await searchRes.json()) as { contact?: { id?: string } | null };
+    let contactId = searchData?.contact?.id;
+
+    if (contactId) {
+      // 2a — Update existing contact
+      const updateRes = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+        method: "PUT",
+        headers: ghlHeaders(apiKey),
+        body: JSON.stringify({ firstName, lastName, phone }),
+      });
+
+      if (!updateRes.ok) {
+        const body = await updateRes.text();
+        logger.error({ email, contactId, status: updateRes.status, body }, "Stripe webhook: GHL contact update failed");
+      } else {
+        logger.info({ email, contactId }, "Stripe webhook: GHL contact updated");
+      }
+    } else {
+      // 2b — Create new contact
+      const createRes = await fetch(`${GHL_BASE}/contacts/`, {
+        method: "POST",
+        headers: ghlHeaders(apiKey),
+        body: JSON.stringify({ locationId, firstName, lastName, email, phone }),
+      });
+
+      if (!createRes.ok) {
+        const body = await createRes.text();
+        logger.error({ email, status: createRes.status, body }, "Stripe webhook: GHL contact creation failed");
+        return;
+      }
+
+      const createData = (await createRes.json()) as { contact?: { id?: string } };
+      contactId = createData?.contact?.id;
+      logger.info({ email, contactId }, "Stripe webhook: GHL contact created");
+    }
+
+    if (!contactId) {
+      logger.error({ email }, "Stripe webhook: no GHL contact ID available — tag not applied");
+      return;
+    }
+
+    // 3 — Apply the correct plan tag
+    const tagRes = await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
       method: "POST",
       headers: ghlHeaders(apiKey),
       body: JSON.stringify({ tags: [planTag] }),
     });
 
-    logger.info({ email, contactId, planTag }, "Stripe webhook: GHL purchase tag applied");
+    if (!tagRes.ok) {
+      const body = await tagRes.text();
+      logger.error({ email, contactId, planTag, status: tagRes.status, body }, "Stripe webhook: GHL tag application failed");
+    } else {
+      logger.info({ email, contactId, planTag }, "Stripe webhook: GHL tag applied successfully");
+    }
+
   } catch (err) {
-    logger.error({ err, email }, "Stripe webhook: GHL tag application failed");
+    logger.error({ err, email }, "Stripe webhook: GHL API error — unexpected exception");
   }
 }
 
@@ -77,14 +145,25 @@ app.post(
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      const email = session.metadata?.email ?? session.customer_email ?? "";
-      const planTag = session.metadata?.planTag ?? "";
-      const planName = session.metadata?.planName ?? "";
+      const email        = session.metadata?.email        ?? session.customer_email ?? "";
+      const firstName    = session.metadata?.firstName    ?? "";
+      const lastName     = session.metadata?.lastName     ?? "";
+      const phone        = session.metadata?.phone        ?? "";
+      const selectedPlan = session.metadata?.selectedPlan ?? "";
+      const planName     = session.metadata?.planName     ?? "";
 
-      logger.info({ email, planName, planTag }, "Stripe webhook: checkout.session.completed");
+      logger.info(
+        { event: "payment_successful", email, selectedPlan, planName, sessionId: session.id },
+        "Stripe webhook: payment successful",
+      );
 
-      if (email && planTag) {
-        await applyGHLPurchaseTag(email, planTag);
+      if (email && selectedPlan) {
+        await handleGHLPostPayment(email, firstName, lastName, phone, selectedPlan);
+      } else {
+        logger.warn(
+          { email, selectedPlan },
+          "Stripe webhook: missing email or selectedPlan in session metadata — GHL skipped",
+        );
       }
     }
 

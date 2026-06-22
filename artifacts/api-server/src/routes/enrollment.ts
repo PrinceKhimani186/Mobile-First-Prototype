@@ -51,11 +51,11 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
 
   const {
     firstName, lastName, email, phone,
-    planName, planTag,
+    selectedPlan, planName, planTag,
     successUrl, cancelUrl,
   } = req.body as {
     firstName: string; lastName: string; email: string; phone: string;
-    planName: string; planTag: string;
+    selectedPlan: string; planName: string; planTag: string;
     successUrl: string; cancelUrl: string;
   };
 
@@ -108,7 +108,7 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       customer_email: email,
-      metadata: { firstName, lastName, email, phone, planName, planTag },
+      metadata: { firstName, lastName, email, phone, selectedPlan, planName, planTag },
       success_url: successUrl,
       cancel_url: cancelUrl,
     });

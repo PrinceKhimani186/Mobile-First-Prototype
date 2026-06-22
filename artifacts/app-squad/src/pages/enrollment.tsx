@@ -201,6 +201,7 @@ export default function Enrollment() {
           lastName: form.lastName,
           email: form.email,
           phone: form.phone,
+          selectedPlan,
           planName: plan.name,
           planTag: plan.tag,
           successUrl: `${origin}${base}/?payment=success`,
