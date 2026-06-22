@@ -1,0 +1,74 @@
+Implement the Publishing Requirements stage integration with GoHighLevel.
+
+Current behavior:
+Final Approval is completed successfully.
+
+New requirement:
+When the Publishing Requirements stage becomes active or when the client submits the Publishing Requirements form, automatically update the corresponding contact in GHL and add a tag.
+
+Tag to create/use:
+Publishing Requirements - Submitted
+
+Folder / custom field:
+Publishing Requirements
+
+Requirements:
+
+1. Find the contact in GHL using the customer's email address.
+
+2. If the contact exists:
+- Add the tag:
+  Publishing Requirements - Submitted
+- Update a custom field or note called:
+  Publishing Requirements
+- Store all Publishing Requirements form data inside it.
+
+3. Save:
+- App Name
+- Package Name
+- Bundle ID
+- Apple Developer Email
+- Google Play Email
+- Privacy Policy URL
+- Support Email
+- Company Name
+- Any additional Publishing Requirements form fields
+- Submission date
+
+4. If the contact does not exist:
+- Create the contact.
+- Then add the tag:
+  Publishing Requirements - Submitted
+- Save the Publishing Requirements data.
+
+5. Prevent duplicate tags.
+Do not create the same tag twice.
+
+6. Add logs:
+
+console.log("Publishing Requirements submitted");
+console.log("Searching GHL contact");
+console.log("Contact found");
+console.log("Adding Publishing Requirements tag");
+console.log("Saving Publishing Requirements data");
+console.log("GHL update successful");
+
+7. Show success toast:
+
+"Publishing requirements saved successfully."
+
+8. If GHL update fails, show:
+
+"Unable to save publishing requirements."
+
+9. Create a backend API endpoint:
+
+POST /api/publishing-requirements
+
+The frontend should call this endpoint and never expose GHL API keys.
+
+10. Keep all existing UI and styling unchanged.
+
+11. Use the existing GHL_API_KEY and GHL_LOCATION_ID secrets already configured in Replit.
+
+12. Make sure the data is associated with the correct contact based on the logged-in customer's email.
