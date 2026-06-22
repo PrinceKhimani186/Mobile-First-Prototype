@@ -203,11 +203,14 @@ export default function Dashboard() {
   const [mondayData, setMondayData] = useState<{
     currentStage?: string;
     progressPct?: number;
+    completedCount?: number;
+    totalStages?: number;
     clientName?: string;
     appName?: string;
     gameType?: string;
     tagline?: string;
     monetization?: string;
+    _items?: Array<{ id: string; name: string; status: string }>;
   } | null>(null);
   const [mondayLoading, setMondayLoading] = useState(false);
 
@@ -291,30 +294,37 @@ export default function Dashboard() {
     }
 
     // Fetch Monday.com live project data — highest-priority source of truth.
-    setMondayLoading(true);
-    fetch(`/api/monday/project${em ? `?email=${encodeURIComponent(em.toLowerCase())}` : ""}`)
-      .then(r => r.ok ? r.json() : null)
-      .then((data: {
-        ok?: boolean; fallback?: boolean;
-        currentStage?: string; progressPct?: number;
-        clientName?: string; appName?: string;
-        gameType?: string; tagline?: string; monetization?: string;
-      } | null) => {
-        if (data?.ok && !data.fallback) {
-          setMondayData(data);
-          // Override stage with Monday's live stage if it's a known stage
-          if (data.currentStage && STAGE_ORDER.includes(data.currentStage as ProjectStage)) {
-            // Only override if no URL ?stage= param was set
-            const urlStageCheck = new URLSearchParams(window.location.search).get("stage");
-            if (!urlStageCheck) {
-              setProjectStage(data.currentStage as ProjectStage);
-              localStorage.setItem("as_project_stage", data.currentStage);
+    function fetchMonday(emailParam: string) {
+      setMondayLoading(true);
+      fetch(`/api/monday/project${emailParam ? `?email=${encodeURIComponent(emailParam.toLowerCase())}` : ""}`)
+        .then(r => r.ok ? r.json() : null)
+        .then((data: {
+          ok?: boolean; fallback?: boolean;
+          currentStage?: string; progressPct?: number;
+          completedCount?: number; totalStages?: number;
+          clientName?: string; appName?: string;
+          gameType?: string; tagline?: string; monetization?: string;
+          _items?: Array<{ id: string; name: string; status: string }>;
+        } | null) => {
+          if (data?.ok && !data.fallback) {
+            setMondayData(data);
+            if (data.currentStage && STAGE_ORDER.includes(data.currentStage as ProjectStage)) {
+              const urlStageCheck = new URLSearchParams(window.location.search).get("stage");
+              if (!urlStageCheck) {
+                setProjectStage(data.currentStage as ProjectStage);
+                localStorage.setItem("as_project_stage", data.currentStage);
+              }
             }
           }
-        }
-      })
-      .catch(() => { /* non-fatal: dashboard shows localStorage data */ })
-      .finally(() => setMondayLoading(false));
+        })
+        .catch(() => { /* non-fatal */ })
+        .finally(() => setMondayLoading(false));
+    }
+
+    fetchMonday(em);
+
+    // Refresh Monday data every 5 minutes
+    const mondayInterval = setInterval(() => fetchMonday(em), 5 * 60 * 1000);
 
     if (savedRevision) {
       try { setRevisionData(JSON.parse(savedRevision)); } catch { /* ignore */ }
@@ -330,6 +340,8 @@ export default function Dashboard() {
       status: "dashboard_viewed",
       source: src,
     });
+
+    return () => clearInterval(mondayInterval);
   }, []);
 
   function advanceTo(stage: ProjectStage) {
@@ -393,18 +405,34 @@ export default function Dashboard() {
     advanceTo("Store Submission");
   }
 
-  // ── Timeline ──────────────────────────────────────────────────────────────
-  const currentIdx = STAGE_ORDER.indexOf(projectStage);
-  const timeline = STAGE_ORDER.map((label, i) => ({
-    id: label.toLowerCase().replace(/\s+/g, "-"),
-    label,
-    icon: STAGE_ICONS[label],
-    pct: STAGE_PCT[label],
-    status: (i < currentIdx ? "complete" : i === currentIdx ? "active" : "pending") as "complete" | "active" | "pending",
-  }));
+  // ── Timeline — driven by Monday.com _items when available ─────────────────
+  const mondayItemMap = new Map(
+    (mondayData?._items ?? []).map(item => [item.name, item.status])
+  );
+  const hasMondayItems = mondayItemMap.size > 0;
 
-  const progressPct = STAGE_PCT[projectStage];
+  const currentIdx = STAGE_ORDER.indexOf(projectStage);
+  const timeline = STAGE_ORDER.map((label, i) => {
+    let status: "complete" | "active" | "pending";
+    if (hasMondayItems) {
+      const mondayStatus = mondayItemMap.get(label) ?? "Not Started";
+      if (mondayStatus === "Done") status = "complete";
+      else if (mondayStatus === "Working on it") status = "active";
+      else status = "pending";
+    } else {
+      status = i < currentIdx ? "complete" : i === currentIdx ? "active" : "pending";
+    }
+    return {
+      id: label.toLowerCase().replace(/\s+/g, "-"),
+      label,
+      icon: STAGE_ICONS[label],
+      pct: STAGE_PCT[label],
+      status,
+    };
+  });
+
   const completedCount = timeline.filter(t => t.status === "complete").length;
+  const progressPct = mondayData?.progressPct ?? STAGE_PCT[projectStage];
 
   // ── Revision type checkboxes ──────────────────────────────────────────────
   const REVISION_TYPES = [

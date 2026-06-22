@@ -189,7 +189,7 @@ const PACKAGES = [
       "30-day post-launch support",
     ],
     cta: "START ESSENTIALS ENROLLMENT",
-    route: "https://appsquadinc.com/enroll/essentials",
+    route: "/enrollment?plan=essentials",
   },
   {
     name: "App Ownership\nAccelerator",
@@ -209,7 +209,7 @@ const PACKAGES = [
       "Analytics dashboard access",
     ],
     cta: "START ACCELERATOR ENROLLMENT",
-    route: "https://appsquadinc.com/enroll/accelerator",
+    route: "/enrollment?plan=accelerator",
   },
   {
     name: "Digital Asset\nEmpire",
@@ -229,7 +229,7 @@ const PACKAGES = [
       "App portfolio growth roadmap",
     ],
     cta: "START EMPIRE ENROLLMENT",
-    route: "https://appsquadinc.com/enroll/empire",
+    route: "/enrollment?plan=empire",
   },
 ];
 
@@ -1083,7 +1083,7 @@ export default function Presentation() {
           {/* Main CTA */}
           <FadeUp delay={0.25}>
             <button
-              onClick={() => window.open("https://appsquadinc.com/enroll", "_blank")}
+              onClick={() => window.open("/enrollment", "_blank")}
               style={{ ...goldBtn, fontSize: 20, padding: "28px 72px" }}
               onMouseEnter={e => { e.currentTarget.style.opacity = "0.9"; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}>

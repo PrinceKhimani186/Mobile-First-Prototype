@@ -132,16 +132,35 @@ export default function Enrollment() {
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
 
-  // Handle payment=cancelled redirect
+  // Handle ?plan= pre-selection (from closer presentation CTA) and payment=cancelled
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
+    // Pre-select plan and skip to Step 2
+    const planParam = params.get("plan");
+    if (planParam) {
+      const planMap: Record<string, PlanId> = {
+        essentials: "essentials",
+        accelerator: "accelerator",
+        empire: "empire",
+      };
+      const matched = planMap[planParam.toLowerCase()];
+      if (matched) {
+        setSelectedPlan(matched);
+        setStep(2);
+      }
+    }
+
     if (params.get("payment") === "cancelled") {
       toast({
         title: "Payment cancelled",
         description: "You can continue whenever you're ready.",
         variant: "destructive",
       });
-      // Clean up URL
+    }
+
+    // Clean up query params without a page reload
+    if (params.has("plan") || params.has("payment")) {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [toast]);
