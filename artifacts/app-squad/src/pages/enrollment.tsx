@@ -193,6 +193,9 @@ export default function Enrollment() {
       const origin = window.location.origin;
       const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
+      // Store email so /set-password can prefill it after Stripe redirects back
+      localStorage.setItem("appSquadEnrollmentEmail", form.email);
+
       const res = await fetch("/api/enrollment/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -204,7 +207,7 @@ export default function Enrollment() {
           selectedPlan,
           planName: plan.name,
           planTag: plan.tag,
-          successUrl: `${origin}${base}/?payment=success`,
+          successUrl: `${origin}${base}/set-password?payment=success`,
           cancelUrl: `${origin}${base}/enrollment?payment=cancelled`,
         }),
       });

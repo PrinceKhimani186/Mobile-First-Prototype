@@ -1,0 +1,108 @@
+After Stripe payment success, I want the user to complete account setup before login.
+
+Current requirement:
+Do frontend-only flow for now. Do not connect Supabase yet, but prepare the code structure so Supabase can be added later.
+
+Flow:
+
+Stripe payment success
+↓
+Redirect to /set-password
+↓
+User enters password and confirm password
+↓
+Frontend validates password
+↓
+Show success message
+↓
+Redirect to existing login page
+
+Requirements:
+
+1. Update Stripe success_url to:
+
+/set-password?payment=success&email={CUSTOMER_EMAIL}
+
+If email cannot be passed directly, use metadata or localStorage from the enrollment form.
+
+2. Create a new page:
+
+/set-password
+
+3. Page design:
+Match the existing App Squad dark theme.
+Use same typography, spacing, buttons, rounded cards, orange/cyan accents.
+
+4. Form fields:
+- Email Address, prefilled if available
+- Password
+- Confirm Password
+
+5. Validation:
+- Password required
+- Confirm Password required
+- Password and Confirm Password must match
+- Minimum password length: 8 characters
+- Show clean error messages
+
+6. On successful frontend validation:
+For now, save temporary mock data in localStorage:
+
+appSquadPendingAccount = {
+  email,
+  passwordSet: true,
+  createdAt
+}
+
+Do NOT store real password in localStorage.
+Only store passwordSet: true for demo/frontend testing.
+
+7. Add a placeholder function for future Supabase connection:
+
+async function createUserInSupabase(email, password) {
+  // TODO: connect Supabase later
+  // await supabase.auth.signUp({ email, password })
+}
+
+8. After successful password setup:
+Show success toast:
+
+"Password created successfully. Please login to continue."
+
+Then redirect to the existing login page.
+
+Use existing login route if available.
+If route is /login, redirect to:
+
+/login
+
+9. Add loading state on the button:
+
+"Creating Account..."
+
+10. Do not change existing homepage, login page, dashboard, Stripe checkout, or styling.
+
+11. Make sure direct access to /set-password works.
+
+12. Make sure if user comes from payment success, the page shows:
+
+"Payment successful. Create your dashboard password."
+
+13. Future backend note:
+Prepare the code so later we can replace the mock localStorage flow with Supabase user creation and encrypted password handling.
+
+Test flow:
+
+Enrollment
+↓
+Stripe Checkout
+↓
+Payment Success
+↓
+/set-password
+↓
+Enter password + confirm password
+↓
+Success toast
+↓
+Redirect to /login

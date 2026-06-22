@@ -23,6 +23,7 @@ import AdminLogin from "@/pages/admin-login";
 import AdminProjects from "@/pages/admin-projects";
 import AdminProjectDetail from "@/pages/admin-project-detail";
 import StaffLogin from "@/pages/staff-login";
+import SetPassword from "@/pages/set-password";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,8 @@ function AppShell() {
           <Route path="/onboarding/game-selection" component={GameSelection} />
           <Route path="/onboarding/customization" component={Customize} />
           <Route path="/onboarding/dashboard" component={Dashboard} />
+          {/* Post-payment account setup */}
+          <Route path="/set-password" component={SetPassword} />
           {/* Staff login */}
           <Route path="/login" component={StaffLogin} />
           {/* Admin */}
