@@ -1,0 +1,108 @@
+Fix the Monday stage workflow sequence logic.
+
+Do not change the UI design.
+
+Current issue:
+A later stage can stay Complete or Working on it even when an earlier stage is still Working on it.
+
+Example issue:
+Customization Review = Working on it
+Development = Done
+Testing = Done
+Demo Ready For Review = Ready to Review
+Revision Window = Working on it
+
+This should NOT happen.
+
+Required logic:
+
+1. Stages must follow strict order:
+
+Project Received
+Brand Review
+Customization Review
+Development
+Testing
+Demo Ready For Review
+Revision Window
+Final Approval
+Publishing Requirements
+Store Submission
+App Launch
+
+2. Only one stage can be active at a time.
+
+Active statuses are:
+- Working on it
+- Ready to Review
+
+3. If a stage is Working on it, every stage after it must automatically become Not Started.
+
+Example:
+Customization Review = Working on it
+Then automatically set:
+Development = Not Started
+Testing = Not Started
+Demo Ready For Review = Not Started
+Revision Window = Not Started
+Final Approval = Not Started
+Publishing Requirements = Not Started
+Store Submission = Not Started
+App Launch = Not Started
+
+4. If a stage is Ready to Review, every stage after it must be Not Started.
+
+Example:
+Demo Ready For Review = Ready to Review
+Then:
+Revision Window = Not Started
+Final Approval = Not Started
+Publishing Requirements = Not Started
+Store Submission = Not Started
+App Launch = Not Started
+
+5. A stage can only move to Working on it when all previous stages are Done.
+
+6. A stage can only move to Done when all previous stages are Done.
+
+7. When Mark Complete is clicked:
+- Set current stage to Done
+- Set the next stage to Working on it
+- But only if the current stage is the first non-Done stage.
+
+8. Special rule:
+Demo Ready For Review should move to Ready to Review after Testing is Done.
+It should not auto-complete.
+Only the client can approve it from the app.
+
+9. When client clicks Approve Demo:
+- Set Demo Ready For Review to Done
+- Set Revision Window to Working on it
+
+10. Add backend function:
+
+normalizeStageStatuses()
+
+This function should:
+- Read all stage statuses from Monday
+- Find the first stage that is not Done
+- Keep that stage as Working on it or Ready to Review
+- Reset all later stages to Not Started
+- Push corrected statuses back to Monday
+
+11. Run normalizeStageStatuses():
+- After fetching Monday data
+- After any Mark Complete action
+- After Approve Demo action
+
+12. Add logs:
+Current statuses before normalization
+First non-complete stage
+Statuses reset
+Monday update response
+
+13. Do not change Stripe, GHL, login, Supabase placeholder, or existing styling.
+
+Expected result:
+If stage 3 is Working on it, stage 4, 5, 6, 7, 8, 9, 10, 11 must not show Complete or Working on it.
+They must show Not Started.

@@ -112,7 +112,9 @@ function mapStatus(raw: string): "Complete" | "In Progress" | "Client Review Req
 }
 
 // ── Shared board item fetch ──────────────────────────────────────────────────
-async function fetchBoardItems(boardId: string, token: string) {
+type BoardItem = { id: string; name: string; column_values: ColumnValue[] };
+
+async function fetchBoardItems(boardId: string, token: string): Promise<{ board: { name: string } | undefined; items: BoardItem[] }> {
   const query = `
     {
       boards(ids: [${boardId}]) {
@@ -133,9 +135,7 @@ async function fetchBoardItems(boardId: string, token: string) {
   const data = (await mondayQuery(query, token)) as {
     boards: {
       name: string;
-      items_page: {
-        items: { id: string; name: string; column_values: ColumnValue[] }[];
-      };
+      items_page: { items: BoardItem[] };
     }[];
   };
   const board = data.boards?.[0];
@@ -165,9 +165,9 @@ async function updateItemColumn(
 
 // ── Find a stage item + its status column ────────────────────────────────────
 function findStageItem(
-  items: { id: string; name: string; column_values: ColumnValue[] }[],
+  items: BoardItem[],
   stageName: string
-): { item: typeof items[0]; statusCol: ColumnValue } | null {
+): { item: BoardItem; statusCol: ColumnValue } | null {
   const item = items.find(i => {
     const lower = i.name.toLowerCase().trim();
     const stage = stageName.toLowerCase().trim();
@@ -179,6 +179,65 @@ function findStageItem(
   );
   if (!statusCol) return null;
   return { item, statusCol };
+}
+
+// ── normalizeStageStatuses ────────────────────────────────────────────────────
+// Reads fresh item statuses, finds the first non-Done stage, and resets all
+// later stages to Not Started so the board can never be in an inconsistent state.
+async function normalizeStageStatuses(boardId: string, token: string): Promise<void> {
+  const { items } = await fetchBoardItems(boardId, token);
+
+  // Build an ordered status snapshot
+  const snapshot = STAGE_ORDER.map(stageName => {
+    const found = findStageItem(items, stageName);
+    const rawStatus = found?.statusCol.text?.trim() ?? "Not Started";
+    return { stageName, rawStatus, found };
+  });
+
+  console.log(
+    "Current statuses before normalization:",
+    snapshot.map(s => `${s.stageName}: ${s.rawStatus}`).join(" | ")
+  );
+
+  // Find the first stage that is NOT Done
+  const firstNonDoneIdx = snapshot.findIndex(
+    s => s.rawStatus.toLowerCase() !== "done"
+  );
+
+  if (firstNonDoneIdx === -1) {
+    console.log("All stages are Done — no normalization needed.");
+    return;
+  }
+
+  const firstNonDone = snapshot[firstNonDoneIdx];
+  console.log(`First non-complete stage: ${firstNonDone.stageName} (${firstNonDone.rawStatus})`);
+
+  // Collect stages after the first non-Done that need resetting
+  const stagesToReset: string[] = [];
+  for (let i = firstNonDoneIdx + 1; i < snapshot.length; i++) {
+    const s = snapshot[i];
+    const lower = s.rawStatus.toLowerCase();
+    if (lower !== "not started" && lower !== "") {
+      stagesToReset.push(s.stageName);
+    }
+  }
+
+  if (stagesToReset.length === 0) {
+    console.log("Board is already normalized — no resets needed.");
+    return;
+  }
+
+  console.log("Statuses reset:", stagesToReset.join(", "));
+
+  for (const stageName of stagesToReset) {
+    const found = findStageItem(items, stageName);
+    if (found) {
+      await updateItemColumn(boardId, found.item.id, found.statusCol.id, "Not Started", token);
+      console.log(`  → Reset ${stageName} to Not Started`);
+    }
+  }
+
+  console.log("Monday update response: normalization complete.");
 }
 
 // ── POST /api/update-stage-status ────────────────────────────────────────────
@@ -257,33 +316,28 @@ router.post("/update-stage-status", async (req: Request, res: Response) => {
       }
     }
 
-    // Apply the update
+    // Apply the update to the current stage
     await updateItemColumn(boardId, item.id, statusCol.id, mondayLabel, token);
 
     let nextStageActivated: string | null = null;
 
-    if (mondayLabel === "Done") {
-      // Advance next stage to Working on it
-      if (stageIdx < STAGE_ORDER.length - 1) {
-        const nextName = STAGE_ORDER[stageIdx + 1] as StageName;
-        const nextFound = findStageItem(items, nextName);
-        if (nextFound) {
-          await updateItemColumn(boardId, nextFound.item.id, nextFound.statusCol.id, "Working on it", token);
-          nextStageActivated = nextName;
-          console.log(`Next stage activated: ${nextName} → Working on it`);
-        }
-      }
-    } else {
-      // Downgrade — cascade reset all later stages to Not Started
-      for (let i = stageIdx + 1; i < STAGE_ORDER.length; i++) {
-        const laterName = STAGE_ORDER[i] as StageName;
-        const laterFound = findStageItem(items, laterName);
-        if (laterFound && laterFound.statusCol.text?.toLowerCase() !== "not started") {
-          await updateItemColumn(boardId, laterFound.item.id, laterFound.statusCol.id, "Not Started", token);
-          console.log(`Cascade reset: ${laterName} → Not Started`);
-        }
+    if (mondayLabel === "Done" && stageIdx < STAGE_ORDER.length - 1) {
+      const nextName = STAGE_ORDER[stageIdx + 1] as StageName;
+
+      // Special rule: Testing Done → Demo Ready For Review becomes "Ready to Review"
+      const nextMondayLabel =
+        nextName === "Demo Ready For Review" ? "Ready to Review" : "Working on it";
+
+      const nextFound = findStageItem(items, nextName);
+      if (nextFound) {
+        await updateItemColumn(boardId, nextFound.item.id, nextFound.statusCol.id, nextMondayLabel, token);
+        nextStageActivated = nextName;
+        console.log(`Next stage activated: ${nextName} → ${nextMondayLabel}`);
       }
     }
+
+    // Normalize the board to fix any inconsistencies
+    await normalizeStageStatuses(boardId, token);
 
     const result = { ok: true, stageName: canonicalName, oldStatus, newStatus: mondayLabel, nextStageActivated };
     console.log(`Monday update response: ${JSON.stringify(result)}`);
@@ -314,7 +368,6 @@ router.post("/approve-demo", async (req: Request, res: Response) => {
   try {
     const { items } = await fetchBoardItems(boardId, token);
 
-    // Find Demo Ready For Review
     const demoFound = findStageItem(items, "Demo Ready For Review");
     if (!demoFound) {
       res.status(404).json({ error: "Demo Ready For Review stage not found in Monday board" });
@@ -339,6 +392,9 @@ router.post("/approve-demo", async (req: Request, res: Response) => {
       nextStageActivated = "Revision Window";
       console.log(`Next stage activated: Revision Window → Working on it`);
     }
+
+    // Normalize the board to fix any inconsistencies
+    await normalizeStageStatuses(boardId, token);
 
     const result = {
       ok: true,
@@ -374,6 +430,10 @@ router.get("/project-progress", async (req: Request, res: Response) => {
     console.log(`MONDAY BOARD ID: ${boardId}`);
     console.log("FETCHING MONDAY DATA...");
 
+    // Normalize first to fix any inconsistencies from manual Monday edits
+    await normalizeStageStatuses(boardId, token);
+
+    // Re-fetch after normalization so the response reflects the corrected state
     const { items } = await fetchBoardItems(boardId, token);
 
     console.log(`ITEMS FOUND: ${items.length}`);
@@ -478,16 +538,16 @@ router.get("/monday/project", async (req: Request, res: Response) => {
         })
       : null;
 
-    // 2. Find the first item with status "Working on it" (active stage)
+    // 2. Find the first item with status "Working on it" or "Ready to Review" (active stage)
     const activeItem = items.find(item => {
       const statusCol = item.column_values.find(c =>
         c.column.title.toLowerCase().includes("status")
       );
-      return statusCol?.text?.toLowerCase() === "working on it";
+      const st = statusCol?.text?.toLowerCase() ?? "";
+      return st === "working on it" || st === "ready to review";
     });
 
-    // 3. If nothing is "Working on it", find the LAST "Done" item and treat
-    //    the next stage as active.
+    // 3. If nothing is active, find the LAST "Done" item and treat next stage as active.
     let currentStage: string;
     if (activeItem) {
       currentStage = resolveStage(activeItem.name);
