@@ -142,6 +142,24 @@ async function fetchBoardItems(boardId: string, token: string): Promise<{ board:
   return { board, items: board?.items_page?.items ?? [] };
 }
 
+// ── Monday item comment (create_update) ─────────────────────────────────────
+async function createUpdate(itemId: string, body: string, token: string): Promise<void> {
+  // Escape the body for embedding in a GraphQL string literal
+  const escaped = body
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\r?\n/g, "\\n");
+  const mutation = `
+    mutation {
+      create_update(
+        item_id: ${itemId},
+        body: "${escaped}"
+      ) { id }
+    }
+  `;
+  await mondayQuery(mutation, token);
+}
+
 // ── Single column mutation ───────────────────────────────────────────────────
 async function updateItemColumn(
   boardId: string,
@@ -383,6 +401,15 @@ router.post("/approve-demo", async (req: Request, res: Response) => {
 
     // Set Demo Ready For Review → Done
     await updateItemColumn(boardId, demoItem.id, demoStatusCol.id, "Done", token);
+    console.log("Client approved demo");
+
+    // Post approval comment on the Monday item
+    await createUpdate(
+      demoItem.id,
+      "Client approved demo. Ready to move to revision window.",
+      token
+    );
+    console.log(`Comment posted to Monday item ${demoItem.id} (Demo Ready For Review)`);
 
     // Set Revision Window → Working on it
     let nextStageActivated: string | null = null;
@@ -390,7 +417,7 @@ router.post("/approve-demo", async (req: Request, res: Response) => {
     if (revFound) {
       await updateItemColumn(boardId, revFound.item.id, revFound.statusCol.id, "Working on it", token);
       nextStageActivated = "Revision Window";
-      console.log(`Next stage activated: Revision Window → Working on it`);
+      console.log(`Revision Window activated`);
     }
 
     // Normalize the board to fix any inconsistencies
@@ -410,6 +437,97 @@ router.post("/approve-demo", async (req: Request, res: Response) => {
     const message = err instanceof Error ? err.message : String(err);
     console.error("approve-demo FAILED:", message);
     req.log.error({ err }, "approve-demo failed");
+    res.status(502).json({ error: message });
+  }
+});
+
+// ── POST /api/submit-revision ────────────────────────────────────────────────
+// Posts a client revision request as a comment on the Demo Ready For Review
+// Monday item. Does NOT change the stage status — Demo stays "Ready to Review".
+router.post("/submit-revision", async (req: Request, res: Response) => {
+  const token   = process.env.MONDAY_API_TOKEN;
+  const boardId = process.env.MONDAY_BOARD_ID || "5029246685";
+
+  noCache(res);
+
+  if (!token) {
+    res.status(503).json({ error: "MONDAY_API_TOKEN not configured" });
+    return;
+  }
+
+  const {
+    revisionTypes,
+    revisionDetails,
+    specificScreens,
+    priorityLevel,
+    clientName,
+    submittedAt,
+  } = req.body as {
+    revisionTypes?: string[];
+    revisionDetails?: string;
+    specificScreens?: string;
+    priorityLevel?: string;
+    clientName?: string;
+    submittedAt?: string;
+  };
+
+  if (!revisionDetails?.trim()) {
+    res.status(400).json({ error: "revisionDetails is required" });
+    return;
+  }
+
+  console.log("Revision request submitted");
+
+  try {
+    const { items } = await fetchBoardItems(boardId, token);
+
+    const demoFound = findStageItem(items, "Demo Ready For Review");
+    if (!demoFound) {
+      res.status(404).json({ error: "Demo Ready For Review stage not found in Monday board" });
+      return;
+    }
+
+    const demoItem = demoFound.item;
+    const currentStatus = demoFound.statusCol.text ?? "Not Started";
+    console.log(`Current stage status: Demo Ready For Review = ${currentStatus}`);
+
+    // Build the formatted comment
+    const typesBlock =
+      Array.isArray(revisionTypes) && revisionTypes.length > 0
+        ? revisionTypes.map(t => `• ${t}`).join("\n")
+        : "(not specified)";
+
+    const submittedDate = submittedAt
+      ? new Date(submittedAt).toLocaleString("en-US", { dateStyle: "long", timeStyle: "short", timeZone: "UTC" }) + " UTC"
+      : new Date().toLocaleString("en-US", { dateStyle: "long", timeStyle: "short", timeZone: "UTC" }) + " UTC";
+
+    const comment = [
+      "---------------------------------------",
+      "Client Revision Request",
+      "",
+      "Revision Types:",
+      typesBlock,
+      "",
+      "Revision Details:",
+      (revisionDetails ?? "").trim(),
+      "",
+      "Specific Screens / Areas:",
+      (specificScreens ?? "(not specified)").trim(),
+      "",
+      `Priority: ${priorityLevel ?? "Normal"}`,
+      `Submitted by${clientName ? " " + clientName : " client"} on: ${submittedDate}`,
+      "---------------------------------------",
+    ].join("\n");
+
+    await createUpdate(demoItem.id, comment, token);
+    console.log(`Comment posted to Monday item ${demoItem.id} (Demo Ready For Review)`);
+    console.log("Stage status unchanged: Demo Ready For Review = Ready to Review");
+
+    res.json({ ok: true, itemId: demoItem.id, commentPosted: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("submit-revision FAILED:", message);
+    req.log.error({ err }, "submit-revision failed");
     res.status(502).json({ error: message });
   }
 });

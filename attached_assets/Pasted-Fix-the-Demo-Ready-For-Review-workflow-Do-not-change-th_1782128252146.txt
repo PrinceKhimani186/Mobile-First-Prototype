@@ -1,0 +1,188 @@
+Fix the Demo Ready For Review workflow.
+
+Do not change the UI design.
+
+Current problem:
+Demo Ready For Review is being marked Done from Monday or automatically from the app.
+
+This stage must ONLY be approved by the client.
+
+New workflow:
+
+================================================
+TESTING DONE
+================================================
+
+When Testing becomes Done:
+
+Set:
+
+Demo Ready For Review = Ready to Review
+
+Do NOT set it to Done.
+
+Show on dashboard:
+
+Approve Demo
+Submit Revision Request
+
+================================================
+CLIENT APPROVES DEMO
+================================================
+
+When client clicks "Approve Demo":
+
+1. Update Monday:
+Demo Ready For Review = Done
+
+2. Add Monday update:
+
+"Client approved demo. Ready to move to revision window."
+
+3. Move Revision Window to Working on it.
+
+4. Refresh dashboard.
+
+================================================
+CLIENT REQUESTS REVISIONS
+================================================
+
+If client submits revision request:
+
+DO NOT mark Demo Ready For Review Done.
+
+Keep:
+
+Demo Ready For Review = Ready to Review
+
+Revision Window = Not Started
+
+Nothing should move forward.
+
+================================================
+SEND REVISION COMMENTS TO MONDAY
+================================================
+
+When Submit Revision Request is pressed:
+
+Create an update/comment on the Monday item
+for Demo Ready For Review.
+
+Comment format:
+
+---------------------------------------
+Client Revision Request
+
+Revision Types:
+<Text changes>
+<Color changes>
+<Branding changes>
+
+Revision Details:
+<textbox value>
+
+Specific Screens:
+<textbox value>
+
+Submitted by client on:
+<date/time>
+---------------------------------------
+
+Use Monday create_update mutation.
+
+Do NOT change stage status.
+
+Keep:
+
+Demo Ready For Review = Ready to Review
+
+================================================
+DEVELOPER WORKFLOW
+================================================
+
+Developer reviews comments.
+
+Developer makes changes.
+
+Developer manually changes Demo Ready For Review back to:
+
+Ready to Review
+
+(not Done)
+
+This tells client that another review is ready.
+
+Client again sees:
+
+Approve Demo
+Submit Revision Request
+
+================================================
+ONLY CLIENT CAN COMPLETE THIS STAGE
+================================================
+
+Demo Ready For Review becomes Done ONLY when:
+
+Client clicks Approve Demo.
+
+Not from Monday.
+Not from developer.
+Not automatically.
+
+================================================
+SEQUENCE RULE
+================================================
+
+Revision Window cannot start until:
+
+Demo Ready For Review = Done
+
+Final Approval cannot start until:
+
+Revision Window = Done
+
+Publishing Requirements cannot start until:
+
+Final Approval = Done
+
+Store Submission cannot start until:
+
+Publishing Requirements = Done
+
+App Launch cannot start until:
+
+Store Submission = Done
+
+================================================
+BACKEND VALIDATION
+================================================
+
+Block any attempt from Monday or API to mark:
+
+Demo Ready For Review = Done
+
+unless source == client_approve_demo
+
+Return:
+
+"Demo Ready For Review can only be completed by client approval."
+
+================================================
+LOGGING
+================================================
+
+Log:
+
+Current stage status
+Revision request submitted
+Comment posted to Monday
+Client approved demo
+Revision Window activated
+
+================================================
+IMPORTANT
+================================================
+
+Do not modify Stripe, GHL, login, Supabase, routes, or styling.
+
+The dashboard should always reflect Monday status, but Demo Ready For Review completion authority belongs only to the client.

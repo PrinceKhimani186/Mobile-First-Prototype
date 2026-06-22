@@ -479,23 +479,58 @@ export default function Dashboard() {
   }
 
   // ── Submit Revision Request ───────────────────────────────────────────────
-  function submitRevision() {
-    if (!revDetails.trim() || !revAgreed) return;
+  const [submittingRevision, setSubmittingRevision] = useState(false);
+
+  const submitRevision = useCallback(async () => {
+    if (!revDetails.trim() || !revAgreed || submittingRevision) return;
+    setSubmittingRevision(true);
+
+    const submittedAt = new Date().toISOString();
     const data: RevisionData = {
       revisionType: revType,
       revisionDetails: revDetails,
       specificAreas: revAreas,
       priorityLevel: revPriority,
-      submittedAt: new Date().toISOString(),
+      submittedAt,
       clientName,
       appName: customization?.appName ?? "",
     };
-    setRevisionData(data);
-    localStorage.setItem("as_revision_data", JSON.stringify(data));
-    setRevisionFormOpen(false);
-    sendRevisionRequestToCRM({ ...data, email, phone });
-    advanceTo("Revision Window");
-  }
+
+    try {
+      const res = await fetch("/api/submit-revision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          revisionTypes: revType,
+          revisionDetails: revDetails,
+          specificScreens: revAreas,
+          priorityLevel: revPriority,
+          clientName,
+          submittedAt,
+        }),
+      });
+      const result = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(result.error ?? "Failed to submit revision");
+
+      // Store locally for display + send to CRM — do NOT advance the stage
+      setRevisionData(data);
+      localStorage.setItem("as_revision_data", JSON.stringify(data));
+      setRevisionFormOpen(false);
+      sendRevisionRequestToCRM({ ...data, email, phone });
+
+      toast({
+        title: "Revision request submitted.",
+        description: "Your feedback has been sent to the team. Demo Ready For Review remains open.",
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("submitRevision error:", message);
+      toast({ title: "Submission failed", description: message, variant: "destructive" });
+    } finally {
+      setSubmittingRevision(false);
+    }
+  }, [revType, revDetails, revAreas, revPriority, revAgreed, submittingRevision, clientName, customization, email, phone, toast]);
 
   // ── Approve For Publishing ────────────────────────────────────────────────
   function confirmFinalApproval() {
@@ -856,20 +891,22 @@ export default function Dashboard() {
                                   </button>
 
                                   <div style={{ display: "flex", gap: 8 }}>
-                                    <button type="button" onClick={submitRevision}
-                                      disabled={!revDetails.trim() || !revAgreed}
+                                    <button type="button" onClick={() => { void submitRevision(); }}
+                                      disabled={!revDetails.trim() || !revAgreed || submittingRevision}
                                       style={{
                                         display: "inline-flex", alignItems: "center", gap: 7,
                                         padding: "10px 18px", borderRadius: 9, border: "none",
                                         fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
-                                        background: revDetails.trim() && revAgreed
+                                        background: revDetails.trim() && revAgreed && !submittingRevision
                                           ? "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)"
                                           : "rgba(255,255,255,0.05)",
-                                        color: revDetails.trim() && revAgreed ? "#050505" : "hsl(218 16% 30%)",
-                                        cursor: revDetails.trim() && revAgreed ? "pointer" : "not-allowed",
+                                        color: revDetails.trim() && revAgreed && !submittingRevision ? "#050505" : "hsl(218 16% 30%)",
+                                        cursor: revDetails.trim() && revAgreed && !submittingRevision ? "pointer" : "not-allowed",
+                                        opacity: submittingRevision ? 0.6 : 1,
+                                        transition: "opacity 0.15s",
                                       }}>
                                       <Send style={{ width: 11, height: 11 }} />
-                                      Submit Revision Request
+                                      {submittingRevision ? "Submitting…" : "Submit Revision Request"}
                                     </button>
                                     <button type="button" onClick={() => setRevisionFormOpen(false)}
                                       style={{
