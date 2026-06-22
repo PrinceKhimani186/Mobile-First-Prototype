@@ -61,7 +61,7 @@ function colNumber(columns: ColumnValue[], ...titles: string[]): number | null {
   return null;
 }
 
-// ── Stage map — Monday task names → dashboard stage names ────────────────────
+// ── Stage order ───────────────────────────────────────────────────────────────
 const STAGE_ORDER = [
   "Project Received",
   "Brand Review",
@@ -75,6 +75,8 @@ const STAGE_ORDER = [
   "Store Submission",
   "App Launch",
 ] as const;
+
+type StageName = typeof STAGE_ORDER[number];
 
 const STAGE_PCT: Record<string, number> = {
   "Project Received": 10,
@@ -90,7 +92,7 @@ const STAGE_PCT: Record<string, number> = {
   "App Launch": 100,
 };
 
-// Fuzzy-match a Monday item name to a known dashboard stage
+// Fuzzy-match a Monday item name to a known stage
 function resolveStage(name: string): string {
   const lower = name.toLowerCase().trim();
   const exact = STAGE_ORDER.find(s => s.toLowerCase() === lower);
@@ -101,10 +103,11 @@ function resolveStage(name: string): string {
 }
 
 // ── Status text → dashboard label ───────────────────────────────────────────
-function mapStatus(raw: string): "Complete" | "In Progress" | "Pending" {
+function mapStatus(raw: string): "Complete" | "In Progress" | "Client Review Required" | "Pending" {
   const t = (raw ?? "").trim().toLowerCase();
   if (t === "done") return "Complete";
   if (t === "working on it") return "In Progress";
+  if (t === "ready to review") return "Client Review Required";
   return "Pending";
 }
 
@@ -139,6 +142,45 @@ async function fetchBoardItems(boardId: string, token: string) {
   return { board, items: board?.items_page?.items ?? [] };
 }
 
+// ── Single column mutation ───────────────────────────────────────────────────
+async function updateItemColumn(
+  boardId: string,
+  itemId: string,
+  columnId: string,
+  label: string,
+  token: string
+): Promise<void> {
+  const mutation = `
+    mutation {
+      change_column_value(
+        board_id: ${boardId},
+        item_id: ${itemId},
+        column_id: "${columnId}",
+        value: "{\\"label\\": \\"${label}\\"}"
+      ) { id }
+    }
+  `;
+  await mondayQuery(mutation, token);
+}
+
+// ── Find a stage item + its status column ────────────────────────────────────
+function findStageItem(
+  items: { id: string; name: string; column_values: ColumnValue[] }[],
+  stageName: string
+): { item: typeof items[0]; statusCol: ColumnValue } | null {
+  const item = items.find(i => {
+    const lower = i.name.toLowerCase().trim();
+    const stage = stageName.toLowerCase().trim();
+    return lower === stage || lower.includes(stage) || stage.includes(lower);
+  });
+  if (!item) return null;
+  const statusCol = item.column_values.find(c =>
+    c.column.title.toLowerCase().includes("status")
+  );
+  if (!statusCol) return null;
+  return { item, statusCol };
+}
+
 // ── POST /api/update-stage-status ────────────────────────────────────────────
 router.post("/update-stage-status", async (req: Request, res: Response) => {
   const token   = process.env.MONDAY_API_TOKEN;
@@ -152,7 +194,6 @@ router.post("/update-stage-status", async (req: Request, res: Response) => {
   }
 
   const { stageName, status } = req.body as { stageName?: string; status?: string };
-
   if (!stageName || !status) {
     res.status(400).json({ error: "stageName and status are required" });
     return;
@@ -164,69 +205,155 @@ router.post("/update-stage-status", async (req: Request, res: Response) => {
     status === "In Progress" ? "Working on it" :
     "Not Started";
 
-  console.log(`Stage clicked: ${stageName}`);
-  console.log(`New status: ${status} → Monday label: "${mondayLabel}"`);
+  // Resolve to known stage index
+  const stageIdx = STAGE_ORDER.findIndex(s => resolveStage(stageName) === s || s === stageName);
+  if (stageIdx === -1) {
+    res.status(400).json({ error: `Unknown stage: "${stageName}"` });
+    return;
+  }
+
+  const canonicalName = STAGE_ORDER[stageIdx];
+
+  // Block Demo Ready For Review from admin Mark Complete — must use /api/approve-demo
+  if (canonicalName === "Demo Ready For Review" && mondayLabel === "Done") {
+    res.status(400).json({
+      error: "Demo Ready For Review must be approved by the client via POST /api/approve-demo",
+    });
+    return;
+  }
+
+  console.log(`Stage clicked: ${canonicalName}`);
+  console.log(`Requested update: ${status} → "${mondayLabel}"`);
 
   try {
     const { items } = await fetchBoardItems(boardId, token);
 
-    // Find the Monday item whose name matches the stage
-    const item = items.find(i => {
-      const lower = i.name.toLowerCase().trim();
-      const stage = stageName.toLowerCase().trim();
-      return lower === stage || lower.includes(stage) || stage.includes(lower);
-    });
-
-    if (!item) {
-      console.error(`Stage not found in Monday board: "${stageName}"`);
-      res.status(404).json({ error: `Stage "${stageName}" not found in Monday board` });
+    const found = findStageItem(items, canonicalName);
+    if (!found) {
+      res.status(404).json({ error: `Stage "${canonicalName}" not found in Monday board` });
       return;
     }
-
-    const statusCol = item.column_values.find(
-      c => c.column.title.toLowerCase().includes("status")
-    );
-    if (!statusCol) {
-      res.status(404).json({ error: `No status column found on item "${item.name}"` });
-      return;
-    }
+    const { item, statusCol } = found;
+    const oldStatus = statusCol.text ?? "Not Started";
 
     console.log(`Monday item ID: ${item.id}`);
-    console.log(`Old status: ${statusCol.text ?? "(empty)"}`);
+    console.log(`Previous stage status: ${oldStatus}`);
 
-    // Update the status column using Monday's mutation
-    const mutation = `
-      mutation {
-        change_column_value(
-          board_id: ${boardId},
-          item_id: ${item.id},
-          column_id: "${statusCol.id}",
-          value: "{\\"label\\": \\"${mondayLabel}\\"}"
-        ) {
-          id
-          name
+    // Sequential validation: if marking Done, previous stage must be Done
+    if (mondayLabel === "Done" && stageIdx > 0) {
+      const prevName = STAGE_ORDER[stageIdx - 1] as StageName;
+      const prevFound = findStageItem(items, prevName);
+      const prevStatus = prevFound?.statusCol.text ?? "Not Started";
+
+      console.log(`Previous stage (${prevName}): ${prevStatus}`);
+
+      if (prevStatus.toLowerCase() !== "done") {
+        res.status(400).json({
+          error: `Previous stage "${prevName}" must be completed first.`,
+          previousStage: prevName,
+          previousStatus: prevStatus,
+        });
+        return;
+      }
+    }
+
+    // Apply the update
+    await updateItemColumn(boardId, item.id, statusCol.id, mondayLabel, token);
+
+    let nextStageActivated: string | null = null;
+
+    if (mondayLabel === "Done") {
+      // Advance next stage to Working on it
+      if (stageIdx < STAGE_ORDER.length - 1) {
+        const nextName = STAGE_ORDER[stageIdx + 1] as StageName;
+        const nextFound = findStageItem(items, nextName);
+        if (nextFound) {
+          await updateItemColumn(boardId, nextFound.item.id, nextFound.statusCol.id, "Working on it", token);
+          nextStageActivated = nextName;
+          console.log(`Next stage activated: ${nextName} → Working on it`);
         }
       }
-    `;
+    } else {
+      // Downgrade — cascade reset all later stages to Not Started
+      for (let i = stageIdx + 1; i < STAGE_ORDER.length; i++) {
+        const laterName = STAGE_ORDER[i] as StageName;
+        const laterFound = findStageItem(items, laterName);
+        if (laterFound && laterFound.statusCol.text?.toLowerCase() !== "not started") {
+          await updateItemColumn(boardId, laterFound.item.id, laterFound.statusCol.id, "Not Started", token);
+          console.log(`Cascade reset: ${laterName} → Not Started`);
+        }
+      }
+    }
 
-    const updateData = (await mondayQuery(mutation, token)) as {
-      change_column_value?: { id: string; name: string };
-    };
+    const result = { ok: true, stageName: canonicalName, oldStatus, newStatus: mondayLabel, nextStageActivated };
+    console.log(`Monday update response: ${JSON.stringify(result)}`);
 
-    console.log(`Monday update response: ${JSON.stringify(updateData)}`);
-
-    res.json({
-      ok: true,
-      itemId: item.id,
-      stageName,
-      oldStatus: statusCol.text ?? "",
-      newStatus: mondayLabel,
-      monday: updateData,
-    });
+    res.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`update-stage-status FAILED for "${stageName}":`, message);
     req.log.error({ err }, "update-stage-status failed");
+    res.status(502).json({ error: message });
+  }
+});
+
+// ── POST /api/approve-demo ────────────────────────────────────────────────────
+router.post("/approve-demo", async (req: Request, res: Response) => {
+  const token   = process.env.MONDAY_API_TOKEN;
+  const boardId = process.env.MONDAY_BOARD_ID || "5029246685";
+
+  noCache(res);
+
+  if (!token) {
+    res.status(503).json({ error: "MONDAY_API_TOKEN not configured" });
+    return;
+  }
+
+  console.log("Current stage: Demo Ready For Review");
+
+  try {
+    const { items } = await fetchBoardItems(boardId, token);
+
+    // Find Demo Ready For Review
+    const demoFound = findStageItem(items, "Demo Ready For Review");
+    if (!demoFound) {
+      res.status(404).json({ error: "Demo Ready For Review stage not found in Monday board" });
+      return;
+    }
+
+    const { item: demoItem, statusCol: demoStatusCol } = demoFound;
+    const currentDemoStatus = demoStatusCol.text ?? "Not Started";
+
+    console.log(`Previous stage status: ${currentDemoStatus}`);
+    console.log(`Monday item ID: ${demoItem.id}`);
+    console.log(`Requested update: Demo Ready For Review → Done`);
+
+    // Set Demo Ready For Review → Done
+    await updateItemColumn(boardId, demoItem.id, demoStatusCol.id, "Done", token);
+
+    // Set Revision Window → Working on it
+    let nextStageActivated: string | null = null;
+    const revFound = findStageItem(items, "Revision Window");
+    if (revFound) {
+      await updateItemColumn(boardId, revFound.item.id, revFound.statusCol.id, "Working on it", token);
+      nextStageActivated = "Revision Window";
+      console.log(`Next stage activated: Revision Window → Working on it`);
+    }
+
+    const result = {
+      ok: true,
+      demoApproved: true,
+      demoItemId: demoItem.id,
+      oldStatus: currentDemoStatus,
+      nextStageActivated,
+    };
+    console.log(`Monday update response: ${JSON.stringify(result)}`);
+
+    res.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("approve-demo FAILED:", message);
+    req.log.error({ err }, "approve-demo failed");
     res.status(502).json({ error: message });
   }
 });
@@ -251,18 +378,9 @@ router.get("/project-progress", async (req: Request, res: Response) => {
 
     console.log(`ITEMS FOUND: ${items.length}`);
 
-    // Map each known stage to its Monday board item status
     const stages = STAGE_ORDER.map(stageName => {
-      const item = items.find(i => {
-        const lower = i.name.toLowerCase().trim();
-        const stage = stageName.toLowerCase();
-        return lower === stage || lower.includes(stage) || stage.includes(lower);
-      });
-
-      const rawStatus = item?.column_values.find(
-        c => c.column.title.toLowerCase().includes("status")
-      )?.text ?? "Not Started";
-
+      const found = findStageItem(items, stageName);
+      const rawStatus = found?.statusCol.text ?? "Not Started";
       const status = mapStatus(rawStatus);
       return { name: stageName, status, rawStatus };
     });
@@ -299,51 +417,17 @@ router.get("/debug-monday", async (req: Request, res: Response) => {
   noCache(res);
 
   if (!token) {
-    res.status(503).json({
-      error: "MONDAY_API_TOKEN not set",
-      boardId,
-      tokenSet: false,
-    });
+    res.status(503).json({ error: "MONDAY_API_TOKEN not set", boardId, tokenSet: false });
     return;
   }
 
   try {
-    const query = `
-      {
-        boards(ids: [${boardId}]) {
-          name
-          items_page(limit: 500) {
-            items {
-              id
-              name
-              column_values {
-                id text value
-                column { title }
-              }
-            }
-          }
-        }
-      }
-    `;
-
-    const rawData = (await mondayQuery(query, token)) as {
-      boards: {
-        name: string;
-        items_page: {
-          items: { id: string; name: string; column_values: ColumnValue[] }[];
-        };
-      }[];
-    };
-
-    const board = rawData.boards?.[0];
-    const items = board?.items_page?.items ?? [];
+    const { board, items } = await fetchBoardItems(boardId, token);
 
     const itemSummary = items.map(i => ({
       id: i.id,
       name: i.name,
-      statusText: i.column_values.find(
-        c => c.column.title.toLowerCase().includes("status")
-      )?.text ?? "(no status column)",
+      statusText: i.column_values.find(c => c.column.title.toLowerCase().includes("status"))?.text ?? "(no status column)",
       allColumnTitles: i.column_values.map(c => c.column.title),
     }));
 
@@ -354,7 +438,6 @@ router.get("/debug-monday", async (req: Request, res: Response) => {
       tokenPrefix: token.slice(0, 12) + "…",
       itemCount: items.length,
       items: itemSummary,
-      rawResponse: rawData,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -403,38 +486,33 @@ router.get("/monday/project", async (req: Request, res: Response) => {
       return statusCol?.text?.toLowerCase() === "working on it";
     });
 
-    // 3. If nothing is "Working on it", find the LAST "Done" item and treat the
-    //    next stage as active. This handles boards where stages are all Done or Not Started.
+    // 3. If nothing is "Working on it", find the LAST "Done" item and treat
+    //    the next stage as active.
     let currentStage: string;
     if (activeItem) {
       currentStage = resolveStage(activeItem.name);
     } else {
-      // Find the last completed stage index
       let lastDoneIdx = -1;
-      items.forEach((item, i) => {
+      items.forEach(item => {
         const statusCol = item.column_values.find(c =>
           c.column.title.toLowerCase().includes("status")
         );
         if (statusCol?.text?.toLowerCase() === "done") {
-          // Map to STAGE_ORDER index
-          const stageIdx = STAGE_ORDER.findIndex(s => resolveStage(item.name) === s);
-          if (stageIdx > lastDoneIdx) lastDoneIdx = stageIdx;
+          const idx = STAGE_ORDER.findIndex(s => resolveStage(item.name) === s);
+          if (idx > lastDoneIdx) lastDoneIdx = idx;
         }
       });
 
       if (lastDoneIdx >= 0 && lastDoneIdx < STAGE_ORDER.length - 1) {
-        // Next stage after the last completed one is "active"
         currentStage = STAGE_ORDER[lastDoneIdx + 1];
       } else if (lastDoneIdx === STAGE_ORDER.length - 1) {
-        // All done
         currentStage = STAGE_ORDER[STAGE_ORDER.length - 1];
       } else {
-        // Nothing done yet
         currentStage = STAGE_ORDER[0];
       }
     }
 
-    // 4. Client metadata from matched item or items[0]
+    // 4. Client metadata
     const metaItem = clientItem ?? items[0];
     const cols = metaItem?.column_values ?? [];
     const clientName   = colText(cols, "client name", "client", "name");
@@ -443,7 +521,7 @@ router.get("/monday/project", async (req: Request, res: Response) => {
     const tagline      = colText(cols, "tagline", "slogan");
     const monetization = colText(cols, "monetization", "revenue", "monetize");
 
-    // 5. Progress pct derived from the active item's column, else from stage name
+    // 5. Progress pct
     const activeCols  = (activeItem ?? metaItem)?.column_values ?? [];
     const progressCol = colNumber(activeCols, "progress", "%", "percent")
       ?? colNumber(cols, "progress", "%", "percent");
@@ -451,7 +529,7 @@ router.get("/monday/project", async (req: Request, res: Response) => {
       ? progressCol
       : (STAGE_PCT[currentStage] ?? 10);
 
-    // 6. Completed stage count = how many stages are Done
+    // 6. Completed count = Done items
     const completedCount = items.filter(item => {
       const statusCol = item.column_values.find(c =>
         c.column.title.toLowerCase().includes("status")

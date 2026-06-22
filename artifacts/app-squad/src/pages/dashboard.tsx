@@ -220,16 +220,43 @@ export default function Dashboard() {
     completedStages: number;
     totalStages: number;
     percentage: number;
-    stages: Array<{ name: string; status: "Complete" | "In Progress" | "Pending" }>;
+    stages: Array<{ name: string; status: "Complete" | "In Progress" | "Pending" | "Client Review Required" }>;
   } | null>(null);
 
   // Admin detection — true only when logged in via admin password (as_admin_auth key),
   // demo client accounts use appSquadDemoAccount and never set as_admin_auth.
   const [isAdmin] = useState(() => localStorage.getItem("as_admin_auth") === "true");
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
+  const [approvingDemo, setApprovingDemo] = useState(false);
   const { toast } = useToast();
 
-  // Update a stage status in Monday.com (admin only)
+  // Shared refetch helper — called after any Monday mutation
+  const refreshMondayData = useCallback((emailParam: string) => {
+    fetch("/api/project-progress", { cache: "no-store" })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { completedStages: number; totalStages: number; percentage: number; stages: Array<{ name: string; status: "Complete" | "In Progress" | "Pending" | "Client Review Required" }> } | null) => {
+        if (d?.stages) setProjectProgress(d);
+      })
+      .catch(console.error);
+
+    fetch(
+      `/api/monday/project${emailParam ? `?email=${encodeURIComponent(emailParam.toLowerCase())}` : ""}`,
+      { cache: "no-store" }
+    )
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { ok?: boolean; fallback?: boolean; currentStage?: string; progressPct?: number; completedCount?: number; totalStages?: number; clientName?: string; appName?: string; gameType?: string; tagline?: string; monetization?: string; _items?: Array<{ id: string; name: string; status: string }> } | null) => {
+        if (d?.ok && !d.fallback) {
+          setMondayData(d);
+          if (d.currentStage && STAGE_ORDER.includes(d.currentStage as ProjectStage)) {
+            setProjectStage(d.currentStage as ProjectStage);
+            localStorage.setItem("as_project_stage", d.currentStage);
+          }
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  // Update a stage status in Monday.com (admin only — sequential, with next-stage activation)
   const updateStageStatus = useCallback(async (stageName: string) => {
     setUpdatingStage(stageName);
     try {
@@ -246,31 +273,7 @@ export default function Dashboard() {
         title: "Stage updated successfully.",
         description: `${stageName} marked as Complete in Monday.com.`,
       });
-
-      // Refetch both endpoints so UI reflects live Monday data immediately
-      fetch("/api/project-progress", { cache: "no-store" })
-        .then(r => r.ok ? r.json() : null)
-        .then((d: { completedStages: number; totalStages: number; percentage: number; stages: Array<{ name: string; status: "Complete" | "In Progress" | "Pending" }> } | null) => {
-          if (d?.stages) setProjectProgress(d);
-        })
-        .catch(console.error);
-
-      const emailParam = email;
-      fetch(
-        `/api/monday/project${emailParam ? `?email=${encodeURIComponent(emailParam.toLowerCase())}` : ""}`,
-        { cache: "no-store" }
-      )
-        .then(r => r.ok ? r.json() : null)
-        .then((d: { ok?: boolean; fallback?: boolean; currentStage?: string; progressPct?: number; completedCount?: number; totalStages?: number; clientName?: string; appName?: string; gameType?: string; tagline?: string; monetization?: string; _items?: Array<{ id: string; name: string; status: string }> } | null) => {
-          if (d?.ok && !d.fallback) {
-            setMondayData(d);
-            if (d.currentStage && STAGE_ORDER.includes(d.currentStage as ProjectStage)) {
-              setProjectStage(d.currentStage as ProjectStage);
-              localStorage.setItem("as_project_stage", d.currentStage);
-            }
-          }
-        })
-        .catch(console.error);
+      refreshMondayData(email);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("updateStageStatus error:", message);
@@ -278,7 +281,34 @@ export default function Dashboard() {
     } finally {
       setUpdatingStage(null);
     }
-  }, [email, toast]);
+  }, [email, toast, refreshMondayData]);
+
+  // Approve Demo — client action that marks Demo Ready For Review Done and activates Revision Window
+  const approveDemo = useCallback(async () => {
+    setApprovingDemo(true);
+    try {
+      const res = await fetch("/api/approve-demo", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ stageName: "Demo Ready For Review" }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Approval failed");
+
+      toast({
+        title: "Demo approved successfully.",
+        description: "Your demo has been approved. Revision Window is now active.",
+      });
+      refreshMondayData(email);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("approveDemo error:", message);
+      toast({ title: "Approval failed", description: message, variant: "destructive" });
+    } finally {
+      setApprovingDemo(false);
+    }
+  }, [email, toast, refreshMondayData]);
 
   // Modals
   const [showDemoModal, setShowDemoModal] = useState(false);
@@ -509,16 +539,18 @@ export default function Dashboard() {
 
   const currentIdx = STAGE_ORDER.indexOf(projectStage);
   const timeline = STAGE_ORDER.map((label, i) => {
-    let status: "complete" | "active" | "pending";
+    let status: "complete" | "active" | "pending" | "review";
     if (hasProgressData) {
       const ps = progressStageMap.get(label) ?? "Pending";
       if (ps === "Complete") status = "complete";
       else if (ps === "In Progress") status = "active";
+      else if (ps === "Client Review Required") status = "review";
       else status = "pending";
     } else if (hasMondayItems) {
       const mondayStatus = mondayItemMap.get(label) ?? "Not Started";
       if (mondayStatus === "Done") status = "complete";
       else if (mondayStatus === "Working on it") status = "active";
+      else if (mondayStatus === "Ready to Review") status = "review";
       else status = "pending";
     } else {
       status = i < currentIdx ? "complete" : i === currentIdx ? "active" : "pending";
@@ -644,6 +676,7 @@ export default function Dashboard() {
                   const isLast = i === timeline.length - 1;
                   const isComplete = stage.status === "complete";
                   const isActive = stage.status === "active";
+                  const isReview = stage.status === "review";
                   const lbl = stage.label as ProjectStage;
 
                   return (
@@ -692,7 +725,7 @@ export default function Dashboard() {
                               Revision Round Used
                             </span>
                           )}
-                          {isAdmin && !isComplete && (
+                          {isAdmin && isActive && lbl !== "Demo Ready For Review" && (
                             <button
                               onClick={() => updateStageStatus(stage.label)}
                               disabled={updatingStage === stage.label}
@@ -721,7 +754,7 @@ export default function Dashboard() {
                         </div>
 
                         {/* ── DEMO READY FOR REVIEW ── */}
-                        {lbl === "Demo Ready For Review" && isActive && (
+                        {lbl === "Demo Ready For Review" && (isActive || isReview) && (
                           <AnimatePresence mode="wait">
                             <motion.div key="demo-ready" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}>
                               <p style={{ fontFamily: "'Inter'", fontSize: 12, lineHeight: 1.65, color: "hsl(218 16% 44%)", fontWeight: 300, marginBottom: 14 }}>
@@ -852,17 +885,23 @@ export default function Dashboard() {
                               ) : (
                                 /* ── Two action buttons ── */
                                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                  <button type="button" onClick={() => setShowDemoModal(true)}
+                                  <button type="button" onClick={approvingDemo ? undefined : approveDemo}
+                                    disabled={approvingDemo}
                                     style={{
                                       display: "inline-flex", alignItems: "center", gap: 7,
                                       padding: "10px 18px", borderRadius: 9, border: "none",
                                       fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, letterSpacing: "0.02em",
-                                      background: "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)",
-                                      color: "#050505", cursor: "pointer",
-                                      boxShadow: "0 0 20px rgba(245,158,11,0.2)",
+                                      background: approvingDemo
+                                        ? "rgba(255,255,255,0.06)"
+                                        : "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)",
+                                      color: approvingDemo ? "hsl(218 16% 44%)" : "#050505",
+                                      cursor: approvingDemo ? "wait" : "pointer",
+                                      boxShadow: approvingDemo ? "none" : "0 0 20px rgba(245,158,11,0.2)",
+                                      opacity: approvingDemo ? 0.6 : 1,
+                                      transition: "opacity 0.15s",
                                     }}>
                                     <ArrowRight style={{ width: 12, height: 12 }} />
-                                    Approve Demo
+                                    {approvingDemo ? "Approving…" : "Approve Demo"}
                                   </button>
                                   <button type="button" onClick={() => setRevisionFormOpen(true)}
                                     style={{

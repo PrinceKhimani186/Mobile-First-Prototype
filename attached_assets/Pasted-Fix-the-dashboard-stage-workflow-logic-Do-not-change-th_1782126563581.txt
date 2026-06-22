@@ -1,0 +1,115 @@
+Fix the dashboard stage workflow logic.
+
+Do not change the UI design.
+
+Current issue:
+Stages can be marked complete out of order, and Demo Ready For Review should not be completed directly from Monday/admin. It must be approved by the client from the app.
+
+Required workflow:
+
+1. Stages must move in sequence only.
+A later stage cannot be completed until the previous stage is complete.
+
+Example:
+If Stage 3 is Complete and Stage 4 is Not Started, Stage 5 cannot be marked complete.
+
+2. If any earlier stage changes back from Complete to In Progress or Not Started, then all later stages should automatically reset to Not Started.
+
+Example:
+Customization Review changes from Complete to In Progress
+→ Development, Testing, Demo Ready For Review, Revision Window, etc. should become Not Started.
+
+3. Demo Ready For Review special rule:
+This stage should show as:
+Ready to Review
+
+It should NOT be marked Complete from Monday/admin manually.
+
+The client must approve it inside the dashboard.
+
+4. On the client dashboard, when Demo Ready For Review is Ready to Review:
+Show button:
+Approve Demo
+
+5. When client clicks Approve Demo:
+- Update Monday status for Demo Ready For Review to Done
+- Move next stage Revision Window to Working on it
+- Refresh dashboard progress
+- Show success toast:
+Demo approved successfully.
+
+6. Monday status mapping:
+
+Not Started
+→ Pending
+
+Working on it
+→ In Progress
+
+Ready to Review
+→ Client Review Required
+
+Done
+→ Complete
+
+7. Only show "Mark Complete" button for the current active stage.
+Do not show Mark Complete for all future stages.
+
+8. The next stage should become Working on it only after the current stage is Done.
+
+9. Add backend endpoint:
+
+POST /api/approve-demo
+
+Body:
+{
+  stageName: "Demo Ready For Review"
+}
+
+This endpoint should:
+- Set Demo Ready For Review to Done
+- Set Revision Window to Working on it
+
+10. Add backend validation:
+If previous stage is not Done, block update and return error:
+Previous stage must be completed first.
+
+11. Add logs:
+Current stage
+Previous stage status
+Requested update
+Monday item ID
+Monday response
+Next stage activated
+
+12. Do not overwrite unrelated Monday columns.
+
+13. Do not change routes, styling, Stripe, GHL, or login logic.
+
+Final desired flow:
+
+Project Received Done
+↓
+Brand Review Working on it
+↓
+Brand Review Done
+↓
+Customization Review Working on it
+↓
+Customization Review Done
+↓
+Development Working on it
+↓
+Development Done
+↓
+Testing Working on it
+↓
+Testing Done
+↓
+Demo Ready For Review = Ready to Review
+↓
+Client clicks Approve Demo in app
+↓
+Demo Ready For Review = Done
+↓
+Revision Window = Working on it
