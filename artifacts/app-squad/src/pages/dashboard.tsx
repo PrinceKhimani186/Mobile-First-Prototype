@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2, Gamepad2, Palette,
   Store, Rocket, Layers, TestTube2, LifeBuoy, User,
   Eye, PhoneCall, Wand2, ClipboardEdit, ArrowRight, Send,
-  X, AlertTriangle, CheckSquare, Square, Upload, ShieldCheck,
+  X, AlertTriangle, CheckSquare, Square, Upload, ShieldCheck, Check,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { updateProjectStatusInCRM } from "@/lib/crm";
 
 const CALENDLY_URL = "https://calendly.com/appguyofficial/30min";
@@ -221,6 +222,63 @@ export default function Dashboard() {
     percentage: number;
     stages: Array<{ name: string; status: "Complete" | "In Progress" | "Pending" }>;
   } | null>(null);
+
+  // Admin detection — true only when logged in via admin password (as_admin_auth key),
+  // demo client accounts use appSquadDemoAccount and never set as_admin_auth.
+  const [isAdmin] = useState(() => localStorage.getItem("as_admin_auth") === "true");
+  const [updatingStage, setUpdatingStage] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Update a stage status in Monday.com (admin only)
+  const updateStageStatus = useCallback(async (stageName: string) => {
+    setUpdatingStage(stageName);
+    try {
+      const res = await fetch("/api/update-stage-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ stageName, status: "Complete" }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Monday update failed");
+
+      toast({
+        title: "Stage updated successfully.",
+        description: `${stageName} marked as Complete in Monday.com.`,
+      });
+
+      // Refetch both endpoints so UI reflects live Monday data immediately
+      fetch("/api/project-progress", { cache: "no-store" })
+        .then(r => r.ok ? r.json() : null)
+        .then((d: { completedStages: number; totalStages: number; percentage: number; stages: Array<{ name: string; status: "Complete" | "In Progress" | "Pending" }> } | null) => {
+          if (d?.stages) setProjectProgress(d);
+        })
+        .catch(console.error);
+
+      const emailParam = email;
+      fetch(
+        `/api/monday/project${emailParam ? `?email=${encodeURIComponent(emailParam.toLowerCase())}` : ""}`,
+        { cache: "no-store" }
+      )
+        .then(r => r.ok ? r.json() : null)
+        .then((d: { ok?: boolean; fallback?: boolean; currentStage?: string; progressPct?: number; completedCount?: number; totalStages?: number; clientName?: string; appName?: string; gameType?: string; tagline?: string; monetization?: string; _items?: Array<{ id: string; name: string; status: string }> } | null) => {
+          if (d?.ok && !d.fallback) {
+            setMondayData(d);
+            if (d.currentStage && STAGE_ORDER.includes(d.currentStage as ProjectStage)) {
+              setProjectStage(d.currentStage as ProjectStage);
+              localStorage.setItem("as_project_stage", d.currentStage);
+            }
+          }
+        })
+        .catch(console.error);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("updateStageStatus error:", message);
+      toast({ title: "Update failed", description: message, variant: "destructive" });
+    } finally {
+      setUpdatingStage(null);
+    }
+  }, [email, toast]);
 
   // Modals
   const [showDemoModal, setShowDemoModal] = useState(false);
@@ -633,6 +691,25 @@ export default function Dashboard() {
                             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(217 85% 60% / 0.12)", color: "hsl(217 85% 65%)", border: "1px solid hsl(217 85% 60% / 0.28)" }}>
                               Revision Round Used
                             </span>
+                          )}
+                          {isAdmin && !isComplete && (
+                            <button
+                              onClick={() => updateStageStatus(stage.label)}
+                              disabled={updatingStage === stage.label}
+                              style={{
+                                display: "inline-flex", alignItems: "center", gap: 4,
+                                padding: "3px 10px", borderRadius: 6, cursor: updatingStage === stage.label ? "wait" : "pointer",
+                                fontFamily: "'Inter'", fontSize: 10, fontWeight: 600,
+                                background: "hsl(142 76% 55% / 0.08)",
+                                border: "1px solid hsl(142 76% 55% / 0.22)",
+                                color: "hsl(142 76% 55%)",
+                                opacity: updatingStage === stage.label ? 0.55 : 1,
+                                transition: "opacity 0.15s",
+                              }}
+                            >
+                              <Check style={{ width: 9, height: 9 }} />
+                              {updatingStage === stage.label ? "Updating…" : "Mark Complete"}
+                            </button>
                           )}
                           <span style={{
                             fontFamily: "'Inter'", fontSize: 10, fontWeight: 500,

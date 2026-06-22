@@ -139,6 +139,98 @@ async function fetchBoardItems(boardId: string, token: string) {
   return { board, items: board?.items_page?.items ?? [] };
 }
 
+// ── POST /api/update-stage-status ────────────────────────────────────────────
+router.post("/update-stage-status", async (req: Request, res: Response) => {
+  const token   = process.env.MONDAY_API_TOKEN;
+  const boardId = process.env.MONDAY_BOARD_ID || "5029246685";
+
+  noCache(res);
+
+  if (!token) {
+    res.status(503).json({ error: "MONDAY_API_TOKEN not configured" });
+    return;
+  }
+
+  const { stageName, status } = req.body as { stageName?: string; status?: string };
+
+  if (!stageName || !status) {
+    res.status(400).json({ error: "stageName and status are required" });
+    return;
+  }
+
+  // Map dashboard status → Monday label
+  const mondayLabel =
+    status === "Complete"    ? "Done" :
+    status === "In Progress" ? "Working on it" :
+    "Not Started";
+
+  console.log(`Stage clicked: ${stageName}`);
+  console.log(`New status: ${status} → Monday label: "${mondayLabel}"`);
+
+  try {
+    const { items } = await fetchBoardItems(boardId, token);
+
+    // Find the Monday item whose name matches the stage
+    const item = items.find(i => {
+      const lower = i.name.toLowerCase().trim();
+      const stage = stageName.toLowerCase().trim();
+      return lower === stage || lower.includes(stage) || stage.includes(lower);
+    });
+
+    if (!item) {
+      console.error(`Stage not found in Monday board: "${stageName}"`);
+      res.status(404).json({ error: `Stage "${stageName}" not found in Monday board` });
+      return;
+    }
+
+    const statusCol = item.column_values.find(
+      c => c.column.title.toLowerCase().includes("status")
+    );
+    if (!statusCol) {
+      res.status(404).json({ error: `No status column found on item "${item.name}"` });
+      return;
+    }
+
+    console.log(`Monday item ID: ${item.id}`);
+    console.log(`Old status: ${statusCol.text ?? "(empty)"}`);
+
+    // Update the status column using Monday's mutation
+    const mutation = `
+      mutation {
+        change_column_value(
+          board_id: ${boardId},
+          item_id: ${item.id},
+          column_id: "${statusCol.id}",
+          value: "{\\"label\\": \\"${mondayLabel}\\"}"
+        ) {
+          id
+          name
+        }
+      }
+    `;
+
+    const updateData = (await mondayQuery(mutation, token)) as {
+      change_column_value?: { id: string; name: string };
+    };
+
+    console.log(`Monday update response: ${JSON.stringify(updateData)}`);
+
+    res.json({
+      ok: true,
+      itemId: item.id,
+      stageName,
+      oldStatus: statusCol.text ?? "",
+      newStatus: mondayLabel,
+      monday: updateData,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`update-stage-status FAILED for "${stageName}":`, message);
+    req.log.error({ err }, "update-stage-status failed");
+    res.status(502).json({ error: message });
+  }
+});
+
 // ── GET /api/project-progress ────────────────────────────────────────────────
 router.get("/project-progress", async (req: Request, res: Response) => {
   const token   = process.env.MONDAY_API_TOKEN;
