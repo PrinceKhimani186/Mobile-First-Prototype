@@ -1,0 +1,201 @@
+Before we continue with any additional development, I want to create a complete backup and export of the entire App Squad project.
+
+Please generate a downloadable ZIP archive containing the full project.
+
+The export should include everything required to recreate the project from scratch.
+
+==================================================
+INCLUDE
+=======
+
+Entire source code
+
+All frontend files
+
+All backend files
+
+All assets
+
+Images
+
+Icons
+
+Fonts
+
+CSS
+
+JavaScript
+
+TypeScript
+
+React components
+
+Next.js / React configuration
+
+Package.json
+
+Package-lock.json or pnpm-lock.yaml
+
+Environment variable template (.env.example)
+
+Database schema (if applicable)
+
+Database migration files
+
+API routes
+
+Authentication logic
+
+Admin routes
+
+Customer dashboard
+
+Game selection pages
+
+Customization forms
+
+Agreement pages
+
+Payment integration code
+
+Dashboard logic
+
+Progress tracking
+
+Email templates
+
+Automation scripts
+
+Middleware
+
+Utility functions
+
+Hooks
+
+Components
+
+Configuration files
+
+Build configuration
+
+Deployment configuration
+
+README.md
+
+==================================================
+INTEGRATIONS
+============
+
+Provide documentation listing every integration currently connected to the project.
+
+Include:
+
+Payment processor
+
+Authentication provider
+
+Email provider
+
+Storage provider
+
+Database
+
+Hosting
+
+Analytics
+
+CRM
+
+Third-party APIs
+
+Webhook endpoints
+
+Environment variables used
+
+Any API keys required (replace actual secret values with placeholders)
+
+==================================================
+PROJECT STRUCTURE
+=================
+
+Include a project tree showing the folder structure.
+
+Example:
+
+/app
+
+/components
+
+/lib
+
+/api
+
+/public
+
+/assets
+
+/styles
+
+/hooks
+
+/utils
+
+/database
+
+==================================================
+DEPENDENCIES
+============
+
+Include a list of every installed dependency and package.
+
+==================================================
+DEPLOYMENT
+==========
+
+Include instructions explaining exactly how another developer can:
+
+Install dependencies
+
+Configure environment variables
+
+Run locally
+
+Build production
+
+Deploy
+
+==================================================
+DATABASE
+========
+
+If a database is used, export:
+
+Schema
+
+Tables
+
+Relationships
+
+Migration files
+
+Seed files (if applicable)
+
+==================================================
+FINAL DELIVERY
+==============
+
+Provide:
+
+1. A downloadable ZIP file containing the complete project.
+
+2. A README explaining how to install and deploy the project.
+
+3. A document describing every integration currently connected to the website.
+
+Do not modify the project.
+
+Do not refactor code.
+
+Do not remove anything.
+
+This request is for backup and ownership purposes only.
