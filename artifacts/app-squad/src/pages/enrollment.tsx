@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
-  Zap, ArrowRight, CheckCircle2, User, Mail, Phone,
+  Zap, ArrowRight, CheckCircle2, User, Mail,
   ChevronRight, Loader2, AlertCircle, X, Sparkles, Crown, Rocket,
-  Upload, FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { initEnrollment, uploadDocument, updatePackage } from "@/services/enrollment";
+import { initEnrollment, updatePackage } from "@/services/enrollment";
 
 // ── Plan definitions ─────────────────────────────────────────────────────────
 const PLANS = [
@@ -73,11 +72,7 @@ interface FormData {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
   company: string;
-  country: string;
-  businessType: string;
-  preferredContact: string;
 }
 
 const inputBase: React.CSSProperties = {
@@ -181,110 +176,14 @@ function SelectField({
   );
 }
 
-function DocumentUploadField({
-  file, onFile, required,
-}: {
-  file: File | null;
-  onFile: (f: File | null) => void;
-  required?: boolean;
-}) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
-
-  function handleFileChange(f: File | null) {
-    if (f) onFile(f);
-  }
-
-  return (
-    <div>
-      <label style={{
-        display: "block", fontFamily: "'Inter'", fontSize: 11, fontWeight: 600,
-        letterSpacing: "0.07em", textTransform: "uppercase",
-        color: "rgba(255,255,255,0.35)", marginBottom: 7,
-      }}>
-        Required Document{required && <span style={{ color: "hsl(35 90% 60%)", marginLeft: 3 }}>*</span>}
-      </label>
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-        style={{ display: "none" }}
-        onChange={e => handleFileChange(e.target.files?.[0] ?? null)}
-      />
-      <div
-        onClick={() => fileRef.current?.click()}
-        onDragOver={e => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={e => {
-          e.preventDefault();
-          setDragging(false);
-          handleFileChange(e.dataTransfer.files?.[0] ?? null);
-        }}
-        style={{
-          borderRadius: 10,
-          padding: "16px 14px",
-          border: `1px dashed ${dragging ? "hsl(35 90% 55% / 0.7)" : file ? "hsl(35 90% 55% / 0.4)" : "rgba(255,255,255,0.15)"}`,
-          background: dragging
-            ? "hsl(35 90% 55% / 0.06)"
-            : file
-            ? "hsl(35 90% 55% / 0.04)"
-            : "rgba(255,255,255,0.02)",
-          cursor: "pointer",
-          transition: "all 0.2s",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-        }}
-      >
-        {file ? (
-          <>
-            <FileText style={{ width: 18, height: 18, color: "hsl(35 90% 62%)", flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(35 90% 68%)", margin: 0, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {file.name}
-              </p>
-              <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "rgba(255,255,255,0.3)", margin: "2px 0 0" }}>
-                {(file.size / 1024).toFixed(0)} KB — click to change
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={e => { e.stopPropagation(); onFile(null); if (fileRef.current) fileRef.current.value = ""; }}
-              style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", padding: 2, display: "flex" }}
-            >
-              <X style={{ width: 14, height: 14 }} />
-            </button>
-          </>
-        ) : (
-          <>
-            <Upload style={{ width: 18, height: 18, color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
-            <div>
-              <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "rgba(255,255,255,0.5)", margin: 0 }}>
-                Click or drag & drop to upload
-              </p>
-              <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "rgba(255,255,255,0.25)", margin: "3px 0 0" }}>
-                PDF, Word, JPG, PNG (max 10 MB)
-              </p>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const CONTACT_OPTIONS = ["Email", "Phone", "WhatsApp"];
-
 export default function Enrollment() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState<FormData>({
-    firstName: "", lastName: "", email: "", phone: "",
-    company: "", country: "", businessType: "", preferredContact: "",
+    firstName: "", lastName: "", email: "", company: "",
   });
-  const [docFile, setDocFile] = useState<File | null>(null);
   const [formError, setFormError] = useState("");
   const [submittingStep1, setSubmittingStep1] = useState(false);
 
@@ -324,10 +223,7 @@ export default function Enrollment() {
     if (!form.lastName.trim()) return "Last name is required.";
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRe.test(form.email)) return "Please enter a valid email address.";
-    if (!form.phone.trim()) return "Phone number is required.";
-    if (!form.country.trim()) return "Country is required.";
-    if (!form.businessType.trim()) return "Business type is required.";
-    if (!docFile) return "Please upload your required document.";
+    if (!form.company.trim()) return "Business name is required.";
     return "";
   }
 
@@ -341,30 +237,11 @@ export default function Enrollment() {
     try {
       const normalizedEmail = form.email.trim().toLowerCase();
 
-      // Step A: upload document (blocking — must succeed before saving)
-      let documentName = "";
-      let documentUrl = "";
-      if (docFile) {
-        const uploadResult = await uploadDocument(docFile, normalizedEmail);
-        if (!uploadResult.ok) {
-          setFormError(uploadResult.error ?? "Unable to upload document.");
-          return;
-        }
-        documentName = uploadResult.documentName ?? docFile.name;
-        documentUrl = uploadResult.documentUrl ?? "";
-      }
-
-      // Step B: save to Supabase (blocking — must succeed before proceeding)
+      // Save to Supabase (blocking — must succeed before proceeding)
       const saveResult = await initEnrollment({
         fullName: `${form.firstName} ${form.lastName}`.trim(),
         email: normalizedEmail,
-        phone: form.phone,
         companyName: form.company,
-        country: form.country,
-        businessType: form.businessType,
-        preferredContact: form.preferredContact,
-        documentName,
-        documentUrl,
       });
 
       if (!saveResult.ok) {
@@ -372,19 +249,16 @@ export default function Enrollment() {
         return;
       }
 
-      // Step C: save session data for downstream use
+      // Save session data for downstream use
       localStorage.setItem("appSquadEnrollment", JSON.stringify({
         firstName: form.firstName,
         lastName: form.lastName,
         email: normalizedEmail,
-        phone: form.phone,
         company: form.company,
-        country: form.country,
-        businessType: form.businessType,
-        preferredContact: form.preferredContact,
         selectedPlan,
       }));
       localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
+      localStorage.setItem("appSquadEnrollmentName", `${form.firstName} ${form.lastName}`.trim());
 
       // Step D: proceed to plan selection
       setStep(2);
@@ -417,7 +291,6 @@ export default function Enrollment() {
           firstName: form.firstName,
           lastName: form.lastName,
           email: normalizedEmail,
-          phone: form.phone,
           selectedPlan,
           planName: plan.name,
           planTag: plan.tag,
@@ -553,37 +426,9 @@ export default function Enrollment() {
                   <InputField label="Email Address" type="email" value={form.email}
                     onChange={v => { setForm(f => ({ ...f, email: v })); setFormError(""); }}
                     placeholder="you@example.com" required />
-                  <InputField label="Phone Number" type="tel" value={form.phone}
-                    onChange={v => { setForm(f => ({ ...f, phone: v })); setFormError(""); }}
-                    placeholder="+1 (555) 000-0000" required />
-
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <InputField label="Company Name (optional)" value={form.company}
-                      onChange={v => setForm(f => ({ ...f, company: v }))}
-                      placeholder="Your company name" />
-                    <InputField label="Country" value={form.country}
-                      onChange={v => { setForm(f => ({ ...f, country: v })); setFormError(""); }}
-                      placeholder="United States" required />
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <InputField label="Business Type" value={form.businessType}
-                      onChange={v => { setForm(f => ({ ...f, businessType: v })); setFormError(""); }}
-                      placeholder="e.g. E-commerce, Agency…" required />
-                    <SelectField
-                      label="Preferred Contact"
-                      value={form.preferredContact}
-                      onChange={v => setForm(f => ({ ...f, preferredContact: v }))}
-                      options={CONTACT_OPTIONS}
-                      placeholder="Select one…"
-                    />
-                  </div>
-
-                  <DocumentUploadField
-                    file={docFile}
-                    onFile={f => { setDocFile(f); setFormError(""); }}
-                    required
-                  />
+                  <InputField label="Business Name" value={form.company}
+                    onChange={v => { setForm(f => ({ ...f, company: v })); setFormError(""); }}
+                    placeholder="Your business name" required />
 
                   {formError && (
                     <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
