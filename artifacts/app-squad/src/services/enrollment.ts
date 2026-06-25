@@ -9,6 +9,9 @@ export interface EnrollmentRecord {
   email: string;
   phone?: string;
   company_name?: string;
+  country?: string;
+  business_type?: string;
+  preferred_contact?: string;
   onboarding_status?: string;
   payment_status?: string;
   password_created?: boolean;
@@ -16,6 +19,51 @@ export interface EnrollmentRecord {
   customization_completed?: boolean;
   dashboard_completed?: boolean;
   selected_package?: string;
+  document_name?: string;
+  document_url?: string;
+}
+
+// ── Upload document to Supabase Storage ───────────────────────────────────────
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(",")[1] ?? "");
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+export async function uploadDocument(
+  file: File,
+  email: string,
+): Promise<{ ok: boolean; documentName?: string; documentUrl?: string; error?: string }> {
+  try {
+    const base64 = await fileToBase64(file);
+    const res = await fetch(`${BASE}/upload-document`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        fileName: file.name,
+        mimeType: file.type,
+        base64,
+      }),
+    });
+    const json = (await res.json()) as {
+      ok?: boolean;
+      documentName?: string;
+      documentUrl?: string;
+      error?: string;
+      skipped?: boolean;
+    };
+    if (json.skipped) return { ok: true, documentName: file.name, documentUrl: "" };
+    return { ok: !!json.ok, documentName: json.documentName, documentUrl: json.documentUrl, error: json.error };
+  } catch {
+    return { ok: false, error: "Unable to upload document." };
+  }
 }
 
 // ── Init (Step 1 submit — insert or upsert) ───────────────────────────────────
@@ -24,6 +72,11 @@ export async function initEnrollment(data: {
   email: string;
   phone: string;
   companyName?: string;
+  country?: string;
+  businessType?: string;
+  preferredContact?: string;
+  documentName?: string;
+  documentUrl?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
     const res = await fetch(`${BASE}/init`, {

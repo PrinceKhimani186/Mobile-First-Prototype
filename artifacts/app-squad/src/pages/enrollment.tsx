@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   Zap, ArrowRight, CheckCircle2, User, Mail, Phone,
   ChevronRight, Loader2, AlertCircle, X, Sparkles, Crown, Rocket,
+  Upload, FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { initEnrollment, updatePackage } from "@/services/enrollment";
+import { initEnrollment, uploadDocument, updatePackage } from "@/services/enrollment";
 
 // ── Plan definitions ─────────────────────────────────────────────────────────
 const PLANS = [
@@ -74,6 +75,9 @@ interface FormData {
   email: string;
   phone: string;
   company: string;
+  country: string;
+  businessType: string;
+  preferredContact: string;
 }
 
 const inputBase: React.CSSProperties = {
@@ -88,6 +92,17 @@ const inputBase: React.CSSProperties = {
   outline: "none",
   boxSizing: "border-box",
   transition: "border-color 0.2s",
+};
+
+const selectBase: React.CSSProperties = {
+  ...inputBase,
+  appearance: "none" as const,
+  WebkitAppearance: "none" as const,
+  cursor: "pointer",
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.35)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
+  backgroundRepeat: "no-repeat",
+  backgroundPosition: "right 12px center",
+  paddingRight: 36,
 };
 
 function InputField({
@@ -123,22 +138,163 @@ function InputField({
   );
 }
 
+function SelectField({
+  label, value, onChange, options, placeholder, required,
+}: {
+  label: string; value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder: string;
+  required?: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div>
+      <label style={{
+        display: "block", fontFamily: "'Inter'", fontSize: 11, fontWeight: 600,
+        letterSpacing: "0.07em", textTransform: "uppercase",
+        color: "rgba(255,255,255,0.35)", marginBottom: 7,
+      }}>
+        {label}{required && <span style={{ color: "hsl(35 90% 60%)", marginLeft: 3 }}>*</span>}
+      </label>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        required={required}
+        style={{
+          ...selectBase,
+          borderColor: focused ? "hsl(35 90% 55% / 0.5)" : "rgba(255,255,255,0.1)",
+        }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+      >
+        <option value="" disabled style={{ background: "#0a0a0f", color: "rgba(255,255,255,0.4)" }}>
+          {placeholder}
+        </option>
+        {options.map(opt => (
+          <option key={opt} value={opt} style={{ background: "#0a0a0f", color: "rgba(255,255,255,0.9)" }}>
+            {opt}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function DocumentUploadField({
+  file, onFile, required,
+}: {
+  file: File | null;
+  onFile: (f: File | null) => void;
+  required?: boolean;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  function handleFileChange(f: File | null) {
+    if (f) onFile(f);
+  }
+
+  return (
+    <div>
+      <label style={{
+        display: "block", fontFamily: "'Inter'", fontSize: 11, fontWeight: 600,
+        letterSpacing: "0.07em", textTransform: "uppercase",
+        color: "rgba(255,255,255,0.35)", marginBottom: 7,
+      }}>
+        Required Document{required && <span style={{ color: "hsl(35 90% 60%)", marginLeft: 3 }}>*</span>}
+      </label>
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+        style={{ display: "none" }}
+        onChange={e => handleFileChange(e.target.files?.[0] ?? null)}
+      />
+      <div
+        onClick={() => fileRef.current?.click()}
+        onDragOver={e => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={e => {
+          e.preventDefault();
+          setDragging(false);
+          handleFileChange(e.dataTransfer.files?.[0] ?? null);
+        }}
+        style={{
+          borderRadius: 10,
+          padding: "16px 14px",
+          border: `1px dashed ${dragging ? "hsl(35 90% 55% / 0.7)" : file ? "hsl(35 90% 55% / 0.4)" : "rgba(255,255,255,0.15)"}`,
+          background: dragging
+            ? "hsl(35 90% 55% / 0.06)"
+            : file
+            ? "hsl(35 90% 55% / 0.04)"
+            : "rgba(255,255,255,0.02)",
+          cursor: "pointer",
+          transition: "all 0.2s",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        {file ? (
+          <>
+            <FileText style={{ width: 18, height: 18, color: "hsl(35 90% 62%)", flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(35 90% 68%)", margin: 0, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {file.name}
+              </p>
+              <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "rgba(255,255,255,0.3)", margin: "2px 0 0" }}>
+                {(file.size / 1024).toFixed(0)} KB — click to change
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); onFile(null); if (fileRef.current) fileRef.current.value = ""; }}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", padding: 2, display: "flex" }}
+            >
+              <X style={{ width: 14, height: 14 }} />
+            </button>
+          </>
+        ) : (
+          <>
+            <Upload style={{ width: 18, height: 18, color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+            <div>
+              <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "rgba(255,255,255,0.5)", margin: 0 }}>
+                Click or drag & drop to upload
+              </p>
+              <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "rgba(255,255,255,0.25)", margin: "3px 0 0" }}>
+                PDF, Word, JPG, PNG (max 10 MB)
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const CONTACT_OPTIONS = ["Email", "Phone", "WhatsApp"];
+
 export default function Enrollment() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [form, setForm] = useState<FormData>({ firstName: "", lastName: "", email: "", phone: "", company: "" });
+  const [form, setForm] = useState<FormData>({
+    firstName: "", lastName: "", email: "", phone: "",
+    company: "", country: "", businessType: "", preferredContact: "",
+  });
+  const [docFile, setDocFile] = useState<File | null>(null);
   const [formError, setFormError] = useState("");
+  const [submittingStep1, setSubmittingStep1] = useState(false);
+
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
 
-  // Handle ?plan= pre-selection and payment=cancelled
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
-    // Pre-select plan — stay on Step 1 so user fills contact info first
     const planParam = params.get("plan");
     if (planParam) {
       const planMap: Record<string, PlanId> = {
@@ -158,7 +314,6 @@ export default function Enrollment() {
       });
     }
 
-    // Clean up query params without a page reload
     if (params.has("plan") || params.has("payment")) {
       window.history.replaceState({}, "", window.location.pathname);
     }
@@ -170,35 +325,73 @@ export default function Enrollment() {
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRe.test(form.email)) return "Please enter a valid email address.";
     if (!form.phone.trim()) return "Phone number is required.";
+    if (!form.country.trim()) return "Country is required.";
+    if (!form.businessType.trim()) return "Business type is required.";
+    if (!docFile) return "Please upload your required document.";
     return "";
   }
 
-  function handleStep1Submit(e: React.FormEvent) {
+  async function handleStep1Submit(e: React.FormEvent) {
     e.preventDefault();
     const err = validateStep1();
     if (err) { setFormError(err); return; }
     setFormError("");
+    setSubmittingStep1(true);
 
-    // Save contact info + selected plan for the session
-    localStorage.setItem("appSquadEnrollment", JSON.stringify({
-      firstName: form.firstName,
-      lastName: form.lastName,
-      email: form.email,
-      phone: form.phone,
-      company: form.company,
-      selectedPlan,
-    }));
+    try {
+      const normalizedEmail = form.email.trim().toLowerCase();
 
-    // Persist to Supabase (non-blocking — does not gate the UI)
-    initEnrollment({
-      fullName: `${form.firstName} ${form.lastName}`.trim(),
-      email: form.email,
-      phone: form.phone,
-      companyName: form.company,
-    }).catch(() => {/* graceful — Supabase may not be configured yet */});
+      // Step A: upload document (blocking — must succeed before saving)
+      let documentName = "";
+      let documentUrl = "";
+      if (docFile) {
+        const uploadResult = await uploadDocument(docFile, normalizedEmail);
+        if (!uploadResult.ok) {
+          setFormError(uploadResult.error ?? "Unable to upload document.");
+          return;
+        }
+        documentName = uploadResult.documentName ?? docFile.name;
+        documentUrl = uploadResult.documentUrl ?? "";
+      }
 
-    setStep(2);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+      // Step B: save to Supabase (blocking — must succeed before proceeding)
+      const saveResult = await initEnrollment({
+        fullName: `${form.firstName} ${form.lastName}`.trim(),
+        email: normalizedEmail,
+        phone: form.phone,
+        companyName: form.company,
+        country: form.country,
+        businessType: form.businessType,
+        preferredContact: form.preferredContact,
+        documentName,
+        documentUrl,
+      });
+
+      if (!saveResult.ok) {
+        setFormError(saveResult.error ?? "Unable to save your information.");
+        return;
+      }
+
+      // Step C: save session data for downstream use
+      localStorage.setItem("appSquadEnrollment", JSON.stringify({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: normalizedEmail,
+        phone: form.phone,
+        company: form.company,
+        country: form.country,
+        businessType: form.businessType,
+        preferredContact: form.preferredContact,
+        selectedPlan,
+      }));
+      localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
+
+      // Step D: proceed to plan selection
+      setStep(2);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } finally {
+      setSubmittingStep1(false);
+    }
   }
 
   async function handleEnroll() {
@@ -208,11 +401,14 @@ export default function Enrollment() {
     setCheckoutError("");
 
     try {
+      const normalizedEmail = form.email.trim().toLowerCase();
       const origin = window.location.origin;
       const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
-      // Store email so /set-password can prefill it after Stripe redirects back
-      localStorage.setItem("appSquadEnrollmentEmail", form.email);
+      // Save selected plan to Supabase (non-blocking — Stripe webhook is source of truth)
+      updatePackage(normalizedEmail, selectedPlan).catch(() => {});
+
+      localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
 
       const res = await fetch("/api/enrollment/checkout", {
         method: "POST",
@@ -220,7 +416,7 @@ export default function Enrollment() {
         body: JSON.stringify({
           firstName: form.firstName,
           lastName: form.lastName,
-          email: form.email,
+          email: normalizedEmail,
           phone: form.phone,
           selectedPlan,
           planName: plan.name,
@@ -360,9 +556,34 @@ export default function Enrollment() {
                   <InputField label="Phone Number" type="tel" value={form.phone}
                     onChange={v => { setForm(f => ({ ...f, phone: v })); setFormError(""); }}
                     placeholder="+1 (555) 000-0000" required />
-                  <InputField label="Company Name (optional)" value={form.company}
-                    onChange={v => setForm(f => ({ ...f, company: v }))}
-                    placeholder="Your company or business name" />
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <InputField label="Company Name (optional)" value={form.company}
+                      onChange={v => setForm(f => ({ ...f, company: v }))}
+                      placeholder="Your company name" />
+                    <InputField label="Country" value={form.country}
+                      onChange={v => { setForm(f => ({ ...f, country: v })); setFormError(""); }}
+                      placeholder="United States" required />
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <InputField label="Business Type" value={form.businessType}
+                      onChange={v => { setForm(f => ({ ...f, businessType: v })); setFormError(""); }}
+                      placeholder="e.g. E-commerce, Agency…" required />
+                    <SelectField
+                      label="Preferred Contact"
+                      value={form.preferredContact}
+                      onChange={v => setForm(f => ({ ...f, preferredContact: v }))}
+                      options={CONTACT_OPTIONS}
+                      placeholder="Select one…"
+                    />
+                  </div>
+
+                  <DocumentUploadField
+                    file={docFile}
+                    onFile={f => { setDocFile(f); setFormError(""); }}
+                    required
+                  />
 
                   {formError && (
                     <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
@@ -379,16 +600,29 @@ export default function Enrollment() {
                   )}
 
                   <button type="submit"
+                    disabled={submittingStep1}
                     style={{
                       width: "100%", height: 50, borderRadius: 14, border: "none",
-                      background: "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))",
+                      background: submittingStep1
+                        ? "hsl(35 90% 55% / 0.4)"
+                        : "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))",
                       color: "white", fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 600,
-                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: submittingStep1 ? "not-allowed" : "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
                       gap: 8, marginTop: 4,
                     }}
                   >
-                    Continue to Plan Selection
-                    <ArrowRight style={{ width: 15, height: 15 }} />
+                    {submittingStep1 ? (
+                      <>
+                        <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} />
+                        Saving…
+                      </>
+                    ) : (
+                      <>
+                        Continue to Plan Selection
+                        <ArrowRight style={{ width: 15, height: 15 }} />
+                      </>
+                    )}
                   </button>
                 </form>
               </div>
@@ -452,7 +686,6 @@ export default function Enrollment() {
                         </div>
                       )}
 
-                      {/* Selected check */}
                       {isSelected && (
                         <div style={{
                           position: "absolute", top: 14, right: 14,
@@ -501,7 +734,6 @@ export default function Enrollment() {
                 })}
               </div>
 
-              {/* Error */}
               {checkoutError && (
                 <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
                   style={{
@@ -519,7 +751,6 @@ export default function Enrollment() {
                 </motion.div>
               )}
 
-              {/* CTA row */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => { setStep(1); setSelectedPlan(null); setCheckoutError(""); }}
@@ -546,42 +777,28 @@ export default function Enrollment() {
                     color: selectedPlan && !loading ? "white" : "rgba(255,255,255,0.3)",
                     fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 600,
                     cursor: selectedPlan && !loading ? "pointer" : "not-allowed",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    transition: "all 0.2s",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    gap: 8, transition: "all 0.2s",
                   }}
                 >
                   {loading ? (
                     <>
                       <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} />
-                      Preparing Checkout…
+                      Redirecting…
                     </>
                   ) : (
                     <>
-                      {selectedPlan
-                        ? `Enroll in ${PLANS.find(p => p.id === selectedPlan)?.name}`
-                        : "Select a Plan to Continue"}
+                      {selectedPlan ? `Proceed with ${PLANS.find(p => p.id === selectedPlan)!.name}` : "Select a Plan to Continue"}
                       {selectedPlan && <ArrowRight style={{ width: 15, height: 15 }} />}
                     </>
                   )}
                 </button>
               </div>
-
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                marginTop: 20,
-              }}>
-                <span style={{ fontSize: 11, color: "hsl(218 16% 32%)", fontFamily: "'Inter'" }}>
-                  🔒 Secure checkout powered by Stripe. Cancel any time.
-                </span>
-              </div>
             </motion.div>
           )}
+
         </AnimatePresence>
       </div>
-
-      <style>{`
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 }

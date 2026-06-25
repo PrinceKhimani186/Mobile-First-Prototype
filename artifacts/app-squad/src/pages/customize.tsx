@@ -206,8 +206,9 @@ export default function Customize() {
       source,
     });
 
-    // Track progress in Supabase (non-fatal)
+    // Track progress in Supabase (non-fatal) and cache flag locally
     if (email) markCustomizationCompleted(email).catch(() => {/* graceful */});
+    localStorage.setItem("appSquadCustomizationCompleted", "true");
 
     navigate("/onboarding/dashboard");
     window.scrollTo({ top: 0 });

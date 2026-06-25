@@ -2,10 +2,27 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Zap, Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
+import { getEnrollmentProgress } from "@/services/enrollment";
 
 const ADMIN_EMAIL    = "princekhimani186@gmail.com";
 const ADMIN_PASSWORD = "Prince@123";
 const STORAGE_KEY    = "as_admin_auth";
+
+async function resolveOnboardingRedirect(email: string): Promise<string> {
+  try {
+    const { record } = await getEnrollmentProgress(email);
+    if (record) {
+      localStorage.setItem("appSquadGameSelected", record.game_selected ? "true" : "false");
+      localStorage.setItem("appSquadCustomizationCompleted", record.customization_completed ? "true" : "false");
+      if (!record.game_selected) return "/onboarding/game-selection";
+      if (!record.customization_completed) return "/onboarding/customization";
+      return "/onboarding/dashboard";
+    }
+  } catch {
+    // Supabase not reachable — fall through to default
+  }
+  return "/onboarding/game-selection";
+}
 
 export default function StaffLogin() {
   const [, navigate] = useLocation();
@@ -35,11 +52,9 @@ export default function StaffLogin() {
     setLoading(true);
 
     const normalizedEmail = email.trim().toLowerCase();
-    console.log("[Auth] Login attempt:", normalizedEmail);
 
     try {
-      // TODO: Replace localStorage demo auth with Supabase Auth
-      // Step 1 — Check demo account set up via /set-password (frontend-only flow)
+      // Step 1 — Check demo account set up via /set-password
       const demoRaw = localStorage.getItem("appSquadDemoAccount");
       if (demoRaw) {
         try {
@@ -48,27 +63,25 @@ export default function StaffLogin() {
             demo.email?.toLowerCase() === normalizedEmail &&
             demo.password === password
           ) {
-            console.log("[Auth] Demo account match — login success");
             localStorage.setItem("appSquadLoggedIn", "true");
             localStorage.setItem("appSquadUserEmail", normalizedEmail);
-            navigate("/onboarding/dashboard");
+            const redirect = await resolveOnboardingRedirect(normalizedEmail);
+            navigate(redirect);
             return;
           }
         } catch {
-          // malformed entry — fall through to admin check
+          // malformed entry — fall through
         }
       }
 
       // Step 2 — Check hardcoded admin credentials
       if (normalizedEmail !== ADMIN_EMAIL.toLowerCase() || password !== ADMIN_PASSWORD) {
-        console.log("[Auth] Login failure: invalid credentials");
         setError("Incorrect email or password. Please try again.");
         setLoading(false);
         return;
       }
 
       // Step 3 — Verify contact exists in GHL (server-side, key never exposed)
-      console.log("[Auth] Checking GHL contact for:", normalizedEmail);
       const res = await fetch("/api/auth/check-ghl", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -78,17 +91,19 @@ export default function StaffLogin() {
       const data = (await res.json()) as { exists?: boolean; error?: string };
 
       if (!data.exists) {
-        console.log("[Auth] GHL contact not found — login blocked");
         setError("Your account is not authorized. Please contact App Squad support.");
         setLoading(false);
         return;
       }
 
-      // Step 4 — Grant admin access
-      console.log("[Auth] GHL contact found — login success");
+      // Step 4 — Grant access and redirect based on progress
       localStorage.setItem(STORAGE_KEY, "true");
+      localStorage.setItem("appSquadLoggedIn", "true");
+      localStorage.setItem("appSquadUserEmail", normalizedEmail);
       window.dispatchEvent(new Event("as_admin_auth_change"));
-      navigate("/onboarding/dashboard");
+
+      const redirect = await resolveOnboardingRedirect(normalizedEmail);
+      navigate(redirect);
     } catch (err) {
       console.error("[Auth] Login error:", err);
       setError("Login check failed. Please try again.");

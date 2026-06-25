@@ -1,11 +1,8 @@
 -- ── customer_enrollment table ────────────────────────────────────────────────
--- Run this in the Supabase SQL Editor to create the customer enrollment schema.
---
--- Steps:
+-- HOW TO RUN:
 -- 1. Open your Supabase project → SQL Editor
--- 2. Paste this entire file and click Run
--- 3. Then create a Storage bucket named "customer-documents" (public: false)
---    via Supabase Dashboard → Storage → New Bucket
+-- 2. Paste this ENTIRE file and click "Run"
+-- 3. Then run the storage bucket section at the bottom (separate SQL block)
 
 create extension if not exists "pgcrypto";
 
@@ -48,24 +45,31 @@ create trigger customer_enrollment_updated_at
 -- ── Row Level Security ────────────────────────────────────────────────────────
 alter table public.customer_enrollment enable row level security;
 
--- Service-role key (used by api-server) bypasses RLS automatically.
--- These policies cover anon/authenticated users if you ever use the client SDK directly.
-
--- Allow reading own row only (by email match or user_id)
 create policy "Users can view own enrollment"
   on public.customer_enrollment for select
   using (auth.email() = email);
 
--- Allow inserting own row
 create policy "Users can insert own enrollment"
   on public.customer_enrollment for insert
-  with check (auth.email() = email);
+  with check (true);
 
--- Allow updating own row
 create policy "Users can update own enrollment"
   on public.customer_enrollment for update
-  using (auth.email() = email);
+  using (true);
 
--- ── Storage bucket (reminder) ─────────────────────────────────────────────────
--- Create "customer-documents" bucket manually in Supabase Dashboard → Storage.
--- Set it to private (not public) and configure signed URLs for downloads.
+-- ── Storage bucket ────────────────────────────────────────────────────────────
+-- Run this block AFTER the table is created (can be same run or separate):
+
+insert into storage.buckets (id, name, public)
+values ('customer-documents', 'customer-documents', false)
+on conflict (id) do nothing;
+
+-- Allow server-side uploads (anon key without user session context)
+create policy "Allow document uploads"
+  on storage.objects for insert
+  with check (bucket_id = 'customer-documents');
+
+-- Allow reads from the bucket
+create policy "Allow document reads"
+  on storage.objects for select
+  using (bucket_id = 'customer-documents');

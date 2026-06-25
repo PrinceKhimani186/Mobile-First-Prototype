@@ -764,8 +764,9 @@ export default function GameSelection() {
       source,
     });
 
-    // Track progress in Supabase (non-fatal)
+    // Track progress in Supabase (non-fatal) and cache flag locally
     if (email) markGameSelected(email).catch(() => {/* graceful */});
+    localStorage.setItem("appSquadGameSelected", "true");
 
     navigate("/onboarding/customization");
     window.scrollTo({ top: 0 });

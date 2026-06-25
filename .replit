@@ -48,6 +48,8 @@ externalPort = 3002
 [userenv.shared]
 MONDAY_API_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjY3MzYyODg1MywiYWFpIjoxMSwidWlkIjoxMDU2MDY1MDcsImlhZCI6IjIwMjYtMDYtMjJUMDg6MzA6MDYuMTc0WiIsInBlciI6Im1lOndyaXRlIiwiYWN0aWQiOjM1NTU2NTAyLCJyZ24iOiJ1c2UxIn0.RmmObbUicQeE7wRoFkEjP2XbbYF1itVBxowWn5F5WJc"
 STRIPE_WEBHOOK_SECRET = "whsec_I63yeVDtyIooFqtOLpl497A55zFF6Q8G"
+SUPABASE_URL = "support@appsquadinc.com"
+SUPABASE_ANON_KEY = "Famous41510$"
 
 [userenv.development]
 MONDAY_BOARD_ID = "18417329698"

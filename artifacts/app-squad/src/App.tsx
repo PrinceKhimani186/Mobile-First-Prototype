@@ -27,14 +27,42 @@ import SetPassword from "@/pages/set-password";
 
 const queryClient = new QueryClient();
 
-// ── Route protection for onboarding routes ─────────────────────────────────────
-// Checks localStorage "appSquadLoggedIn" flag set by the login page.
-// If not authenticated, redirects to /login.
-function RequireAuth({ component: Component }: { component: React.ComponentType }) {
-  const isLoggedIn = typeof window !== "undefined" && localStorage.getItem("appSquadLoggedIn") === "true";
-  if (!isLoggedIn) {
-    return <Redirect to="/login" />;
-  }
+// ── Auth + ordered route protection ─────────────────────────────────────────
+// Reads cached flags written to localStorage on login (from Supabase progress).
+function isLoggedIn() {
+  if (typeof window === "undefined") return false;
+  return (
+    localStorage.getItem("appSquadLoggedIn") === "true" ||
+    localStorage.getItem("as_admin_auth") === "true"
+  );
+}
+
+function gameSelected() {
+  return localStorage.getItem("appSquadGameSelected") === "true";
+}
+
+function customizationCompleted() {
+  return localStorage.getItem("appSquadCustomizationCompleted") === "true";
+}
+
+// /onboarding/game-selection — requires auth only
+function RequireGameSelection({ component: Component }: { component: React.ComponentType }) {
+  if (!isLoggedIn()) return <Redirect to="/login" />;
+  return <Component />;
+}
+
+// /onboarding/customization — requires auth + game selected
+function RequireCustomization({ component: Component }: { component: React.ComponentType }) {
+  if (!isLoggedIn()) return <Redirect to="/login" />;
+  if (!gameSelected()) return <Redirect to="/onboarding/game-selection" />;
+  return <Component />;
+}
+
+// /onboarding/dashboard — requires auth + game selected + customization completed
+function RequireDashboard({ component: Component }: { component: React.ComponentType }) {
+  if (!isLoggedIn()) return <Redirect to="/login" />;
+  if (!gameSelected()) return <Redirect to="/onboarding/game-selection" />;
+  if (!customizationCompleted()) return <Redirect to="/onboarding/customization" />;
   return <Component />;
 }
 
@@ -62,14 +90,15 @@ function AppShell() {
           {/* Hidden post-enrollment */}
           <Route path="/enrollment" component={Enrollment} />
           <Route path="/onboarding/access" component={OnboardingAccess} />
+          {/* Protected onboarding — ordered */}
           <Route path="/onboarding/game-selection">
-            {() => <RequireAuth component={GameSelection} />}
+            {() => <RequireGameSelection component={GameSelection} />}
           </Route>
           <Route path="/onboarding/customization">
-            {() => <RequireAuth component={Customize} />}
+            {() => <RequireCustomization component={Customize} />}
           </Route>
           <Route path="/onboarding/dashboard">
-            {() => <RequireAuth component={Dashboard} />}
+            {() => <RequireDashboard component={Dashboard} />}
           </Route>
           {/* Post-payment account setup */}
           <Route path="/set-password" component={SetPassword} />
