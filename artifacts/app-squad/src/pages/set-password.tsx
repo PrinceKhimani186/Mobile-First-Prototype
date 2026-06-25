@@ -78,13 +78,33 @@ export default function SetPassword() {
     try {
       const normalizedEmail = email.trim().toLowerCase();
 
-      // Track payment paid + password created in Supabase (non-fatal if not configured)
+      // Save credentials to Supabase (primary store)
+      try {
+        const saveRes = await fetch("/api/auth/save-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            password,
+            fullName: localStorage.getItem("appSquadEnrollmentName") ?? undefined,
+          }),
+        });
+        if (!saveRes.ok) {
+          const err = await saveRes.json().catch(() => ({})) as { error?: string };
+          throw new Error(err.error ?? "Failed to save password");
+        }
+      } catch (err) {
+        // If Supabase is unreachable fall back to localStorage only
+        console.warn("[Auth] save-password API failed, using localStorage fallback:", err);
+      }
+
+      // Track payment paid + password created in Supabase enrollment record (non-fatal)
       if (fromPayment) {
         markPaymentPaid(normalizedEmail).catch(() => {/* graceful */});
       }
       markPasswordCreated(normalizedEmail).catch(() => {/* graceful */});
 
-      // Store credentials in localStorage so /login can verify them
+      // Keep localStorage as offline/fallback credential store
       localStorage.setItem(
         "appSquadDemoAccount",
         JSON.stringify({
@@ -103,8 +123,8 @@ export default function SetPassword() {
       setTimeout(() => {
         navigate("/login");
       }, 2200);
-    } catch {
-      setErrors({ password: "Something went wrong. Please try again." });
+    } catch (err) {
+      setErrors({ password: (err as Error).message || "Something went wrong. Please try again." });
     } finally {
       setLoading(false);
     }

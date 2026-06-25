@@ -54,7 +54,39 @@ export default function StaffLogin() {
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      // Step 1 — Check demo account set up via /set-password
+      // Step 1 — Check Supabase credentials (primary auth store)
+      const supabaseRes = await fetch("/api/auth/verify-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, password }),
+      }).catch(() => null);
+
+      if (supabaseRes?.ok) {
+        const supabaseData = await supabaseRes.json() as {
+          ok: boolean; skipped?: boolean; role?: string; reason?: string;
+        };
+        if (supabaseData.ok) {
+          // Supabase confirmed credentials — grant access
+          localStorage.setItem("appSquadLoggedIn", "true");
+          localStorage.setItem("appSquadUserEmail", normalizedEmail);
+          if (supabaseData.role === "admin") {
+            localStorage.setItem(STORAGE_KEY, "true");
+            window.dispatchEvent(new Event("as_admin_auth_change"));
+          }
+          const redirect = await resolveOnboardingRedirect(normalizedEmail);
+          navigate(redirect);
+          return;
+        }
+        if (!supabaseData.skipped && supabaseData.reason !== undefined) {
+          // Supabase is configured and explicitly rejected — don't fall through
+          setError("Incorrect email or password. Please try again.");
+          setLoading(false);
+          return;
+        }
+        // skipped = Supabase not configured yet — fall through to legacy checks
+      }
+
+      // Step 2 — Legacy: check localStorage credentials (set before Supabase was configured)
       const demoRaw = localStorage.getItem("appSquadDemoAccount");
       if (demoRaw) {
         try {
@@ -74,29 +106,28 @@ export default function StaffLogin() {
         }
       }
 
-      // Step 2 — Check hardcoded admin credentials
+      // Step 3 — Admin hardcoded credentials + GHL verification
       if (normalizedEmail !== ADMIN_EMAIL.toLowerCase() || password !== ADMIN_PASSWORD) {
         setError("Incorrect email or password. Please try again.");
         setLoading(false);
         return;
       }
 
-      // Step 3 — Verify contact exists in GHL (server-side, key never exposed)
-      const res = await fetch("/api/auth/check-ghl", {
+      const ghlRes = await fetch("/api/auth/check-ghl", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: normalizedEmail }),
       });
 
-      const data = (await res.json()) as { exists?: boolean; error?: string };
+      const ghlData = (await ghlRes.json()) as { exists?: boolean; error?: string };
 
-      if (!data.exists) {
+      if (!ghlData.exists) {
         setError("Your account is not authorized. Please contact App Squad support.");
         setLoading(false);
         return;
       }
 
-      // Step 4 — Grant access and redirect based on progress
+      // Grant admin access
       localStorage.setItem(STORAGE_KEY, "true");
       localStorage.setItem("appSquadLoggedIn", "true");
       localStorage.setItem("appSquadUserEmail", normalizedEmail);
