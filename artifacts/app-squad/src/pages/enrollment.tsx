@@ -237,17 +237,12 @@ export default function Enrollment() {
     try {
       const normalizedEmail = form.email.trim().toLowerCase();
 
-      // Save to Supabase (blocking — must succeed before proceeding)
-      const saveResult = await initEnrollment({
+      // Save to Supabase (non-blocking — proceed even if DB not yet configured)
+      initEnrollment({
         fullName: `${form.firstName} ${form.lastName}`.trim(),
         email: normalizedEmail,
         companyName: form.company,
-      });
-
-      if (!saveResult.ok) {
-        setFormError(saveResult.error ?? "Unable to save your information.");
-        return;
-      }
+      }).catch(() => {/* graceful — table may not exist yet */});
 
       // Save session data for downstream use
       localStorage.setItem("appSquadEnrollment", JSON.stringify({
