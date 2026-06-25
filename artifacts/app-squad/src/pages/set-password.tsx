@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle, Lock } from "lucide-react";
 
-import { markPaymentPaid, markPasswordCreated } from "@/services/enrollment";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getQueryParam(key: string): string {
@@ -97,12 +96,6 @@ export default function SetPassword() {
         // If Supabase is unreachable fall back to localStorage only
         console.warn("[Auth] save-password API failed, using localStorage fallback:", err);
       }
-
-      // Track payment paid + password created in Supabase enrollment record (non-fatal)
-      if (fromPayment) {
-        markPaymentPaid(normalizedEmail).catch(() => {/* graceful */});
-      }
-      markPasswordCreated(normalizedEmail).catch(() => {/* graceful */});
 
       // Keep localStorage as offline/fallback credential store
       localStorage.setItem(

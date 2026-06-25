@@ -6,3 +6,9 @@ id = "PVIQDI0I0_9--y2_G-FXO"
 uri = "file://app-squad-monday-tasks.csv"
 type = "table"
 title = "App Squad — Monday.com Import (11 Tasks)"
+
+[[outputs]]
+id = "Yk7G1oLY9LsKnbV7z2jO9"
+uri = "file://app-squad-export.tar.gz"
+type = "unspecified"
+title = "App Squad — Full Project Export (63 MB)"

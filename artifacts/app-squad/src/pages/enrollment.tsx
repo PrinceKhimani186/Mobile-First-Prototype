@@ -6,7 +6,6 @@ import {
   ChevronRight, Loader2, AlertCircle, X, Sparkles, Crown, Rocket,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { initEnrollment, updatePackage } from "@/services/enrollment";
 
 // ── Plan definitions ─────────────────────────────────────────────────────────
 const PLANS = [
@@ -237,13 +236,6 @@ export default function Enrollment() {
     try {
       const normalizedEmail = form.email.trim().toLowerCase();
 
-      // Save to Supabase (non-blocking — proceed even if DB not yet configured)
-      initEnrollment({
-        fullName: `${form.firstName} ${form.lastName}`.trim(),
-        email: normalizedEmail,
-        companyName: form.company,
-      }).catch(() => {/* graceful — table may not exist yet */});
-
       // Save session data for downstream use
       localStorage.setItem("appSquadEnrollment", JSON.stringify({
         firstName: form.firstName,
@@ -273,9 +265,6 @@ export default function Enrollment() {
       const normalizedEmail = form.email.trim().toLowerCase();
       const origin = window.location.origin;
       const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
-
-      // Save selected plan to Supabase (non-blocking — Stripe webhook is source of truth)
-      updatePackage(normalizedEmail, selectedPlan).catch(() => {});
 
       localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
 
