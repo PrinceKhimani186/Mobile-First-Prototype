@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sendGameSelectionToCRM } from "@/lib/crm";
+import { markGameSelected } from "@/services/enrollment";
 
 interface Game {
   id: string;
@@ -762,6 +763,9 @@ export default function GameSelection() {
       templateName: selectedGame.name,
       source,
     });
+
+    // Track progress in Supabase (non-fatal)
+    if (email) markGameSelected(email).catch(() => {/* graceful */});
 
     navigate("/onboarding/customization");
     window.scrollTo({ top: 0 });

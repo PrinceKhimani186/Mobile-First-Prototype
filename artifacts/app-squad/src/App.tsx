@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,6 +27,17 @@ import SetPassword from "@/pages/set-password";
 
 const queryClient = new QueryClient();
 
+// ── Route protection for onboarding routes ─────────────────────────────────────
+// Checks localStorage "appSquadLoggedIn" flag set by the login page.
+// If not authenticated, redirects to /login.
+function RequireAuth({ component: Component }: { component: React.ComponentType }) {
+  const isLoggedIn = typeof window !== "undefined" && localStorage.getItem("appSquadLoggedIn") === "true";
+  if (!isLoggedIn) {
+    return <Redirect to="/login" />;
+  }
+  return <Component />;
+}
+
 function AppShell() {
   const [location] = useLocation();
   const isAdmin = location.startsWith("/admin");
@@ -51,9 +62,15 @@ function AppShell() {
           {/* Hidden post-enrollment */}
           <Route path="/enrollment" component={Enrollment} />
           <Route path="/onboarding/access" component={OnboardingAccess} />
-          <Route path="/onboarding/game-selection" component={GameSelection} />
-          <Route path="/onboarding/customization" component={Customize} />
-          <Route path="/onboarding/dashboard" component={Dashboard} />
+          <Route path="/onboarding/game-selection">
+            {() => <RequireAuth component={GameSelection} />}
+          </Route>
+          <Route path="/onboarding/customization">
+            {() => <RequireAuth component={Customize} />}
+          </Route>
+          <Route path="/onboarding/dashboard">
+            {() => <RequireAuth component={Dashboard} />}
+          </Route>
           {/* Post-payment account setup */}
           <Route path="/set-password" component={SetPassword} />
           {/* Staff login */}

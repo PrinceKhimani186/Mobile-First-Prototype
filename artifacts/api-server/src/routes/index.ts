@@ -6,6 +6,8 @@ import projectsRouter from "./projects";
 import mondayRouter from "./monday";
 import authRouter from "./auth";
 import enrollmentRouter from "./enrollment";
+import enrollmentSupabaseRouter from "./enrollment-supabase";
+import publishingRequirementsRouter from "./publishing-requirements";
 import debugRouter from "./debug";
 
 const router: IRouter = Router();
@@ -17,6 +19,8 @@ router.use(projectsRouter);
 router.use(mondayRouter);
 router.use(authRouter);
 router.use(enrollmentRouter);
+router.use(enrollmentSupabaseRouter);
+router.use(publishingRequirementsRouter);
 router.use(debugRouter);
 
 export default router;

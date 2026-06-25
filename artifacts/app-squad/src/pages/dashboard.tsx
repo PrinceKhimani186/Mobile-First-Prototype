@@ -574,7 +574,13 @@ export default function Dashboard() {
   }, [approvingFinal, clientName, email, customization, toast, refreshMondayData]);
 
   // ── Submit Publishing Requirements ────────────────────────────────────────
-  function submitPublishing() {
+  const [submittingPublishing, setSubmittingPublishing] = useState(false);
+
+  const submitPublishing = useCallback(async () => {
+    if (submittingPublishing) return;
+    setSubmittingPublishing(true);
+
+    const submittedAt = new Date().toISOString();
     const data: PublishingData = {
       publishApple: pubApple,
       appleAccountCreated: pubAppleCreated,
@@ -585,14 +591,48 @@ export default function Dashboard() {
       publishContactName: pubContactName || clientName,
       publishContactEmail: pubContactEmail || email,
       publishNotes: pubNotes,
-      submittedAt: new Date().toISOString(),
+      submittedAt,
     };
+
     setPublishingData(data);
     localStorage.setItem("as_publishing_data", JSON.stringify(data));
     setPublishingFormOpen(false);
+
+    try {
+      const res = await fetch("/api/publishing-requirements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          email,
+          clientName,
+          phone,
+          appName: customization?.appName ?? "",
+          publishApple: pubApple,
+          appleAccountCreated: pubAppleCreated,
+          appleEmail: pubAppleEmail,
+          publishGoogle: pubGoogle,
+          googleAccountCreated: pubGoogleCreated,
+          googleEmail: pubGoogleEmail,
+          publishContactName: pubContactName || clientName,
+          publishContactEmail: pubContactEmail || email,
+          publishNotes: pubNotes,
+          submittedAt,
+        }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(json.error ?? "Unable to save publishing requirements.");
+      toast({ title: "Publishing requirements saved successfully." });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast({ title: "Unable to save publishing requirements.", description: message, variant: "destructive" });
+    } finally {
+      setSubmittingPublishing(false);
+    }
+
     sendPublishingRequirementsToCRM({ ...data, clientName, email, phone });
     advanceTo("Store Submission");
-  }
+  }, [submittingPublishing, pubApple, pubAppleCreated, pubAppleEmail, pubGoogle, pubGoogleCreated, pubGoogleEmail, pubContactName, pubContactEmail, pubNotes, clientName, email, phone, customization, toast]);
 
   // ── Timeline — driven by /api/project-progress stages when available,
   //    falling back to Monday _items, then local projectStage ─────────────────

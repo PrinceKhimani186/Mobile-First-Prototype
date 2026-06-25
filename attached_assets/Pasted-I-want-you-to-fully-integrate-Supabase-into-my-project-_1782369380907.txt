@@ -1,0 +1,273 @@
+I want you to fully integrate Supabase into my project from scratch.
+
+Do not just create placeholder code. Set up the complete foundation so the application is ready for production.
+
+## Step 1 - Install Supabase
+
+Install the official Supabase JavaScript client.
+
+Configure the project using environment variables.
+
+Create the required environment variables:
+
+* SUPABASE_URL
+* SUPABASE_ANON_KEY
+
+Do not hardcode any keys.
+
+---
+
+## Step 2 - Create Supabase Client
+
+Create a reusable Supabase client.
+
+Use a single client instance throughout the project.
+
+Organize it in a clean folder structure.
+
+Example:
+
+* lib/supabase.ts
+  or
+* services/supabase.ts
+
+Use whichever matches the current project structure.
+
+---
+
+## Step 3 - Create Database Schema
+
+Generate SQL to create a table called:
+
+customer_enrollment
+
+Columns:
+
+* id (uuid, primary key)
+* full_name
+* email (unique)
+* phone
+* company_name
+* country
+* business_type
+* preferred_contact
+* selected_package
+* document_name
+* document_url
+* onboarding_status
+* payment_status
+* password_created (boolean)
+* game_selected (boolean)
+* customization_completed (boolean)
+* dashboard_completed (boolean)
+* created_at
+* updated_at
+
+Do NOT execute SQL automatically.
+
+Instead, generate a migration file or SQL file so I can run it inside the Supabase SQL Editor.
+
+---
+
+## Step 4 - Create Storage Bucket
+
+Create a Storage bucket named:
+
+customer-documents
+
+The application should upload documents into this bucket.
+
+Store only:
+
+* document name
+* public URL
+
+inside the database.
+
+Do not store file data inside PostgreSQL.
+
+---
+
+## Step 5 - Enrollment Form Integration
+
+When the user submits the Enrollment Form:
+
+Validate:
+
+* Full Name
+* Email
+* Phone
+* Company
+* Country
+* Business Type
+* Required Document
+
+Upload the document to:
+
+customer-documents
+
+After upload:
+
+Insert a row into:
+
+customer_enrollment
+
+Example values:
+
+onboarding_status = "enrollment_completed"
+
+payment_status = "pending"
+
+password_created = false
+
+game_selected = false
+
+customization_completed = false
+
+dashboard_completed = false
+
+selected_package = null
+
+Only continue if both:
+
+* Storage upload succeeds
+* Database insert succeeds
+
+---
+
+## Step 6 - Package Selection
+
+After successful enrollment:
+
+Redirect to:
+
+/enrollment?step=package
+
+Store the selected package in Supabase.
+
+Do NOT create another row.
+
+Update the existing customer using their email address.
+
+---
+
+## Step 7 - Stripe Payment
+
+After Stripe payment succeeds:
+
+Update:
+
+payment_status = "paid"
+
+Do NOT insert another customer.
+
+---
+
+## Step 8 - Password Setup
+
+After the customer creates a password:
+
+Update:
+
+password_created = true
+
+---
+
+## Step 9 - Login
+
+After login:
+
+Read the customer's onboarding progress from Supabase.
+
+Redirect based on:
+
+If game_selected = false
+
+→ /onboarding/game-selection
+
+Else if customization_completed = false
+
+→ /onboarding/customization
+
+Else
+
+→ /onboarding/dashboard
+
+---
+
+## Step 10 - Route Protection
+
+Prevent users from skipping onboarding.
+
+If they try opening the dashboard directly, redirect them to the first incomplete step.
+
+---
+
+## Step 11 - Row Level Security
+
+Enable Row Level Security.
+
+Generate policies so users can only access their own records using their authenticated email or user ID.
+
+Do not disable RLS.
+
+---
+
+## Step 12 - Error Handling
+
+If upload fails:
+
+Show:
+
+"Unable to upload your document."
+
+If database save fails:
+
+Show:
+
+"Unable to save your information."
+
+If Supabase connection fails:
+
+Show:
+
+"Unable to connect to the database."
+
+Never continue to the next page if any operation fails.
+
+---
+
+## Step 13 - Project Structure
+
+Organize the integration cleanly.
+
+Example:
+
+/lib
+supabase.ts
+
+/services
+enrollment.ts
+
+/hooks
+useEnrollment.ts
+
+Keep the code modular and production-ready.
+
+---
+
+## Step 14 - Important
+
+Do NOT change any existing UI, styling, colors, spacing, animations, or page layout.
+
+Only implement:
+
+* Supabase setup
+* Database integration
+* Storage integration
+* Validation
+* Route protection
+* Onboarding state management
+* Error handling
+
+Before writing code, check the current project structure and integrate Supabase in the cleanest way without breaking the existing application.

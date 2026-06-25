@@ -6,6 +6,7 @@ import {
   ChevronRight, Loader2, AlertCircle, X, Sparkles, Crown, Rocket,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { initEnrollment, updatePackage } from "@/services/enrollment";
 
 // ── Plan definitions ─────────────────────────────────────────────────────────
 const PLANS = [
@@ -187,6 +188,14 @@ export default function Enrollment() {
       company: form.company,
       selectedPlan,
     }));
+
+    // Persist to Supabase (non-blocking — does not gate the UI)
+    initEnrollment({
+      fullName: `${form.firstName} ${form.lastName}`.trim(),
+      email: form.email,
+      phone: form.phone,
+      companyName: form.company,
+    }).catch(() => {/* graceful — Supabase may not be configured yet */});
 
     setStep(2);
     window.scrollTo({ top: 0, behavior: "smooth" });

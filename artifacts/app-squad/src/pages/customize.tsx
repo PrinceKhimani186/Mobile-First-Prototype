@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { ArrowRight, CheckCircle2, Palette, Shield, Sparkles } from "lucide-react";
 import { sendCustomizationToCRM } from "@/lib/crm";
+import { markCustomizationCompleted } from "@/services/enrollment";
 
 const STEPS = ["Game Selected", "Customization", "Dashboard"];
 
@@ -204,6 +205,9 @@ export default function Customize() {
       designNotes,
       source,
     });
+
+    // Track progress in Supabase (non-fatal)
+    if (email) markCustomizationCompleted(email).catch(() => {/* graceful */});
 
     navigate("/onboarding/dashboard");
     window.scrollTo({ top: 0 });

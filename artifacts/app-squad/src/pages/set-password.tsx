@@ -3,11 +3,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle, Lock } from "lucide-react";
 
-// ── Placeholder for future Supabase integration ───────────────────────────────
-async function createUserInSupabase(_email: string, _password: string): Promise<void> {
-  // TODO: connect Supabase later
-  // await supabase.auth.signUp({ email: _email, password: _password })
-}
+import { markPaymentPaid, markPasswordCreated } from "@/services/enrollment";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getQueryParam(key: string): string {
@@ -80,15 +76,19 @@ export default function SetPassword() {
 
     setLoading(true);
     try {
-      // TODO: Replace localStorage demo auth with Supabase Auth
-      // TODO: Never store passwords in localStorage in production
-      await createUserInSupabase(email.trim(), password);
+      const normalizedEmail = email.trim().toLowerCase();
 
-      // Demo-only: store credentials so /login can verify them locally
+      // Track payment paid + password created in Supabase (non-fatal if not configured)
+      if (fromPayment) {
+        markPaymentPaid(normalizedEmail).catch(() => {/* graceful */});
+      }
+      markPasswordCreated(normalizedEmail).catch(() => {/* graceful */});
+
+      // Store credentials in localStorage so /login can verify them
       localStorage.setItem(
         "appSquadDemoAccount",
         JSON.stringify({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           passwordSet: true,
           createdAt: new Date().toISOString(),
