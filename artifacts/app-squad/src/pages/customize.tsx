@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useLocation } from "wouter";
 import { ArrowRight, CheckCircle2, Palette, Shield, Sparkles } from "lucide-react";
 import { sendCustomizationToCRM } from "@/lib/crm";
-import { markCustomizationCompleted } from "@/services/enrollment";
+import { updateOnboarding } from "@/services/auth";
 
 const STEPS = ["Game Selected", "Customization", "Dashboard"];
 
@@ -206,8 +206,11 @@ export default function Customize() {
       source,
     });
 
-    // Track progress in Supabase (non-fatal) and cache flag locally
-    if (email) markCustomizationCompleted(email).catch(() => {/* graceful */});
+    // Persist customization completion to app_users (non-fatal) and cache flag locally
+    const userEmail = localStorage.getItem("appSquadUserEmail") || email;
+    if (userEmail) {
+      updateOnboarding(userEmail, { customization_form_completed: true }).catch(() => {});
+    }
     localStorage.setItem("appSquadCustomizationCompleted", "true");
 
     navigate("/onboarding/dashboard");

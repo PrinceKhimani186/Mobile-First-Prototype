@@ -2,24 +2,28 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Zap, Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
-import { getEnrollmentProgress } from "@/services/enrollment";
+import { getOnboardingStatus } from "@/services/auth";
 
 const ADMIN_EMAIL    = "princekhimani186@gmail.com";
 const ADMIN_PASSWORD = "Prince@123";
 const STORAGE_KEY    = "as_admin_auth";
 
 async function resolveOnboardingRedirect(email: string): Promise<string> {
+  // Always clear stale flags first so skipping steps is impossible
+  localStorage.removeItem("appSquadGameSelected");
+  localStorage.removeItem("appSquadCustomizationCompleted");
+
   try {
-    const { record } = await getEnrollmentProgress(email);
-    if (record) {
-      localStorage.setItem("appSquadGameSelected", record.game_selected ? "true" : "false");
-      localStorage.setItem("appSquadCustomizationCompleted", record.customization_completed ? "true" : "false");
-      if (!record.game_selected) return "/onboarding/game-selection";
-      if (!record.customization_completed) return "/onboarding/customization";
+    const { status, skipped } = await getOnboardingStatus(email);
+    if (!skipped && status) {
+      localStorage.setItem("appSquadGameSelected", status.game_selection_completed ? "true" : "false");
+      localStorage.setItem("appSquadCustomizationCompleted", status.customization_form_completed ? "true" : "false");
+      if (!status.game_selection_completed) return "/onboarding/game-selection";
+      if (!status.customization_form_completed) return "/onboarding/customization";
       return "/onboarding/dashboard";
     }
   } catch {
-    // Supabase not reachable — fall through to default
+    // Supabase not reachable — fall through to first step
   }
   return "/onboarding/game-selection";
 }

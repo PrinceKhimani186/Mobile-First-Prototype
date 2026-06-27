@@ -177,6 +177,78 @@ router.post("/auth/verify-login", async (req, res) => {
   }
 });
 
+// ── GET /api/auth/onboarding-status ──────────────────────────────────────────
+// Returns the onboarding flags for a user stored in app_users.
+router.get("/auth/onboarding-status", async (req, res) => {
+  const email = (req.query as { email?: string }).email;
+  if (!email) {
+    res.status(400).json({ error: "email required" });
+    return;
+  }
+  const supabase = getSupabase();
+  if (!supabase) {
+    res.json({ status: null, skipped: true });
+    return;
+  }
+  try {
+    const { data, error } = await supabase
+      .from("app_users")
+      .select("game_selection_completed, customization_form_completed, selected_game")
+      .eq("email", email.trim().toLowerCase())
+      .maybeSingle();
+    if (error) {
+      req.log.error({ err: error }, "Auth: onboarding-status query error");
+      res.json({ status: null });
+      return;
+    }
+    res.json({ status: data ?? null });
+  } catch (err) {
+    req.log.error({ err }, "Auth: onboarding-status unexpected error");
+    res.json({ status: null });
+  }
+});
+
+// ── POST /api/auth/update-onboarding ─────────────────────────────────────────
+// Writes game_selection_completed / customization_form_completed / selected_game
+// to app_users so onboarding progress persists across devices.
+router.post("/auth/update-onboarding", async (req, res) => {
+  const { email, fields } = req.body as {
+    email?: string;
+    fields?: Record<string, unknown>;
+  };
+  if (!email || !fields) {
+    res.status(400).json({ error: "email and fields required" });
+    return;
+  }
+  const supabase = getSupabase();
+  if (!supabase) {
+    req.log.warn("Supabase not configured — update-onboarding skipped");
+    res.json({ ok: true, skipped: true });
+    return;
+  }
+  try {
+    const allowed = ["game_selection_completed", "customization_form_completed", "selected_game"];
+    const safe: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    for (const key of allowed) {
+      if (key in fields) safe[key] = fields[key];
+    }
+    const { error } = await supabase
+      .from("app_users")
+      .update(safe)
+      .eq("email", email.trim().toLowerCase());
+    if (error) {
+      req.log.error({ err: error }, "Auth: update-onboarding error");
+      res.status(500).json({ ok: false, error: error.message });
+      return;
+    }
+    req.log.info({ email: email.trim().toLowerCase(), fields: Object.keys(safe) }, "Auth: onboarding updated");
+    res.json({ ok: true });
+  } catch (err) {
+    req.log.error({ err }, "Auth: update-onboarding unexpected error");
+    res.status(500).json({ ok: false });
+  }
+});
+
 // ── POST /api/auth/check-ghl ──────────────────────────────────────────────────
 router.post("/auth/check-ghl", async (req, res) => {
   const { email } = req.body as { email?: string };

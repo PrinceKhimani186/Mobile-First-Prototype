@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sendGameSelectionToCRM } from "@/lib/crm";
-import { markGameSelected } from "@/services/enrollment";
+import { updateOnboarding } from "@/services/auth";
 
 interface Game {
   id: string;
@@ -764,8 +764,14 @@ export default function GameSelection() {
       source,
     });
 
-    // Track progress in Supabase (non-fatal) and cache flag locally
-    if (email) markGameSelected(email).catch(() => {/* graceful */});
+    // Persist game selection to app_users (non-fatal) and cache flag locally
+    const userEmail = localStorage.getItem("appSquadUserEmail") || email;
+    if (userEmail) {
+      updateOnboarding(userEmail, {
+        game_selection_completed: true,
+        selected_game: selectedGame.name,
+      }).catch(() => {});
+    }
     localStorage.setItem("appSquadGameSelected", "true");
 
     navigate("/onboarding/customization");
