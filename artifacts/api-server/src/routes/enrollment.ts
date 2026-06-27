@@ -54,12 +54,14 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
     selectedPlan, planName, planTag,
     successUrl, cancelUrl,
   } = req.body as {
-    firstName: string; lastName: string; email: string; phone: string;
+    firstName: string; lastName: string; email: string; phone?: string;
     selectedPlan: string; planName: string; planTag: string;
     successUrl: string; cancelUrl: string;
   };
 
-  if (!firstName || !lastName || !email || !phone || !planName || !successUrl || !cancelUrl) {
+  const phoneVal = phone ?? "";
+
+  if (!firstName || !lastName || !email || !planName || !successUrl || !cancelUrl) {
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
@@ -90,7 +92,7 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
           firstName,
           lastName,
           email,
-          phone,
+          phone: phoneVal,
           tags: ["enrollment-started"],
         }),
       });
@@ -108,7 +110,7 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       customer_email: email,
-      metadata: { firstName, lastName, email, phone, selectedPlan, planName, planTag },
+      metadata: { firstName, lastName, email, phone: phoneVal, selectedPlan, planName, planTag },
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
