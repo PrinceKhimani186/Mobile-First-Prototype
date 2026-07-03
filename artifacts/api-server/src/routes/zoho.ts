@@ -19,10 +19,26 @@ function getSupabase() {
 }
 
 async function getZohoAccessToken(): Promise<string> {
+  // Support both naming conventions:
+  //   ZOHO_SIGN_*        (Replit secrets panel / new naming)
+  //   ZOHO_*             (legacy / Antigravity naming)
+  const refreshToken  = process.env.ZOHO_SIGN_REFRESH_TOKEN  || process.env.ZOHO_REFRESH_TOKEN;
+  const clientId      = process.env.ZOHO_SIGN_CLIENT_ID      || process.env.ZOHO_CLIENT_ID;
+  const clientSecret  = process.env.ZOHO_SIGN_CLIENT_SECRET  || process.env.ZOHO_CLIENT_SECRET;
+
+  if (!refreshToken || !clientId || !clientSecret) {
+    const missing = [
+      !refreshToken && "ZOHO_SIGN_REFRESH_TOKEN",
+      !clientId     && "ZOHO_SIGN_CLIENT_ID",
+      !clientSecret && "ZOHO_SIGN_CLIENT_SECRET",
+    ].filter(Boolean).join(", ");
+    throw new Error(`Zoho credentials not configured. Missing: ${missing}`);
+  }
+
   const params = new URLSearchParams();
-  params.append("refresh_token", process.env.ZOHO_REFRESH_TOKEN!);
-  params.append("client_id", process.env.ZOHO_CLIENT_ID!);
-  params.append("client_secret", process.env.ZOHO_CLIENT_SECRET!);
+  params.append("refresh_token", refreshToken);
+  params.append("client_id", clientId);
+  params.append("client_secret", clientSecret);
   params.append("grant_type", "refresh_token");
 
   const res = await fetch("https://accounts.zoho.in/oauth/v2/token", {
@@ -51,21 +67,39 @@ router.get("/zoho/webhook", (req: Request, res: Response) => {
   });
 });
 
-// GET /api/zoho/debug-env - return obfuscated environment variables
+// GET /api/zoho/debug-env - return obfuscated environment variables (both naming conventions)
 router.get("/zoho/debug-env", (req: Request, res: Response) => {
   const mask = (val?: string) => {
-    if (!val) return "undefined/empty";
-    if (val.length <= 8) return "****";
-    return `${val.substring(0, 4)}...${val.substring(val.length - 4)}`;
+    if (!val) return "❌ undefined/empty";
+    if (val.length <= 8) return "✅ ****";
+    return `✅ ${val.substring(0, 4)}...${val.substring(val.length - 4)}`;
+  };
+  const resolved = (a?: string, b?: string) => {
+    const v = a || b;
+    if (!v) return "❌ NOT SET (neither variant found)";
+    const src = a ? "ZOHO_SIGN_* variant" : "ZOHO_* legacy variant";
+    return `✅ resolved via ${src}`;
   };
 
   res.json({
-    ZOHO_CLIENT_ID: mask(process.env.ZOHO_CLIENT_ID),
+    _note: "Shows both naming conventions. Code reads ZOHO_SIGN_* first, then falls back to ZOHO_*.",
+    // New naming (Replit secrets panel)
+    ZOHO_SIGN_CLIENT_ID:       mask(process.env.ZOHO_SIGN_CLIENT_ID),
+    ZOHO_SIGN_CLIENT_SECRET:   mask(process.env.ZOHO_SIGN_CLIENT_SECRET),
+    ZOHO_SIGN_REFRESH_TOKEN:   mask(process.env.ZOHO_SIGN_REFRESH_TOKEN),
+    ZOHO_SIGN_ORGANIZATION_ID: mask(process.env.ZOHO_SIGN_ORGANIZATION_ID),
+    // Legacy naming (Antigravity)
+    ZOHO_CLIENT_ID:     mask(process.env.ZOHO_CLIENT_ID),
     ZOHO_CLIENT_SECRET: mask(process.env.ZOHO_CLIENT_SECRET),
     ZOHO_REFRESH_TOKEN: mask(process.env.ZOHO_REFRESH_TOKEN),
-    ZOHO_SIGN_ORG_ID: mask(process.env.ZOHO_SIGN_ORG_ID),
+    ZOHO_SIGN_ORG_ID:   mask(process.env.ZOHO_SIGN_ORG_ID),
+    // What the code will actually use
+    _resolved_client_id:      resolved(process.env.ZOHO_SIGN_CLIENT_ID,      process.env.ZOHO_CLIENT_ID),
+    _resolved_client_secret:  resolved(process.env.ZOHO_SIGN_CLIENT_SECRET,  process.env.ZOHO_CLIENT_SECRET),
+    _resolved_refresh_token:  resolved(process.env.ZOHO_SIGN_REFRESH_TOKEN,  process.env.ZOHO_REFRESH_TOKEN),
+    // Supabase
     SUPABASE_URL: mask(process.env.SUPABASE_URL),
-    DATABASE_URL: mask(process.env.DATABASE_URL)
+    DATABASE_URL: mask(process.env.DATABASE_URL),
   });
 });
 

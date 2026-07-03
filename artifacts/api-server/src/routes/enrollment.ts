@@ -15,12 +15,25 @@ function ghlHeaders(apiKey: string) {
 
 // ── One-time Setup Fee price IDs (used for ALL checkout sessions) ─────────────
 // These must point to one-time (not recurring) prices in your Stripe dashboard.
-// Fallbacks match the prices created during initial setup; override via env vars.
+// Checks both naming conventions:
+//   STRIPE_PRICE_ESSENTIALS_SETUP  (legacy / Antigravity)
+//   STRIPE_PRICE_ESSENTIALS        (Replit secrets panel naming)
+// If neither env var is set the hardcoded fallback is used (works only for the
+// Stripe account where those prices were originally created).
 function getSetupFeePrice(planName: string): string | undefined {
   const map: Record<string, string | undefined> = {
-    "Essentials":            process.env.STRIPE_PRICE_ESSENTIALS_SETUP    || "price_1TnzBLJJdy0crHI8FHNhiOtw",
-    "Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR_SETUP   || "price_1TnzBMJJdy0crHI8LawdE6HC",
-    "Digital Asset Empire":  process.env.STRIPE_PRICE_EMPIRE_SETUP        || "price_1TnzBNJJdy0crHI8H5W2kR9L",
+    "Essentials":
+      process.env.STRIPE_PRICE_ESSENTIALS_SETUP ||
+      process.env.STRIPE_PRICE_ESSENTIALS ||
+      "price_1TnzBLJJdy0crHI8FHNhiOtw",
+    "Ownership Accelerator":
+      process.env.STRIPE_PRICE_ACCELERATOR_SETUP ||
+      process.env.STRIPE_PRICE_ACCELERATOR ||
+      "price_1TnzBMJJdy0crHI8LawdE6HC",
+    "Digital Asset Empire":
+      process.env.STRIPE_PRICE_EMPIRE_SETUP ||
+      process.env.STRIPE_PRICE_EMPIRE ||
+      "price_1TnzBNJJdy0crHI8H5W2kR9L",
   };
   return map[planName];
 }
