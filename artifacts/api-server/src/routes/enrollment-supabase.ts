@@ -94,6 +94,7 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
     preferredContact,
     documentName,
     documentUrl,
+    selectedPackage,
   } = req.body as {
     fullName?: string;
     email?: string;
@@ -104,6 +105,7 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
     preferredContact?: string;
     documentName?: string;
     documentUrl?: string;
+    selectedPackage?: string;
   };
 
   if (!email || !fullName) {
@@ -125,6 +127,7 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
           preferred_contact: preferredContact ?? null,
           document_name: documentName ?? null,
           document_url: documentUrl ?? null,
+          selected_package: selectedPackage ?? null,
           onboarding_status: "enrollment_completed",
           payment_status: "pending",
           password_created: false,
@@ -177,6 +180,9 @@ router.post("/enrollment/update", async (req: Request, res: Response) => {
     "game_selected",
     "customization_completed",
     "dashboard_completed",
+    "agreement_signed",
+    "agreement_signing_url",
+    "agreement_contract_id",
     "onboarding_status",
     "country",
     "business_type",

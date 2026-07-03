@@ -79,9 +79,9 @@ export default function OnboardingAccess() {
 
         {/* Form */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}
-          animate={shake ? { x: [-10, 10, -8, 8, -4, 4, 0] } : { x: 0 }}
-          transition={shake ? { duration: 0.5 } : {}}
+          initial={{ opacity: 0, y: 16 }}
+          animate={shake ? { x: [-10, 10, -8, 8, -4, 4, 0], opacity: 1, y: 0 } : { x: 0, opacity: 1, y: 0 }}
+          transition={shake ? { duration: 0.5 } : { delay: 0.12 }}
         >
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">

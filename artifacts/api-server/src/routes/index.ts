@@ -9,6 +9,9 @@ import enrollmentRouter from "./enrollment";
 import enrollmentSupabaseRouter from "./enrollment-supabase";
 import publishingRequirementsRouter from "./publishing-requirements";
 import debugRouter from "./debug";
+import esignaturesRouter from "./esignatures";
+import approvalsRouter from "./approvals";
+import zohoRouter from "./zoho";
 
 const router: IRouter = Router();
 
@@ -22,5 +25,8 @@ router.use(enrollmentRouter);
 router.use(enrollmentSupabaseRouter);
 router.use(publishingRequirementsRouter);
 router.use(debugRouter);
+router.use(esignaturesRouter);
+router.use(approvalsRouter);
+router.use(zohoRouter);
 
 export default router;

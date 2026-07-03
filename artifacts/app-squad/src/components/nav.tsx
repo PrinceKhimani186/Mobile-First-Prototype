@@ -37,6 +37,12 @@ function useAdminAuth() {
 
   const logout = () => {
     localStorage.removeItem(ADMIN_STORAGE_KEY);
+    localStorage.removeItem("appSquadLoggedIn");
+    localStorage.removeItem("appSquadUserEmail");
+    localStorage.removeItem("appSquadAgreementSigned");
+    localStorage.removeItem("appSquadGameSelected");
+    localStorage.removeItem("appSquadCustomizationCompleted");
+    localStorage.removeItem("appSquadEnrollmentEmail");
     window.dispatchEvent(new Event("as_admin_auth_change"));
   };
 

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import {
   ArrowRight, CheckCircle2, Shield, DollarSign,
@@ -71,6 +71,16 @@ function ScaleIn({ children, delay = 0, style = {} }: { children: React.ReactNod
     </motion.div>
   );
 }
+
+const resolveEnrollmentUrl = (route: string) => {
+  const isLocal = window.location.hostname === "localhost" || 
+                  window.location.hostname === "127.0.0.1" || 
+                  window.location.hostname.startsWith("192.168.");
+  if (isLocal) {
+    return `http://${window.location.hostname}:22474${route}`;
+  }
+  return route;
+};
 
 /* Label pill — no section numbers */
 function Label({ children }: { children: React.ReactNode }) {
@@ -174,6 +184,7 @@ const TEMPLATES = [
 
 const PACKAGES = [
   {
+    id: "essentials",
     name: "App Launch\nEssentials",
     packageHeadline: "START YOUR FIRST APP LAUNCH",
     packageDesc: "Perfect for first-time app owners who want to launch their first digital asset.",
@@ -192,6 +203,7 @@ const PACKAGES = [
     route: "/enrollment?plan=essentials",
   },
   {
+    id: "accelerator",
     name: "App Ownership\nAccelerator",
     packageHeadline: "BUILD A STRONGER APP BRAND",
     packageDesc: "For entrepreneurs who want a more complete launch experience.",
@@ -212,6 +224,7 @@ const PACKAGES = [
     route: "/enrollment?plan=accelerator",
   },
   {
+    id: "empire",
     name: "Digital Asset\nEmpire",
     packageHeadline: "THE COMPLETE APP OWNERSHIP EXPERIENCE",
     packageDesc: "For serious buyers who want the strongest implementation package available.",
@@ -233,6 +246,37 @@ const PACKAGES = [
   },
 ];
 
+const packagePricing = {
+  subscription: {
+    essentials: {
+      priceText: "$2,497",
+      subtext: "paid in full",
+    },
+    accelerator: {
+      priceText: "$4,997",
+      subtext: "paid in full",
+    },
+    empire: {
+      priceText: "$9,997",
+      subtext: "paid in full",
+    },
+  },
+  monthly: {
+    essentials: {
+      priceText: "$497",
+      subtext: "setup today, then $199/month for 12 months",
+    },
+    accelerator: {
+      priceText: "$997",
+      subtext: "setup today, then $399/month for 12 months",
+    },
+    empire: {
+      priceText: "$2,500",
+      subtext: "setup today, then $697/month for 12 months",
+    },
+  },
+} as const;
+
 const ENROLLMENT_STEPS = [
   { icon: <FileText />, title: "Complete Your Agreement", desc: "Review and sign the App Squad partnership agreement. All terms, deliverables, and timelines clearly defined." },
   { icon: <CreditCard />, title: "Activate Your Package", desc: "Your investment is processed and your package activated immediately. Coordinator assigned within 24 hours." },
@@ -246,6 +290,7 @@ const ENROLLMENT_STEPS = [
 /* ─────────────────── page ──────────────────────────────────────── */
 
 export default function Presentation() {
+  const [paymentType, setPaymentType] = useState<"subscription" | "monthly">("subscription");
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
   /* shared styles */
@@ -829,6 +874,70 @@ export default function Presentation() {
             </p>
           </FadeUp>
 
+          {/* Payment Type Toggle */}
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            marginBottom: 48,
+            position: "relative",
+            zIndex: 10
+          }}>
+            <div style={{
+              display: "inline-flex",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              padding: 4,
+              borderRadius: 99,
+            }}>
+              <button
+                type="button"
+                onClick={() => setPaymentType("subscription")}
+                style={{
+                  padding: "10px 28px",
+                  borderRadius: 99,
+                  fontFamily: "'Space Grotesk'",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                  background: paymentType === "subscription"
+                    ? "linear-gradient(135deg, #00D4FF 0%, #0099BB 100%)"
+                    : "transparent",
+                  color: paymentType === "subscription" ? "#050505" : "rgba(255,255,255,0.4)",
+                  boxShadow: paymentType === "subscription"
+                    ? "0 0 20px -4px rgba(0,212,255,0.4)"
+                    : "none",
+                }}
+              >
+                Subscription
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaymentType("monthly")}
+                style={{
+                  padding: "10px 28px",
+                  borderRadius: 99,
+                  fontFamily: "'Space Grotesk'",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                  background: paymentType === "monthly"
+                    ? "linear-gradient(135deg, #00D4FF 0%, #0099BB 100%)"
+                    : "transparent",
+                  color: paymentType === "monthly" ? "#050505" : "rgba(255,255,255,0.4)",
+                  boxShadow: paymentType === "monthly"
+                    ? "0 0 20px -4px rgba(0,212,255,0.4)"
+                    : "none",
+                }}
+              >
+                Monthly
+              </button>
+            </div>
+          </div>
+
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.1fr 1fr", gap: 22, alignItems: "start" }}>
             {PACKAGES.map((pkg, i) => (
               <FadeUp key={pkg.name} delay={i * 0.1}>
@@ -871,7 +980,29 @@ export default function Presentation() {
                   <h3 style={{ fontFamily: "'Space Grotesk'", fontSize: pkg.isAccelerator ? "clamp(28px, 2.6vw, 42px)" : "clamp(24px, 2.2vw, 36px)", fontWeight: 700, letterSpacing: "-0.035em", lineHeight: 1.1, whiteSpace: "pre-line", marginBottom: 16, position: "relative", zIndex: 1 }}>{pkg.name}</h3>
                   {/* Identity headline */}
                   <div style={{ fontFamily: "'Space Grotesk'", fontSize: pkg.isAccelerator ? "clamp(13px, 1.1vw, 16px)" : "clamp(12px, 1vw, 14px)", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: pkg.isAccelerator ? GOLD : pkg.isEmpire ? "#7B61FF" : CYAN, marginBottom: 12, position: "relative", zIndex: 1 }}>{pkg.packageHeadline}</div>
-                  <div style={{ fontFamily: "'Inter'", fontSize: 16, color: "rgba(255,255,255,0.38)", marginBottom: 36, lineHeight: 1.65, position: "relative", zIndex: 1 }}>{pkg.packageDesc}</div>
+                  <div style={{ fontFamily: "'Inter'", fontSize: 16, color: "rgba(255,255,255,0.38)", marginBottom: 24, lineHeight: 1.65, position: "relative", zIndex: 1 }}>{pkg.packageDesc}</div>
+                  
+                  {/* Pricing Display */}
+                  <div style={{ marginBottom: 28, position: "relative", zIndex: 1 }}>
+                    <div style={{ 
+                      fontFamily: "'Space Grotesk'", 
+                      fontSize: 36, 
+                      fontWeight: 700, 
+                      color: "white" 
+                    }}>
+                      {packagePricing[paymentType][pkg.id].priceText}
+                    </div>
+                    <div style={{ 
+                      fontFamily: "'Inter'", 
+                      fontSize: 14, 
+                      color: pkg.tagColor,
+                      fontWeight: 500,
+                      marginTop: 4
+                    }}>
+                      {packagePricing[paymentType][pkg.id].subtext}
+                    </div>
+                  </div>
+
                   <div style={{ height: 1, background: pkg.isAccelerator ? `rgba(0,212,255,0.14)` : "rgba(255,255,255,0.06)", marginBottom: 36, position: "relative", zIndex: 1 }} />
 
                   {/* Features */}
@@ -888,7 +1019,7 @@ export default function Presentation() {
 
                   {/* CTA */}
                   <button
-                    onClick={() => window.open(pkg.route, "_blank")}
+                    onClick={() => window.open(resolveEnrollmentUrl(`${pkg.route}&type=${paymentType}`), "_blank")}
                     style={{
                       marginTop: 44,
                       width: "100%",
@@ -1083,7 +1214,7 @@ export default function Presentation() {
           {/* Main CTA */}
           <FadeUp delay={0.25}>
             <button
-              onClick={() => window.open("/enrollment", "_blank")}
+              onClick={() => window.open(resolveEnrollmentUrl("/enrollment"), "_blank")}
               style={{ ...goldBtn, fontSize: 20, padding: "28px 72px" }}
               onMouseEnter={e => { e.currentTarget.style.opacity = "0.9"; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}>

@@ -1,8 +1,10 @@
 import express, { type Express } from "express";
+import path from "path";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
 import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -139,6 +141,21 @@ async function handleGHLPostPayment(
   }
 }
 
+function getSupabase() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  try {
+    return createClient(url.trim(), key.trim(), {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  } catch {
+    return null;
+  }
+}
+
+
+
 const app: Express = express();
 
 // ── GET /api/stripe/webhook — reachability probe ──────────────────────────────
@@ -249,6 +266,35 @@ app.post(
 
     await handleGHLPostPayment(email, firstName, lastName, phone, selectedPlan);
 
+    // Supabase enrollment status update
+    try {
+      const supabase = getSupabase();
+      if (supabase && email) {
+        const upsertData: Record<string, any> = {
+          email: email.trim().toLowerCase(),
+          full_name: `${firstName} ${lastName}`.trim(),
+          phone: phone || null,
+          selected_package: selectedPlan,
+          payment_status: "paid",
+          onboarding_status: "payment_completed",
+          agreement_signed: false,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabase
+          .from("customer_enrollment")
+          .upsert(upsertData, { onConflict: "email" });
+
+        if (error) {
+          logger.error({ err: error, email }, "Stripe Webhook: failed to upsert Supabase customer_enrollment");
+        } else {
+          logger.info({ email }, "Stripe Webhook: successfully upserted Supabase customer_enrollment");
+        }
+      }
+    } catch (eErr) {
+      logger.error({ err: eErr }, "Stripe Webhook: unexpected error in Supabase processing");
+    }
+
     res.status(200).json({ received: true, processed: true });
   }
 );
@@ -286,5 +332,14 @@ app.use(
 );
 
 app.use("/api", router);
+
+// Serve static frontend assets from app-squad build output
+const staticPath = path.resolve(__dirname, "../../app-squad/dist/public");
+app.use(express.static(staticPath));
+
+// Support React SPA routing by serving index.html as a fallback (using RegExp to bypass path-to-regexp)
+app.get(/^.*$/, (req, res) => {
+  res.sendFile(path.join(staticPath, "index.html"));
+});
 
 export default app;

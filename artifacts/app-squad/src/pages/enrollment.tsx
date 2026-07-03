@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 const PLANS = [
   {
     id: "essentials",
-    name: "Essentials",
+    name: "App Launch Essentials",
     tag: "Purchased Plan - Essentials",
     icon: Zap,
     color: "hsl(218 76% 60%)",
@@ -28,7 +28,7 @@ const PLANS = [
   },
   {
     id: "accelerator",
-    name: "Ownership Accelerator",
+    name: "App Ownership Accelerator",
     tag: "Purchased Plan - Ownership Accelerator",
     icon: Sparkles,
     color: "hsl(35 90% 55%)",
@@ -66,6 +66,49 @@ const PLANS = [
 ] as const;
 
 type PlanId = typeof PLANS[number]["id"];
+
+const pricingDetails = {
+  subscription: {
+    essentials: {
+      priceText: "$2,497",
+      subtext: "paid in full",
+      stripePriceId: process.env.STRIPE_PRICE_ESSENTIALS || "price_1TnzBEJJdy0crHI8d1FLz9Et",
+      setupPriceId: undefined,
+    },
+    accelerator: {
+      priceText: "$4,997",
+      subtext: "paid in full",
+      stripePriceId: process.env.STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
+      setupPriceId: undefined,
+    },
+    empire: {
+      priceText: "$9,997",
+      subtext: "paid in full",
+      stripePriceId: process.env.STRIPE_PRICE_EMPIRE || "price_1TnzBGJJdy0crHI8zTHTCEUV",
+      setupPriceId: undefined,
+    },
+  },
+  monthly: {
+    essentials: {
+      priceText: "$497",
+      subtext: "down today, then $199/month for 12 months",
+      stripePriceId: process.env.STRIPE_PRICE_ESSENTIALS_MONTHLY || "price_1TnzBIJJdy0crHI86gETElWE",
+      setupPriceId: process.env.STRIPE_PRICE_ESSENTIALS_SETUP || "price_1TnzBLJJdy0crHI8FHNhiOtw",
+    },
+    accelerator: {
+      priceText: "$997",
+      subtext: "down today, then $399/month for 12 months",
+      stripePriceId: process.env.STRIPE_PRICE_ACCELERATOR_MONTHLY || "price_1TnzBJJJdy0crHI8ZCbKcKSd",
+      setupPriceId: process.env.STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
+    },
+    empire: {
+      priceText: "$2,500",
+      subtext: "down today, then $697/month for 12 months",
+      stripePriceId: process.env.STRIPE_PRICE_EMPIRE_MONTHLY || "price_1TnzBKJJdy0crHI8csCQAO2H",
+      setupPriceId: process.env.STRIPE_PRICE_EMPIRE_SETUP || "price_1TnzBNJJdy0crHI8H5W2kR9L",
+    },
+  },
+} as const;
 
 interface FormData {
   firstName: string;
@@ -187,6 +230,7 @@ export default function Enrollment() {
   const [submittingStep1, setSubmittingStep1] = useState(false);
 
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
+  const [paymentType, setPaymentType] = useState<"subscription" | "monthly">("subscription");
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
 
@@ -204,6 +248,11 @@ export default function Enrollment() {
       if (matched) setSelectedPlan(matched);
     }
 
+    const typeParam = params.get("type");
+    if (typeParam === "subscription" || typeParam === "monthly") {
+      setPaymentType(typeParam);
+    }
+
     if (params.get("payment") === "cancelled") {
       toast({
         title: "Payment cancelled",
@@ -212,7 +261,7 @@ export default function Enrollment() {
       });
     }
 
-    if (params.has("plan") || params.has("payment")) {
+    if (params.has("plan") || params.has("payment") || params.has("type")) {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [toast]);
@@ -258,6 +307,7 @@ export default function Enrollment() {
   async function handleEnroll() {
     if (!selectedPlan) return;
     const plan = PLANS.find(p => p.id === selectedPlan)!;
+    const pricing = pricingDetails[paymentType][selectedPlan];
     setLoading(true);
     setCheckoutError("");
 
@@ -266,8 +316,26 @@ export default function Enrollment() {
       const origin = window.location.origin;
       const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 
-      localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
+      // 1 — Initialize the customer enrollment record in Supabase (saving selectedPackage)
+      const initRes = await fetch("/api/enrollment/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: `${form.firstName} ${form.lastName}`.trim(),
+          email: normalizedEmail,
+          companyName: form.company,
+          selectedPackage: selectedPlan,
+        }),
+      });
 
+      if (!initRes.ok) {
+        const initData = (await initRes.json()) as { error?: string };
+        setCheckoutError(initData.error ?? "Unable to initialize enrollment record. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // 2 — Create the Stripe checkout session (passing package details, price, payment type, setup price)
       const res = await fetch("/api/enrollment/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -278,8 +346,12 @@ export default function Enrollment() {
           selectedPlan,
           planName: plan.name,
           planTag: plan.tag,
-          successUrl: `${origin}${base}/set-password?payment=success`,
+          successUrl: `${origin}${base}/onboarding/agreement?email=${encodeURIComponent(normalizedEmail)}`,
           cancelUrl: `${origin}${base}/enrollment?payment=cancelled`,
+          package_name: plan.name,
+          payment_type: paymentType,
+          stripe_price_id: pricing.stripePriceId,
+          setup_price_id: pricing.setupPriceId,
         }),
       });
 
@@ -290,6 +362,12 @@ export default function Enrollment() {
         return;
       }
 
+      // 3 — Save Stripe session URL, payment type, and email for the agreement page redirect
+      localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
+      localStorage.setItem("appSquadEnrollmentPaymentType", paymentType);
+      localStorage.setItem("appSquadCheckoutUrl", data.url);
+
+      // 4 — Redirect to Stripe Checkout page
       window.location.href = data.url;
     } catch {
       setCheckoutError("Network error. Please check your connection and try again.");
@@ -474,6 +552,74 @@ export default function Enrollment() {
               initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }}
             >
+              {/* Payment Type Toggle */}
+              <div style={{
+                display: "flex",
+                justifyContent: "center",
+                marginBottom: 32,
+              }}>
+                <div style={{
+                  display: "inline-flex",
+                  background: "hsl(226 32% 7%)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  padding: 4,
+                  borderRadius: 99,
+                }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentType("subscription");
+                      setSelectedPlan(null);
+                    }}
+                    style={{
+                      padding: "8px 24px",
+                      borderRadius: 99,
+                      fontFamily: "'Space Grotesk'",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "all 0.3s",
+                      background: paymentType === "subscription"
+                        ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))"
+                        : "transparent",
+                      color: paymentType === "subscription" ? "white" : "rgba(255,255,255,0.4)",
+                      boxShadow: paymentType === "subscription"
+                        ? "0 0 16px -4px hsl(35 90% 55% / 0.5)"
+                        : "none",
+                    }}
+                  >
+                    Subscription
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentType("monthly");
+                      setSelectedPlan(null);
+                    }}
+                    style={{
+                      padding: "8px 24px",
+                      borderRadius: 99,
+                      fontFamily: "'Space Grotesk'",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "all 0.3s",
+                      background: paymentType === "monthly"
+                        ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))"
+                        : "transparent",
+                      color: paymentType === "monthly" ? "white" : "rgba(255,255,255,0.4)",
+                      boxShadow: paymentType === "monthly"
+                        ? "0 0 16px -4px hsl(35 90% 55% / 0.5)"
+                        : "none",
+                    }}
+                  >
+                    Monthly
+                  </button>
+                </div>
+              </div>
+
               <div className="grid md:grid-cols-3 gap-4 mb-6">
                 {PLANS.map(plan => {
                   const Icon = plan.icon;
@@ -547,6 +693,27 @@ export default function Enrollment() {
                       }}>
                         {plan.description}
                       </p>
+
+                      {/* Pricing Display */}
+                      <div style={{ marginBottom: 20 }}>
+                        <div style={{ 
+                          fontFamily: "'Space Grotesk'", 
+                          fontSize: 28, 
+                          fontWeight: 700, 
+                          color: "white" 
+                        }}>
+                          {pricingDetails[paymentType][plan.id].priceText}
+                        </div>
+                        <div style={{ 
+                          fontFamily: "'Inter'", 
+                          fontSize: 12, 
+                          color: plan.color,
+                          fontWeight: 500,
+                          marginTop: 2
+                        }}>
+                          {pricingDetails[paymentType][plan.id].subtext}
+                        </div>
+                      </div>
 
                       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 7 }}>
                         {plan.features.map(f => (

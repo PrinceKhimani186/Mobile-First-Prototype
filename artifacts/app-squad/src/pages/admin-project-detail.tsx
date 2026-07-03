@@ -142,6 +142,11 @@ export default function AdminProjectDetail({ id }: { id: string }) {
   const [, navigate] = useLocation();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [assignedPms, setAssignedPms] = useState<any[]>([]);
+  const [allPMs, setAllPMs] = useState<any[]>([]);
+  const [deleting, setDeleting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id: number; name: string; email: string; role: "super_admin" | "project_manager" } | null>(null);
 
   // Editable fields
   const [stage, setStage] = useState("");
@@ -159,12 +164,23 @@ export default function AdminProjectDetail({ id }: { id: string }) {
 
   async function loadProject() {
     setLoading(true);
+    setAccessDenied(false);
     try {
+      // 1. Fetch Current User Auth
+      const authRes = await fetch("/api/admin/auth", { credentials: "include" });
+      const authData = await authRes.json() as { authenticated: boolean; user: any };
+      if (!authData.authenticated) { navigate("/admin"); return; }
+      setCurrentUser(authData.user);
+
+      // 2. Fetch Project Detail
       const res = await fetch(`/api/admin/projects/${id}`, { credentials: "include" });
       if (res.status === 401) { navigate("/admin"); return; }
+      if (res.status === 403) { setAccessDenied(true); return; }
       if (!res.ok) { navigate("/admin/projects"); return; }
-      const data = await res.json() as { project: Project };
+      
+      const data = await res.json() as { project: Project; assignedPms: any[] };
       setProject(data.project);
+      setAssignedPms(data.assignedPms || []);
       setStage(data.project.currentStage);
       setCustomerName(data.project.customerName);
       setPhone(data.project.phone);
@@ -172,6 +188,17 @@ export default function AdminProjectDetail({ id }: { id: string }) {
       setGameTemplate(data.project.gameTemplate);
       setAppName(data.project.appName);
       setNotes(data.project.notes);
+
+      // 3. If Super Admin, also load all active PMs for assignments
+      if (authData.user.role === "super_admin") {
+        const pmsRes = await fetch("/api/admin/users", { credentials: "include" });
+        if (pmsRes.ok) {
+          const pmsData = await pmsRes.json() as { users: any[] };
+          setAllPMs(pmsData.users.filter(u => u.role === "project_manager" && u.status === "active"));
+        }
+      }
+    } catch {
+      navigate("/admin/projects");
     } finally {
       setLoading(false);
     }
@@ -207,7 +234,8 @@ export default function AdminProjectDetail({ id }: { id: string }) {
         setTimeout(() => setSaveSuccess(false), 3000);
         await loadProject();
       } else {
-        setSaveError("Failed to save changes.");
+        const d = await stageRes.json().catch(() => ({})) as { error?: string };
+        setSaveError(d.error || "Failed to save changes.");
       }
     } catch {
       setSaveError("Network error.");
@@ -216,10 +244,66 @@ export default function AdminProjectDetail({ id }: { id: string }) {
     }
   }
 
+  async function handleDelete() {
+    if (!project) return;
+    if (!window.confirm("Are you sure you want to permanently delete this project? This action cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/projects/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        navigate("/admin/projects");
+      } else {
+        alert("Failed to delete project");
+      }
+    } catch {
+      alert("Network error");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function updateAssignments(pmIds: number[]) {
+    try {
+      const res = await fetch(`/api/admin/projects/${id}/assignments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ adminUserIds: pmIds }),
+      });
+      if (res.ok) {
+        loadProject();
+      } else {
+        alert("Failed to update assignments");
+      }
+    } catch {
+      alert("Network error");
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: "#050507", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Loader2 style={{ width: 24, height: 24, color: "hsl(218 16% 36%)", animation: "spin 1s linear infinite" }} />
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#050507", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+        <AlertTriangle style={{ width: 40, height: 40, color: "hsl(0 70% 60%)" }} />
+        <p style={{ fontFamily: "'Space Grotesk'", fontSize: 18, color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>Access Denied</p>
+        <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(218 16% 40%)", maxWidth: 300, textAlign: "center" }}>
+          You are not assigned to this project and do not have permission to view it.
+        </p>
+        <Link href="/admin/projects" style={{ textDecoration: "none" }}>
+          <button style={{ padding: "8px 16px", borderRadius: 9, border: "none", background: "rgba(255,255,255,0.06)", fontFamily: "'Inter'", fontSize: 13, color: "rgba(255,255,255,0.8)", cursor: "pointer" }}>
+            Go back to projects
+          </button>
+        </Link>
       </div>
     );
   }
@@ -236,7 +320,7 @@ export default function AdminProjectDetail({ id }: { id: string }) {
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <Link href="/admin/projects" style={{ display: "flex", alignItems: "center", gap: 6, textDecoration: "none", color: "hsl(218 16% 44%)", fontFamily: "'Inter'", fontSize: 12 }}>
             <ArrowLeft style={{ width: 14, height: 14 }} />
-            All Projects
+            Projects
           </Link>
           <span style={{ color: "hsl(218 16% 22%)" }}>›</span>
           <p style={{ fontFamily: "'Space Grotesk'", fontSize: 14, fontWeight: 600, color: "hsl(35 90% 62%)" }}>{project.projectId}</p>
@@ -259,6 +343,25 @@ export default function AdminProjectDetail({ id }: { id: string }) {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {currentUser?.role === "super_admin" && (
+            <>
+              <Link href="/admin/users" style={{ textDecoration: "none" }}>
+                <button style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", fontFamily: "'Inter'", fontSize: 12, color: "hsl(220 20% 75%)", cursor: "pointer" }}>
+                  Admin Users
+                </button>
+              </Link>
+              <button onClick={handleDelete} disabled={deleting}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 9,
+                  background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)",
+                  fontFamily: "'Inter'", fontSize: 12, color: "hsl(0 84% 65%)", cursor: "pointer",
+                }}>
+                {deleting ? "Deleting..." : "Delete Project"}
+              </button>
+            </>
+          )}
+
           <button onClick={handleSave} disabled={saving}
             style={{
               display: "flex", alignItems: "center", gap: 7, padding: "8px 18px", borderRadius: 9, border: "none",
@@ -393,6 +496,54 @@ export default function AdminProjectDetail({ id }: { id: string }) {
                   <p style={{ fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: row.highlight ? 700 : 400, color: row.highlight ? "hsl(35 90% 62%)" : "hsl(218 16% 54%)" }}>{row.value}</p>
                 </div>
               ))}
+            </motion.div>
+
+            {/* Project Assignment selector */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+              style={{ borderRadius: 16, padding: 20, background: "hsl(226 32% 8%)", border: "1px solid hsl(224 22% 13%)" }}>
+              <p style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "hsl(218 16% 34%)", marginBottom: 14 }}>Project Assignment</p>
+              
+              <div style={{ marginBottom: 12 }}>
+                {assignedPms.length === 0 ? (
+                  <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 40%)", fontStyle: "italic" }}>No project managers assigned.</p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {assignedPms.map((pm: any) => (
+                      <div key={pm.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "hsl(35 90% 62%)" }} />
+                        <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(220 20% 80%)" }}>{pm.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {currentUser?.role === "super_admin" && (
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12, marginTop: 12 }}>
+                  <p style={{ fontFamily: "'Inter'", fontSize: 9, fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", color: "hsl(218 16% 30%)", marginBottom: 8 }}>Assign Project Manager</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {allPMs.map((pm: any) => {
+                      const isAssigned = assignedPms.some((ap: any) => ap.id === pm.id);
+                      return (
+                        <label key={pm.id} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontFamily: "'Inter'", fontSize: 11, color: "hsl(218 16% 48%)" }}>
+                          <input
+                            type="checkbox"
+                            checked={isAssigned}
+                            onChange={() => {
+                              const nextIds = isAssigned
+                                ? assignedPms.filter((ap: any) => ap.id !== pm.id).map((ap: any) => ap.id)
+                                : [...assignedPms.map((ap: any) => ap.id), pm.id];
+                              updateAssignments(nextIds);
+                            }}
+                            style={{ accentColor: "hsl(35 90% 55%)" }}
+                          />
+                          <span>{pm.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </motion.div>
 
             {/* All stages */}

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle, Lock } from "lucide-react";
-
+import { getEnrollmentProgress, getOnboardingEmail } from "@/services/enrollment";
+import { useQueryClient } from "@tanstack/react-query";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getQueryParam(key: string): string {
@@ -36,6 +37,7 @@ const labelStyle: React.CSSProperties = {
 
 export default function SetPassword() {
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
 
   const fromPayment = getQueryParam("payment") === "success";
   const emailFromUrl = getQueryParam("email");
@@ -51,10 +53,7 @@ export default function SetPassword() {
 
   // Prefill email — prefer URL param, then localStorage, then stored pending
   useEffect(() => {
-    const stored =
-      emailFromUrl ||
-      localStorage.getItem("appSquadEnrollmentEmail") ||
-      "";
+    const stored = getOnboardingEmail();
     if (stored) setEmail(stored);
   }, [emailFromUrl]);
 
@@ -108,13 +107,16 @@ export default function SetPassword() {
         })
       );
 
-      // Clean up temp email key
-      localStorage.removeItem("appSquadEnrollmentEmail");
+      // Invalidate query client cache for onboarding progress to prevent stale guard redirect loops
+      await queryClient.invalidateQueries({ queryKey: ["onboardingProgress", normalizedEmail] });
 
       setDone(true);
 
+      // Save email for pre-filling the login form
+      localStorage.setItem("appSquadPrefillEmail", normalizedEmail);
+
       setTimeout(() => {
-        navigate("/login");
+        navigate(`/login?email=${encodeURIComponent(normalizedEmail)}`);
       }, 2200);
     } catch (err) {
       setErrors({ password: (err as Error).message || "Something went wrong. Please try again." });
@@ -309,15 +311,13 @@ export default function SetPassword() {
                   <input
                     type="email"
                     value={email}
-                    onChange={e => { setEmail(e.target.value); setErrors(v => ({ ...v, email: undefined })); }}
-                    placeholder="your@email.com"
-                    autoComplete="email"
+                    onChange={e => { setEmail(e.target.value); if (errors.email) setErrors({ ...errors, email: undefined }); }}
                     style={{
                       ...inputStyle,
                       ...(errors.email ? { borderColor: "rgba(239,68,68,0.5)" } : {}),
                     }}
-                    onFocus={e => { if (!errors.email) e.target.style.borderColor = "hsl(35 90% 55% / 0.5)"; }}
-                    onBlur={e => { if (!errors.email) e.target.style.borderColor = "rgba(255,255,255,0.1)"; }}
+                    onFocus={e => (e.target.style.borderColor = "hsl(35 90% 55% / 0.5)")}
+                    onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
                   />
                   {errors.email && <ErrorMsg msg={errors.email} />}
                 </div>

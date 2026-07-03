@@ -14,6 +14,7 @@ import BookCall from "@/pages/book-call";
 import Enrollment from "@/pages/enrollment";
 import PartnerProgram from "@/pages/partner-program";
 import OnboardingAccess from "@/pages/onboarding-access";
+import Agreement from "@/pages/agreement";
 import GameSelection from "@/pages/game-selection";
 import Customize from "@/pages/customize";
 import Dashboard from "@/pages/dashboard";
@@ -22,13 +23,16 @@ import ColdTrafficApply from "@/pages/coldtraffic-apply";
 import AdminLogin from "@/pages/admin-login";
 import AdminProjects from "@/pages/admin-projects";
 import AdminProjectDetail from "@/pages/admin-project-detail";
+import AdminUsers from "@/pages/admin-users";
 import StaffLogin from "@/pages/staff-login";
 import SetPassword from "@/pages/set-password";
 
 const queryClient = new QueryClient();
 
-// ── Auth + ordered route protection ─────────────────────────────────────────
-// Reads cached flags written to localStorage on login (from Supabase progress).
+import { useQuery } from "@tanstack/react-query";
+import { getEnrollmentProgress, getOnboardingEmail } from "@/services/enrollment";
+import { Loader2 } from "lucide-react";
+
 function isLoggedIn() {
   if (typeof window === "undefined") return false;
   return (
@@ -37,32 +41,269 @@ function isLoggedIn() {
   );
 }
 
-function gameSelected() {
-  return localStorage.getItem("appSquadGameSelected") === "true";
+function useOnboardingProgress() {
+  const email = getOnboardingEmail();
+
+  return useQuery({
+    queryKey: ["onboardingProgress", email],
+    queryFn: async () => {
+      if (!email) return null;
+      const { record } = await getEnrollmentProgress(email);
+      return record || null;
+    },
+    enabled: !!email,
+    staleTime: 5000,
+  });
 }
 
-function customizationCompleted() {
-  return localStorage.getItem("appSquadCustomizationCompleted") === "true";
+function logGuardRedirect(
+  guardName: string,
+  route: string,
+  email: string,
+  record: any,
+  destination: string | null,
+  reason: string
+) {
+  console.info(
+    `%c[Guard: ${guardName}]`,
+    "color: #fbbf24; font-weight: bold; background: #1e1e2e; padding: 2px 5px; border-radius: 3px;",
+    `\n  - Route: ${route}` +
+    `\n  - Email: ${email || "(empty)"}` +
+    `\n  - Onboarding Step: ${record?.onboarding_status || "(unknown)"}` +
+    `\n  - Agreement Signed: ${record?.agreement_signed ?? false}` +
+    `\n  - Password Created: ${record?.password_created ?? false}` +
+    `\n  - Redirect to: ${destination || "None (Allow Render)"}` +
+    `\n  - Reason: ${reason}`
+  );
 }
 
-// /onboarding/game-selection — requires auth only
+// /onboarding/agreement
+function RequireAgreement({ component: Component }: { component: React.ComponentType }) {
+  const { data: record, isLoading } = useOnboardingProgress();
+  const email = getOnboardingEmail();
+  const path = typeof window !== "undefined" ? window.location.pathname : "/onboarding/agreement";
+
+  if (!email) {
+    logGuardRedirect("RequireAgreement", path, email, null, "/enrollment", "Email is missing");
+    return <Redirect to="/enrollment" />;
+  }
+  if (isLoading) return <div className="min-h-screen bg-[#050507] flex items-center justify-center text-white font-sans text-sm"><Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading progress...</div>;
+
+  if (!record) {
+    logGuardRedirect("RequireAgreement", path, email, null, "/enrollment", "Enrollment record not found in database");
+    return <Redirect to="/enrollment" />;
+  }
+
+  if (record.agreement_signed) {
+    if (!record.password_created) {
+      logGuardRedirect("RequireAgreement", path, email, record, "/set-password", "Agreement signed but password not created");
+      return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
+    }
+    if (!isLoggedIn()) {
+      logGuardRedirect("RequireAgreement", path, email, record, "/login", "Agreement signed & password created but user is not logged in");
+      return <Redirect to="/login" />;
+    }
+    if (!record.game_selected) {
+      logGuardRedirect("RequireAgreement", path, email, record, "/onboarding/game-selection", "Agreement signed, password created, logged in, but game not selected");
+      return <Redirect to="/onboarding/game-selection" />;
+    }
+    if (!record.customization_completed) {
+      logGuardRedirect("RequireAgreement", path, email, record, "/onboarding/customization", "Game selected, but customization not completed");
+      return <Redirect to="/onboarding/customization" />;
+    }
+    logGuardRedirect("RequireAgreement", path, email, record, "/onboarding/dashboard", "Onboarding completed, redirecting to dashboard");
+    return <Redirect to="/onboarding/dashboard" />;
+  }
+
+  logGuardRedirect("RequireAgreement", path, email, record, null, "Agreement not signed yet (Allow Render)");
+  return <Component />;
+}
+
+// /set-password
+function RequireSetPassword({ component: Component }: { component: React.ComponentType }) {
+  const { data: record, isLoading } = useOnboardingProgress();
+  const email = getOnboardingEmail();
+  const path = typeof window !== "undefined" ? window.location.pathname : "/set-password";
+
+  if (!email) {
+    logGuardRedirect("RequireSetPassword", path, email, null, "/enrollment", "Email is missing");
+    return <Redirect to="/enrollment" />;
+  }
+  if (isLoading) return <div className="min-h-screen bg-[#050507] flex items-center justify-center text-white font-sans text-sm"><Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading progress...</div>;
+
+  if (!record) {
+    logGuardRedirect("RequireSetPassword", path, email, null, "/enrollment", "Enrollment record not found in database");
+    return <Redirect to="/enrollment" />;
+  }
+  if (!record.agreement_signed) {
+    logGuardRedirect("RequireSetPassword", path, email, record, "/onboarding/agreement", "Agreement not signed yet");
+    return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
+  }
+  if (record.password_created) {
+    if (!isLoggedIn()) {
+      logGuardRedirect("RequireSetPassword", path, email, record, `/login?email=${encodeURIComponent(email)}`, "Password already created, user not logged in");
+      return <Redirect to={`/login?email=${encodeURIComponent(email)}`} />;
+    }
+    if (!record.game_selected) {
+      logGuardRedirect("RequireSetPassword", path, email, record, "/onboarding/game-selection", "Password created, logged in, game not selected");
+      return <Redirect to="/onboarding/game-selection" />;
+    }
+    if (!record.customization_completed) {
+      logGuardRedirect("RequireSetPassword", path, email, record, "/onboarding/customization", "Password created, logged in, customization not completed");
+      return <Redirect to="/onboarding/customization" />;
+    }
+    logGuardRedirect("RequireSetPassword", path, email, record, "/onboarding/dashboard", "Password created, logged in, onboarding complete");
+    return <Redirect to="/onboarding/dashboard" />;
+  }
+
+  logGuardRedirect("RequireSetPassword", path, email, record, null, "Agreement signed & password not created yet (Allow Render)");
+  return <Component />;
+}
+
+// /login
+function RequireLogin({ component: Component }: { component: React.ComponentType }) {
+  const { data: record, isLoading } = useOnboardingProgress();
+  const email = getOnboardingEmail();
+  const path = typeof window !== "undefined" ? window.location.pathname : "/login";
+
+  if (isLoggedIn()) {
+    if (isLoading) return <div className="min-h-screen bg-[#050507] flex items-center justify-center text-white font-sans text-sm"><Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading progress...</div>;
+    if (record) {
+      if (!record.agreement_signed) {
+        logGuardRedirect("RequireLogin", path, email, record, "/onboarding/agreement", "User is logged in but agreement not signed");
+        return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
+      }
+      if (!record.password_created) {
+        logGuardRedirect("RequireLogin", path, email, record, "/set-password", "User is logged in but password not created");
+        return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
+      }
+      if (!record.game_selected) {
+        logGuardRedirect("RequireLogin", path, email, record, "/onboarding/game-selection", "User is logged in but game not selected");
+        return <Redirect to="/onboarding/game-selection" />;
+      }
+      if (!record.customization_completed) {
+        logGuardRedirect("RequireLogin", path, email, record, "/onboarding/customization", "User is logged in but customization not completed");
+        return <Redirect to="/onboarding/customization" />;
+      }
+      logGuardRedirect("RequireLogin", path, email, record, "/onboarding/dashboard", "Onboarding completed, redirecting to dashboard");
+      return <Redirect to="/onboarding/dashboard" />;
+    }
+  }
+
+  logGuardRedirect("RequireLogin", path, email, record, null, "User is not logged in (Allow Render)");
+  return <Component />;
+}
+
+// /onboarding/game-selection
 function RequireGameSelection({ component: Component }: { component: React.ComponentType }) {
-  if (!isLoggedIn()) return <Redirect to="/login" />;
+  const { data: record, isLoading } = useOnboardingProgress();
+  const email = getOnboardingEmail();
+  const path = typeof window !== "undefined" ? window.location.pathname : "/onboarding/game-selection";
+
+  if (!isLoggedIn()) {
+    logGuardRedirect("RequireGameSelection", path, email, null, "/login", "User is not logged in");
+    return <Redirect to="/login" />;
+  }
+  if (isLoading) return <div className="min-h-screen bg-[#050507] flex items-center justify-center text-white font-sans text-sm"><Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading progress...</div>;
+
+  if (!record) {
+    logGuardRedirect("RequireGameSelection", path, email, null, "/enrollment", "Enrollment record not found in database");
+    return <Redirect to="/enrollment" />;
+  }
+  if (!record.agreement_signed) {
+    logGuardRedirect("RequireGameSelection", path, email, record, "/onboarding/agreement", "Agreement not signed");
+    return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
+  }
+  if (!record.password_created) {
+    logGuardRedirect("RequireGameSelection", path, email, record, "/set-password", "Password not created");
+    return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
+  }
+  
+  if (record.game_selected) {
+    if (!record.customization_completed) {
+      logGuardRedirect("RequireGameSelection", path, email, record, "/onboarding/customization", "Game already selected but customization not completed");
+      return <Redirect to="/onboarding/customization" />;
+    }
+    logGuardRedirect("RequireGameSelection", path, email, record, "/onboarding/dashboard", "Onboarding completed, redirecting to dashboard");
+    return <Redirect to="/onboarding/dashboard" />;
+  }
+
+  logGuardRedirect("RequireGameSelection", path, email, record, null, "Onboarding step Game Selection (Allow Render)");
   return <Component />;
 }
 
-// /onboarding/customization — requires auth + game selected
+// /onboarding/customization
 function RequireCustomization({ component: Component }: { component: React.ComponentType }) {
-  if (!isLoggedIn()) return <Redirect to="/login" />;
-  if (!gameSelected()) return <Redirect to="/onboarding/game-selection" />;
+  const { data: record, isLoading } = useOnboardingProgress();
+  const email = getOnboardingEmail();
+  const path = typeof window !== "undefined" ? window.location.pathname : "/onboarding/customization";
+
+  if (!isLoggedIn()) {
+    logGuardRedirect("RequireCustomization", path, email, null, "/login", "User is not logged in");
+    return <Redirect to="/login" />;
+  }
+  if (isLoading) return <div className="min-h-screen bg-[#050507] flex items-center justify-center text-white font-sans text-sm"><Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading progress...</div>;
+
+  if (!record) {
+    logGuardRedirect("RequireCustomization", path, email, null, "/enrollment", "Enrollment record not found in database");
+    return <Redirect to="/enrollment" />;
+  }
+  if (!record.agreement_signed) {
+    logGuardRedirect("RequireCustomization", path, email, record, "/onboarding/agreement", "Agreement not signed");
+    return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
+  }
+  if (!record.password_created) {
+    logGuardRedirect("RequireCustomization", path, email, record, "/set-password", "Password not created");
+    return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
+  }
+  if (!record.game_selected) {
+    logGuardRedirect("RequireCustomization", path, email, record, "/onboarding/game-selection", "Game not selected");
+    return <Redirect to="/onboarding/game-selection" />;
+  }
+
+  if (record.customization_completed) {
+    logGuardRedirect("RequireCustomization", path, email, record, "/onboarding/dashboard", "Customization already completed");
+    return <Redirect to="/onboarding/dashboard" />;
+  }
+
+  logGuardRedirect("RequireCustomization", path, email, record, null, "Onboarding step Customization (Allow Render)");
   return <Component />;
 }
 
-// /onboarding/dashboard — requires auth + game selected + customization completed
+// /onboarding/dashboard
 function RequireDashboard({ component: Component }: { component: React.ComponentType }) {
-  if (!isLoggedIn()) return <Redirect to="/login" />;
-  if (!gameSelected()) return <Redirect to="/onboarding/game-selection" />;
-  if (!customizationCompleted()) return <Redirect to="/onboarding/customization" />;
+  const { data: record, isLoading } = useOnboardingProgress();
+  const email = getOnboardingEmail();
+  const path = typeof window !== "undefined" ? window.location.pathname : "/onboarding/dashboard";
+
+  if (!isLoggedIn()) {
+    logGuardRedirect("RequireDashboard", path, email, null, "/login", "User is not logged in");
+    return <Redirect to="/login" />;
+  }
+  if (isLoading) return <div className="min-h-screen bg-[#050507] flex items-center justify-center text-white font-sans text-sm"><Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading progress...</div>;
+
+  if (!record) {
+    logGuardRedirect("RequireDashboard", path, email, null, "/enrollment", "Enrollment record not found in database");
+    return <Redirect to="/enrollment" />;
+  }
+  if (!record.agreement_signed) {
+    logGuardRedirect("RequireDashboard", path, email, record, "/onboarding/agreement", "Agreement not signed");
+    return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
+  }
+  if (!record.password_created) {
+    logGuardRedirect("RequireDashboard", path, email, record, "/set-password", "Password not created");
+    return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
+  }
+  if (!record.game_selected) {
+    logGuardRedirect("RequireDashboard", path, email, record, "/onboarding/game-selection", "Game not selected");
+    return <Redirect to="/onboarding/game-selection" />;
+  }
+  if (!record.customization_completed) {
+    logGuardRedirect("RequireDashboard", path, email, record, "/onboarding/customization", "Customization not completed");
+    return <Redirect to="/onboarding/customization" />;
+  }
+
+  logGuardRedirect("RequireDashboard", path, email, record, null, "Onboarding completed, loading dashboard (Allow Render)");
   return <Component />;
 }
 
@@ -91,6 +332,33 @@ function AppShell() {
           <Route path="/enrollment" component={Enrollment} />
           <Route path="/onboarding/access" component={OnboardingAccess} />
           {/* Protected onboarding — ordered */}
+          <Route path="/onboarding/agreement">
+            {() => <RequireAgreement component={Agreement} />}
+          </Route>
+          <Route path="/onboarding/agreement/success">
+            {() => {
+              if (typeof window !== "undefined") {
+                localStorage.setItem("appSquadAgreementSigned", "true");
+                const params = new URLSearchParams(window.location.search);
+                const emailFromUrl = params.get("email");
+                const email = (emailFromUrl || localStorage.getItem("appSquadEnrollmentEmail") || "").trim().toLowerCase();
+                if (email) {
+                  fetch("/api/enrollment/update", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, fields: { agreement_signed: true, onboarding_status: "agreement_signed" } })
+                  }).then(() => {
+                    window.top.location.href = `/set-password?email=${encodeURIComponent(email)}`;
+                  }).catch(() => {
+                    window.top.location.href = `/set-password?email=${encodeURIComponent(email)}`;
+                  });
+                } else {
+                  window.top.location.href = "/set-password";
+                }
+              }
+              return <div>Redirecting...</div>;
+            }}
+          </Route>
           <Route path="/onboarding/game-selection">
             {() => <RequireGameSelection component={GameSelection} />}
           </Route>
@@ -101,15 +369,20 @@ function AppShell() {
             {() => <RequireDashboard component={Dashboard} />}
           </Route>
           {/* Post-payment account setup */}
-          <Route path="/set-password" component={SetPassword} />
+          <Route path="/set-password">
+            {() => <RequireSetPassword component={SetPassword} />}
+          </Route>
           {/* Staff login */}
-          <Route path="/login" component={StaffLogin} />
+          <Route path="/login">
+            {() => <RequireLogin component={StaffLogin} />}
+          </Route>
           {/* Admin */}
           <Route path="/admin" component={AdminLogin} />
           <Route path="/admin/projects" component={AdminProjects} />
           <Route path="/admin/projects/:id">
             {(params) => <AdminProjectDetail id={params.id} />}
           </Route>
+          <Route path="/admin/users" component={AdminUsers} />
           <Route component={NotFound} />
         </Switch>
       </main>

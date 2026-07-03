@@ -28,6 +28,17 @@ if (!basePath) {
 
 export default defineConfig({
   base: basePath,
+  define: {
+    "process.env.STRIPE_PRICE_ESSENTIALS": JSON.stringify(process.env.STRIPE_PRICE_ESSENTIALS),
+    "process.env.STRIPE_PRICE_ACCELERATOR": JSON.stringify(process.env.STRIPE_PRICE_ACCELERATOR),
+    "process.env.STRIPE_PRICE_EMPIRE": JSON.stringify(process.env.STRIPE_PRICE_EMPIRE),
+    "process.env.STRIPE_PRICE_ESSENTIALS_MONTHLY": JSON.stringify(process.env.STRIPE_PRICE_ESSENTIALS_MONTHLY),
+    "process.env.STRIPE_PRICE_ESSENTIALS_SETUP": JSON.stringify(process.env.STRIPE_PRICE_ESSENTIALS_SETUP),
+    "process.env.STRIPE_PRICE_ACCELERATOR_MONTHLY": JSON.stringify(process.env.STRIPE_PRICE_ACCELERATOR_MONTHLY),
+    "process.env.STRIPE_PRICE_ACCELERATOR_SETUP": JSON.stringify(process.env.STRIPE_PRICE_ACCELERATOR_SETUP),
+    "process.env.STRIPE_PRICE_EMPIRE_MONTHLY": JSON.stringify(process.env.STRIPE_PRICE_EMPIRE_MONTHLY),
+    "process.env.STRIPE_PRICE_EMPIRE_SETUP": JSON.stringify(process.env.STRIPE_PRICE_EMPIRE_SETUP),
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -65,6 +76,12 @@ export default defineConfig({
     allowedHosts: true,
     fs: {
       strict: true,
+    },
+    proxy: {
+      "/api": {
+        target: `http://localhost:${process.env.API_SERVER_PORT || "8080"}`,
+        changeOrigin: true,
+      },
     },
   },
   preview: {

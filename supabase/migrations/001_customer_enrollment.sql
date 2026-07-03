@@ -24,6 +24,9 @@ create table if not exists public.customer_enrollment (
   game_selected           boolean not null default false,
   customization_completed boolean not null default false,
   dashboard_completed     boolean not null default false,
+  agreement_signed        boolean not null default false,
+  agreement_signing_url   text,
+  agreement_contract_id   text,
   created_at              timestamptz not null default now(),
   updated_at              timestamptz not null default now()
 );

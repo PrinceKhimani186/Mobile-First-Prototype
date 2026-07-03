@@ -39,6 +39,7 @@ interface Project {
   currentStage: string;
   createdAt: string;
   updatedAt: string;
+  assignedPms?: { id: number; name: string }[];
 }
 
 // ─── New Project Modal ─────────────────────────────────────────────────────────
@@ -142,11 +143,20 @@ export default function AdminProjects() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id: number; name: string; email: string; role: "super_admin" | "project_manager" } | null>(null);
 
   async function checkAuth() {
-    const res = await fetch("/api/admin/auth", { credentials: "include" });
-    const data = await res.json() as { authenticated: boolean };
-    if (!data.authenticated) navigate("/admin");
+    try {
+      const res = await fetch("/api/admin/auth", { credentials: "include" });
+      const data = await res.json() as { authenticated: boolean; user: any };
+      if (!data.authenticated) {
+        navigate("/admin");
+      } else {
+        setCurrentUser(data.user);
+      }
+    } catch {
+      navigate("/admin");
+    }
   }
 
   async function loadProjects() {
@@ -181,21 +191,43 @@ export default function AdminProjects() {
       {showNew && <NewProjectModal onClose={() => setShowNew(false)} onCreated={loadProjects} />}
 
       {/* Header */}
-      <div style={{ borderBottom: "1px solid hsl(224 22% 11%)", padding: "16px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "hsl(226 32% 6%)" }}>
+      <div style={{ borderBottom: "1px solid hsl(224 22% 11%)", padding: "16px 28px", display: "flex", alignItems: "center", justifyBetween: "space-between", justifyContent: "space-between", background: "hsl(226 32% 6%)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "hsl(142 76% 55%)" }} />
-          <p style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "hsl(220 20% 88%)" }}>
-            App Squad — Project Manager
-          </p>
+          <div>
+            <p style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "hsl(220 20% 88%)", lineHeight: 1.2 }}>
+              App Squad — Project Manager
+            </p>
+            {currentUser && (
+              <p style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(218 16% 48%)", fontWeight: 300 }}>
+                Logged in as: <span style={{ color: "hsl(35 90% 62%)", fontWeight: 500 }}>{currentUser.name}</span> ({currentUser.role === "super_admin" ? "Super Admin" : "Project Manager"})
+              </p>
+            )}
+          </div>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <button onClick={loadProjects} title="Refresh" style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "7px 10px", cursor: "pointer", color: "hsl(218 16% 44%)", display: "flex", alignItems: "center" }}>
             <RefreshCw style={{ width: 13, height: 13 }} />
           </button>
-          <button onClick={() => setShowNew(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 9, border: "none", background: "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)", fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, color: "#050505", cursor: "pointer" }}>
-            <Plus style={{ width: 13, height: 13 }} />
-            New Project
-          </button>
+          
+          {currentUser?.role === "super_admin" && (
+            <>
+              <Link href="/admin/users" style={{ textDecoration: "none" }}>
+                <button style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", fontFamily: "'Inter'", fontSize: 12, color: "hsl(220 20% 75%)", cursor: "pointer" }}>
+                  <User style={{ width: 12, height: 12 }} />
+                  Admin Users
+                </button>
+              </Link>
+              <button style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 44%)", cursor: "default" }}>
+                Settings
+              </button>
+              <button onClick={() => setShowNew(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 9, border: "none", background: "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)", fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, color: "#050505", cursor: "pointer" }}>
+                <Plus style={{ width: 13, height: 13 }} />
+                New Project
+              </button>
+            </>
+          )}
+
           <button onClick={logout} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 9, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 44%)", cursor: "pointer" }}>
             <LogOut style={{ width: 12, height: 12 }} />
             Sign out
@@ -207,7 +239,7 @@ export default function AdminProjects() {
         {/* Stats bar */}
         <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
           {[
-            { label: "Total Projects", value: projects.length },
+            { label: currentUser?.role === "super_admin" ? "Total Projects" : "Assigned Projects", value: projects.length },
             { label: "In Progress", value: projects.filter(p => !["App Launch", "Store Submission"].includes(p.currentStage)).length },
             { label: "Demo Ready", value: projects.filter(p => p.currentStage === "Demo Ready For Review").length },
             { label: "Launched", value: projects.filter(p => p.currentStage === "App Launch").length },
@@ -246,7 +278,7 @@ export default function AdminProjects() {
             <div style={{ padding: 48, textAlign: "center" }}>
               <User style={{ width: 28, height: 28, color: "hsl(218 16% 22%)", margin: "0 auto 10px" }} />
               <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(218 16% 34%)", fontWeight: 300 }}>
-                {search ? "No projects match your search." : "No projects yet. Create one to get started."}
+                {search ? "No projects match your search." : "No projects assigned yet."}
               </p>
             </div>
           ) : filtered.map((p, i) => (
@@ -267,7 +299,14 @@ export default function AdminProjects() {
               onMouseLeave={e => (e.currentTarget.style.background = "hsl(226 28% 6%)")}
             >
               <p style={{ fontFamily: "'Space Grotesk'", fontSize: 12, fontWeight: 600, color: "hsl(35 90% 62%)", letterSpacing: "0.02em" }}>{p.projectId}</p>
-              <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(220 20% 78%)", fontWeight: 400 }}>{p.customerName || "—"}</p>
+              <div>
+                <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(220 20% 78%)", fontWeight: 400 }}>{p.customerName || "—"}</p>
+                {p.assignedPms && p.assignedPms.length > 0 && (
+                  <p style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(38 95% 54% / 0.8)", fontWeight: 300, marginTop: 2 }}>
+                    PM: {p.assignedPms.map((pm: any) => pm.name).join(", ")}
+                  </p>
+                )}
+              </div>
               <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 48%)", fontWeight: 300 }}>{p.email}</p>
               <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 44%)", fontWeight: 300 }}>{p.package || "—"}</p>
               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>

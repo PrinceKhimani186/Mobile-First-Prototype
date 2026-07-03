@@ -5,6 +5,7 @@ import {
   Store, Rocket, Layers, TestTube2, LifeBuoy, User,
   Eye, PhoneCall, Wand2, ClipboardEdit, ArrowRight, Send,
   X, AlertTriangle, CheckSquare, Square, Upload, ShieldCheck, Check,
+  FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { updateProjectStatusInCRM } from "@/lib/crm";
@@ -41,6 +42,14 @@ const STAGE_ORDER = [
   "App Launch",
 ] as const;
 type ProjectStage = typeof STAGE_ORDER[number];
+
+const REVIEW_STAGES = [
+  "Brand Review",
+  "Customization Review",
+  "Demo Ready For Review",
+  "Final Approval",
+  "Publishing Requirements"
+];
 
 const STAGE_PCT: Record<ProjectStage, number> = {
   "Project Received": 10,
@@ -196,6 +205,10 @@ export default function Dashboard() {
   const [source, setSource] = useState("");
   const [gameSelection, setGameSelection] = useState<{ selectedGameType: string; gameCategory: string; templateName: string } | null>(null);
   const [customization, setCustomization] = useState<{ appName: string; tagline?: string; monetization?: string } | null>(null);
+  
+  // Custom agreement PDF
+  const [agreementPdfUrl, setAgreementPdfUrl] = useState("");
+  const [agreementSignedAt, setAgreementSignedAt] = useState("");
 
   // Project stage
   const [projectStage, setProjectStage] = useState<ProjectStage>("Project Received");
@@ -230,8 +243,106 @@ export default function Dashboard() {
   const [approvingDemo, setApprovingDemo] = useState(false);
   const { toast } = useToast();
 
+  const [projectId, setProjectId] = useState("");
+  const [approvalsHistory, setApprovalsHistory] = useState<any[]>([]);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingApproval, setSubmittingApproval] = useState<string | null>(null);
+  const [showApprovalConfirm, setShowApprovalConfirm] = useState<{ open: boolean; milestoneName: string } | null>(null);
+
+  const fetchApprovalsHistory = useCallback((projId: string) => {
+    fetch(`/api/projects/${projId}/approvals`, { cache: "no-store" })
+      .then(r => r.ok ? r.json() : [])
+      .then((data) => setApprovalsHistory(data))
+      .catch(console.error);
+  }, []);
+
+  const handleApproveMilestone = async (milestoneName: string) => {
+    setSubmittingApproval(milestoneName);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/approvals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          milestoneName,
+          action: "approve",
+          comment: reviewComment,
+          clientName: clientName || "Client",
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to approve milestone");
+
+      toast({
+        title: "Milestone approved",
+        description: `Successfully approved "${milestoneName}".`,
+      });
+      setReviewComment("");
+      fetchApprovalsHistory(projectId);
+      refreshMondayData(email);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast({
+        title: "Approval failed",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingApproval(null);
+    }
+  };
+
+  const handleRequestRevision = async (milestoneName: string) => {
+    if (!reviewComment.trim()) {
+      toast({
+        title: "Comment required",
+        description: "Please describe the revisions you want to request.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmittingApproval(milestoneName);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/approvals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          milestoneName,
+          action: "revision",
+          comment: reviewComment,
+          clientName: clientName || "Client",
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Failed to request revisions");
+
+      toast({
+        title: "Revisions requested",
+        description: `Successfully requested revisions for "${milestoneName}".`,
+      });
+      setReviewComment("");
+      fetchApprovalsHistory(projectId);
+      refreshMondayData(email);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast({
+        title: "Request failed",
+        description: msg,
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingApproval(null);
+    }
+  };
+
   // Shared refetch helper — called after any Monday mutation
   const refreshMondayData = useCallback((emailParam: string) => {
+    if (projectId) {
+      fetchApprovalsHistory(projectId);
+    }
+
     fetch("/api/project-progress", { cache: "no-store" })
       .then(r => r.ok ? r.json() : null)
       .then((d: { completedStages: number; totalStages: number; percentage: number; stages: Array<{ name: string; status: "Complete" | "In Progress" | "Pending" | "Client Review Required" }> } | null) => {
@@ -254,7 +365,7 @@ export default function Dashboard() {
         }
       })
       .catch(console.error);
-  }, []);
+  }, [projectId, fetchApprovalsHistory]);
 
   // Update a stage status in Monday.com (admin only — sequential, with next-stage activation)
   const updateStageStatus = useCallback(async (stageName: string) => {
@@ -356,6 +467,20 @@ export default function Dashboard() {
     setGameSelection(game);
     setCustomization(custom);
 
+    if (em) {
+      fetch(`/api/enrollment/agreement-status?email=${encodeURIComponent(em.toLowerCase())}`)
+        .then(r => r.ok ? r.json() : null)
+        .then((data: { signed?: boolean; pdfUrl?: string; signedAt?: string } | null) => {
+          if (data?.signed && data.pdfUrl) {
+            setAgreementPdfUrl(data.pdfUrl);
+            if (data.signedAt) {
+              setAgreementSignedAt(new Date(data.signedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
+            }
+          }
+        })
+        .catch(console.error);
+    }
+
     // ?stage= URL param lets admins preview any stage directly (persists to localStorage).
     const urlStage = new URLSearchParams(window.location.search).get("stage") as ProjectStage | null;
     const savedStage = localStorage.getItem("as_project_stage") as ProjectStage | null;
@@ -379,7 +504,11 @@ export default function Dashboard() {
     if (em) {
       fetch(`/api/projects/stage?email=${encodeURIComponent(em.toLowerCase())}`)
         .then(r => r.ok ? r.json() : null)
-        .then((data: { currentStage?: string } | null) => {
+        .then((data: { projectId?: string; currentStage?: string } | null) => {
+          if (data?.projectId) {
+            setProjectId(data.projectId);
+            fetchApprovalsHistory(data.projectId);
+          }
           if (data?.currentStage && STAGE_ORDER.includes(data.currentStage as ProjectStage)) {
             const serverStage = data.currentStage as ProjectStage;
             setProjectStage(serverStage);
@@ -463,7 +592,7 @@ export default function Dashboard() {
     });
 
     return () => clearInterval(mondayInterval);
-  }, []);
+  }, [fetchApprovalsHistory]);
 
   function advanceTo(stage: ProjectStage) {
     setProjectStage(stage);
@@ -723,6 +852,21 @@ export default function Dashboard() {
         onCancel={() => setShowFinalModal(false)}
       />
 
+      {/* Milestone Approval Confirmation Modal */}
+      <ConfirmModal
+        open={!!showApprovalConfirm?.open}
+        headline="Confirm Milestone Approval"
+        body="Are you sure you want to approve this milestone? Once approved, the project will move to the next stage."
+        confirmLabel="Approve"
+        onConfirm={async () => {
+          if (showApprovalConfirm) {
+            await handleApproveMilestone(showApprovalConfirm.milestoneName);
+            setShowApprovalConfirm(null);
+          }
+        }}
+        onCancel={() => setShowApprovalConfirm(null)}
+      />
+
       <div className="container mx-auto px-4 max-w-5xl relative z-10">
 
         {/* Header */}
@@ -786,6 +930,12 @@ export default function Dashboard() {
                   const isActive = stage.status === "active";
                   const isReview = stage.status === "review";
                   const lbl = stage.label as ProjectStage;
+                  const milestoneApprovals = approvalsHistory.filter(h => h.milestoneName === stage.label);
+                  const latestApproval = milestoneApprovals[milestoneApprovals.length - 1];
+                  const isApprovedReview = REVIEW_STAGES.includes(lbl) && (
+                    latestApproval?.status === "approved" || 
+                    (isComplete && (!latestApproval || latestApproval.status === "approved"))
+                  );
 
                   return (
                     <div key={stage.id} className="flex gap-4">
@@ -793,12 +943,30 @@ export default function Dashboard() {
                       <div className="flex flex-col items-center">
                         <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10"
                           style={{
-                            background: isComplete ? "hsl(142 76% 55% / 0.12)" : isActive ? "hsl(35 90% 55% / 0.12)" : "hsl(226 28% 7%)",
-                            border: `1.5px solid ${isComplete ? "hsl(142 76% 55% / 0.4)" : isActive ? "hsl(35 90% 55% / 0.4)" : "hsl(224 22% 14%)"}`,
+                            background: isApprovedReview 
+                              ? "hsl(217 85% 60% / 0.12)" 
+                              : isComplete 
+                              ? "hsl(142 76% 55% / 0.12)" 
+                              : isActive 
+                              ? "hsl(35 90% 55% / 0.12)" 
+                              : "hsl(226 28% 7%)",
+                            border: `1.5px solid ${
+                              isApprovedReview
+                              ? "hsl(217 85% 60% / 0.4)"
+                              : isComplete 
+                              ? "hsl(142 76% 55% / 0.4)" 
+                              : isActive 
+                              ? "hsl(35 90% 55% / 0.4)" 
+                              : "hsl(224 22% 14%)"
+                            }`,
                           }}>
-                          <Icon className="w-3.5 h-3.5" style={{
-                            color: isComplete ? "hsl(142 76% 55%)" : isActive ? "hsl(35 90% 62%)" : "hsl(218 16% 32%)"
-                          }} />
+                          {isApprovedReview ? (
+                            <Check className="w-3.5 h-3.5" style={{ color: "hsl(217 85% 65%)" }} />
+                          ) : (
+                            <Icon className="w-3.5 h-3.5" style={{
+                              color: isComplete ? "hsl(142 76% 55%)" : isActive ? "hsl(35 90% 62%)" : "hsl(218 16% 32%)"
+                            }} />
+                          )}
                         </div>
                         {!isLast && (
                           <div className="w-px flex-1 mt-1 mb-1" style={{
@@ -818,20 +986,46 @@ export default function Dashboard() {
                           }}>
                             {stage.label}
                           </p>
-                          {isComplete && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(142 76% 55% / 0.1)", color: "hsl(142 76% 55%)", border: "1px solid hsl(142 76% 55% / 0.25)" }}>
-                              Complete
-                            </span>
-                          )}
-                          {isActive && lbl !== "Revision Window" && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(35 90% 55% / 0.12)", color: "hsl(35 90% 62%)", border: "1px solid hsl(35 90% 55% / 0.28)" }}>
-                              {lbl === "Demo Ready For Review" ? "Action Required" : "In Progress"}
-                            </span>
-                          )}
-                          {lbl === "Revision Window" && isActive && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(217 85% 60% / 0.12)", color: "hsl(217 85% 65%)", border: "1px solid hsl(217 85% 60% / 0.28)" }}>
-                              Revision Round Used
-                            </span>
+                          {REVIEW_STAGES.includes(lbl) ? (
+                            latestApproval ? (
+                              latestApproval.status === "approved" ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(142 76% 55% / 0.1)", color: "hsl(142 76% 55%)", border: "1px solid hsl(142 76% 55% / 0.25)" }}>
+                                  ✓ Approved by Client
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(35 90% 55% / 0.12)", color: "hsl(35 90% 62%)", border: "1px solid hsl(35 90% 55% / 0.28)" }}>
+                                  ⚠ Revision Requested
+                                </span>
+                              )
+                            ) : (
+                              (isActive || isReview) ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(217 85% 60% / 0.12)", color: "hsl(217 85% 65%)", border: "1px solid hsl(217 85% 60% / 0.28)" }}>
+                                  Awaiting Client Approval
+                                </span>
+                              ) : isComplete ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(142 76% 55% / 0.1)", color: "hsl(142 76% 55%)", border: "1px solid hsl(142 76% 55% / 0.25)" }}>
+                                  ✓ Approved by Client
+                                </span>
+                              ) : null
+                            )
+                          ) : (
+                            <>
+                              {isComplete && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(142 76% 55% / 0.1)", color: "hsl(142 76% 55%)", border: "1px solid hsl(142 76% 55% / 0.25)" }}>
+                                  Complete
+                                </span>
+                              )}
+                              {isActive && lbl !== "Revision Window" && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(35 90% 55% / 0.12)", color: "hsl(35 90% 62%)", border: "1px solid hsl(35 90% 55% / 0.28)" }}>
+                                  In Progress
+                                </span>
+                              )}
+                              {lbl === "Revision Window" && isActive && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "hsl(217 85% 60% / 0.12)", color: "hsl(217 85% 65%)", border: "1px solid hsl(217 85% 60% / 0.28)" }}>
+                                  Revision Round Used
+                                </span>
+                              )}
+                            </>
                           )}
                           {isAdmin && isActive && lbl !== "Demo Ready For Review" && (
                             <button
@@ -1285,6 +1479,99 @@ export default function Dashboard() {
                             </p>
                           </motion.div>
                         )}
+
+                        {/* ── Client Milestone Action & History ── */}
+                        {REVIEW_STAGES.includes(lbl) && (
+                          <div className="mt-3 flex flex-col gap-3">
+                            {/* Action Panel */}
+                            {(isActive || isReview) && (!latestApproval || latestApproval.status !== "approved") && (
+                              <div className="p-4 rounded-xl mt-2" style={{ background: "hsl(226 28% 5%)", border: "1px solid hsl(224 22% 12%)" }}>
+                                <p style={{ fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 700, color: "hsl(220 20% 88%)", marginBottom: 8 }}>
+                                  Client Action: Milestone Review
+                                </p>
+                                
+                                <textarea
+                                  value={reviewComment}
+                                  onChange={(e) => setReviewComment(e.target.value)}
+                                  placeholder="Write feedback, notes, or detailed revision requests here (required for revisions)..."
+                                  rows={3}
+                                  style={{
+                                    width: "100%", borderRadius: 8, padding: "8px 12px",
+                                    fontFamily: "'Inter'", fontSize: 12.5,
+                                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)",
+                                    color: "rgba(255,255,255,0.8)", outline: "none", resize: "none",
+                                    boxSizing: "border-box", marginBottom: 12
+                                  }}
+                                />
+                                
+                                <div style={{ display: "flex", gap: 10 }}>
+                                  <button
+                                    type="button"
+                                    disabled={submittingApproval !== null}
+                                    onClick={() => setShowApprovalConfirm({ open: true, milestoneName: stage.label })}
+                                    style={{
+                                      background: "hsl(142 76% 40%)",
+                                      color: "white",
+                                      padding: "8px 16px",
+                                      borderRadius: 8,
+                                      fontWeight: 600,
+                                      fontSize: 12,
+                                      cursor: "pointer",
+                                      border: "none"
+                                    }}
+                                  >
+                                    Approve Milestone
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={submittingApproval !== null}
+                                    onClick={() => handleRequestRevision(stage.label)}
+                                    style={{
+                                      background: "hsl(35 90% 48%)",
+                                      color: "white",
+                                      padding: "8px 16px",
+                                      borderRadius: 8,
+                                      fontWeight: 600,
+                                      fontSize: 12,
+                                      cursor: "pointer",
+                                      border: "none"
+                                    }}
+                                  >
+                                    Request Revisions
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* History Timeline */}
+                            {milestoneApprovals.length > 0 && (
+                              <div className="mt-2 pl-3 border-l border-dashed border-[rgba(255,255,255,0.1)] flex flex-col gap-2.5">
+                                {milestoneApprovals.map((log) => (
+                                  <div key={log.id} style={{ fontSize: 11.5 }}>
+                                    <div style={{ fontWeight: 600, color: log.status === "approved" ? "hsl(142 76% 55%)" : "hsl(35 90% 62%)" }}>
+                                      {log.status === "approved" ? `✓ Approved by ${log.approvedBy || "Client"}` : "⚠ Revision Requested"}
+                                    </div>
+                                    {log.comment && (
+                                      <div className="mt-0.5 text-[rgba(255,255,255,0.55)] italic font-light">
+                                        Comment: "{log.comment}"
+                                      </div>
+                                    )}
+                                    <div className="mt-0.5 text-[9.5px] text-[rgba(255,255,255,0.25)]">
+                                      {new Date(log.approvedAt || log.requestedAt || log.createdAt).toLocaleString("en-US", {
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                        hour: "numeric",
+                                        minute: "2-digit",
+                                        hour12: true
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -1372,6 +1659,55 @@ export default function Dashboard() {
                 </div>
               ))}
             </motion.div>
+
+            {/* Enrollment Documents */}
+            {agreementPdfUrl && (
+              <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+                className="rounded-2xl p-5" style={{ background: "hsl(226 32% 8%)", border: "1px solid hsl(224 22% 13%)" }}>
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="w-3.5 h-3.5" style={{ color: "hsl(35 90% 55%)" }} />
+                  <p style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "hsl(35 90% 55%)" }}>
+                    Enrollment Documents
+                  </p>
+                </div>
+                
+                <div className="flex flex-col gap-0.5 mb-4">
+                  <p style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(218 16% 34%)", fontWeight: 500, letterSpacing: "0.04em", textTransform: "uppercase" }}>Signed Agreement</p>
+                  <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(218 16% 60%)", fontWeight: 300 }}>v1.0 (Signed)</p>
+                  {agreementSignedAt && (
+                    <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{agreementSignedAt}</p>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <a
+                    href={agreementPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      flex: 1, height: 36, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                      background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                      color: "white", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textDecoration: "none"
+                    }}
+                  >
+                    View PDF
+                  </a>
+                  <a
+                    href={agreementPdfUrl}
+                    download="Enrollment_Agreement.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      flex: 1, height: 36, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                      background: "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))",
+                      color: "black", fontFamily: "'Space Grotesk'", fontSize: 11, fontWeight: 600, textDecoration: "none"
+                    }}
+                  >
+                    Download PDF
+                  </a>
+                </div>
+              </motion.div>
+            )}
 
             {/* Support note */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }}

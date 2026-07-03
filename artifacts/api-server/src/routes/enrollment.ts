@@ -53,33 +53,56 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
     firstName, lastName, email, phone,
     selectedPlan, planName, planTag,
     successUrl, cancelUrl,
+    payment_type, stripe_price_id, setup_price_id
   } = req.body as {
     firstName: string; lastName: string; email: string; phone?: string;
     selectedPlan: string; planName: string; planTag: string;
     successUrl: string; cancelUrl: string;
+    payment_type?: "subscription" | "monthly";
+    stripe_price_id?: string;
+    setup_price_id?: string;
   };
-
-  const phoneVal = phone ?? "";
 
   if (!firstName || !lastName || !email || !planName || !successUrl || !cancelUrl) {
     res.status(400).json({ error: "Missing required fields" });
     return;
   }
 
+  const phoneVal = phone ?? "";
+
   // 2 — Validate price ID format
-  const priceErr = priceIdError(planName);
-  if (priceErr) {
-    req.log.error({ planName, priceErr }, "Enrollment: price ID config error");
-    res.status(400).json({ error: priceErr });
+  const resolvedPriceId = stripe_price_id || getPriceId(planName);
+  if (!resolvedPriceId) {
+    req.log.error({ planName }, "Enrollment: price ID not found");
+    res.status(400).json({ error: `Price ID for "${planName}" is not set.` });
     return;
   }
 
-  const priceId = getPriceId(planName)!;
+  if (resolvedPriceId.startsWith("prod_")) {
+    res.status(400).json({ error: `Price ID for "${planName}" looks like a Product ID (prod_…).` });
+    return;
+  }
+  if (!resolvedPriceId.startsWith("price_")) {
+    res.status(400).json({ error: `Price ID for "${planName}" has an unexpected format.` });
+    return;
+  }
+
+  if (payment_type === "monthly" && setup_price_id) {
+    if (setup_price_id.startsWith("prod_")) {
+      res.status(400).json({ error: `Setup Price ID looks like a Product ID (prod_…).` });
+      return;
+    }
+    if (!setup_price_id.startsWith("price_")) {
+      res.status(400).json({ error: `Setup Price ID has an unexpected format.` });
+      return;
+    }
+  }
+
   const stripeKey = process.env.STRIPE_SECRET_KEY!;
   const ghlApiKey = process.env.GHL_API_KEY;
   const ghlLocationId = process.env.GHL_LOCATION_ID;
 
-  req.log.info({ email, planName, priceId: priceId.slice(0, 14) + "…" }, "Enrollment: starting checkout");
+  req.log.info({ email, planName, resolvedPriceId: resolvedPriceId.slice(0, 14) + "…" }, "Enrollment: starting checkout");
 
   // 3 — Create / update GHL contact (non-fatal)
   if (ghlApiKey && ghlLocationId) {
@@ -104,18 +127,40 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
 
   // 4 — Create Stripe checkout session
   try {
+    const isMonthly = payment_type === "monthly";
+    const mode = isMonthly ? "subscription" : "payment";
+    
+    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      { price: resolvedPriceId, quantity: 1 }
+    ];
+
+    // Add setup fee if monthly and setup fee price ID is provided
+    if (isMonthly && setup_price_id) {
+      line_items.push({ price: setup_price_id, quantity: 1 });
+    }
+
     const stripe = new Stripe(stripeKey);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription",
+      line_items: line_items,
+      mode: mode,
       customer_email: email,
-      metadata: { firstName, lastName, email, phone: phoneVal, selectedPlan, planName, planTag },
+      metadata: { 
+        firstName, 
+        lastName, 
+        email, 
+        phone: phoneVal, 
+        selectedPlan, 
+        planName, 
+        planTag,
+        payment_type: payment_type || "subscription",
+        setup_price_id: setup_price_id || ""
+      },
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
 
-    req.log.info({ email, planName, sessionId: session.id }, "Enrollment: Stripe session created successfully");
+    req.log.info({ email, planName, sessionId: session.id, mode }, "Enrollment: Stripe session created successfully");
     res.json({ url: session.url });
 
   } catch (err: unknown) {
@@ -131,7 +176,7 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
       if (typeof e["type"] === "string") stripeType = e["type"] as string;
     }
 
-    req.log.error({ err, planName, priceId, stripeCode, stripeType }, "Enrollment: Stripe session creation failed");
+    req.log.error({ err, planName, resolvedPriceId, stripeCode, stripeType }, "Enrollment: Stripe session creation failed");
 
     res.status(502).json({
       error: message,

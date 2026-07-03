@@ -21,6 +21,9 @@ export interface EnrollmentRecord {
   selected_package?: string;
   document_name?: string;
   document_url?: string;
+  agreement_signed?: boolean;
+  agreement_signing_url?: string;
+  agreement_contract_id?: string;
 }
 
 // ── Upload document to Supabase Storage ───────────────────────────────────────
@@ -151,7 +154,7 @@ export async function markGameSelected(
     const res = await fetch(`${BASE}/update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, fields: { game_selected: true } }),
+      body: JSON.stringify({ email, fields: { game_selected: true, onboarding_status: "game_selected" } }),
     });
     const json = (await res.json()) as { ok?: boolean; error?: string };
     return { ok: !!json.ok, error: json.error };
@@ -168,7 +171,7 @@ export async function markCustomizationCompleted(
     const res = await fetch(`${BASE}/update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, fields: { customization_completed: true } }),
+      body: JSON.stringify({ email, fields: { customization_completed: true, onboarding_status: "customization_completed" } }),
     });
     const json = (await res.json()) as { ok?: boolean; error?: string };
     return { ok: !!json.ok, error: json.error };
@@ -194,6 +197,75 @@ export async function markDashboardCompleted(
   }
 }
 
+export async function markAgreementSigned(
+  email: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${BASE}/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, fields: { agreement_signed: true, onboarding_status: "agreement_signed" } }),
+    });
+    const json = (await res.json()) as { ok?: boolean; error?: string };
+    return { ok: !!json.ok, error: json.error };
+  } catch {
+    return { ok: false, error: "Unable to save your information." };
+  }
+}
+
+export async function verifySignature(
+  email: string,
+): Promise<{ signed: boolean; pdfUrl?: string; error?: string }> {
+  try {
+    const res = await fetch(`/api/enrollment/agreement-status?email=${encodeURIComponent(email)}`, {
+      cache: "no-store",
+    });
+    const json = (await res.json()) as { signed?: boolean; pdfUrl?: string; error?: string };
+    return { signed: !!json.signed, pdfUrl: json.pdfUrl, error: json.error };
+  } catch {
+    return { signed: false, error: "Unable to verify signature." };
+  }
+}
+
+export async function customSign(
+  email: string,
+  fullName: string,
+  packageName: string,
+  price: string,
+  signatureImage: string,
+): Promise<{ success: boolean; pdfUrl?: string; error?: string }> {
+  try {
+    const res = await fetch(`/api/enrollment/custom-sign`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, fullName, packageName, price, signatureImage }),
+    });
+    const json = (await res.json()) as { success?: boolean; pdfUrl?: string; error?: string };
+    return { success: !!json.success, pdfUrl: json.pdfUrl, error: json.error };
+  } catch {
+    return { success: false, error: "Unable to save your signature." };
+  }
+}
+
+export async function createZohoSignRequest(
+  email: string,
+  fullName: string,
+  packageName: string,
+  price: string,
+): Promise<{ success: boolean; embedUrl?: string; requestId?: string; error?: string }> {
+  try {
+    const res = await fetch(`/api/zoho/create-signature-request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, fullName, packageName, price }),
+    });
+    const json = (await res.json()) as { success?: boolean; embedUrl?: string; requestId?: string; error?: string };
+    return { success: !!json.success, embedUrl: json.embedUrl, requestId: json.requestId, error: json.error };
+  } catch {
+    return { success: false, error: "Unable to connect to the Zoho Sign service." };
+  }
+}
+
 // ── Get progress ──────────────────────────────────────────────────────────────
 export async function getEnrollmentProgress(
   email: string,
@@ -207,4 +279,18 @@ export async function getEnrollmentProgress(
   } catch {
     return { record: null, error: "Unable to connect to the database." };
   }
+}
+
+// ── Get onboarding email helper ────────────────────────────────────────────────
+export function getOnboardingEmail(): string {
+  if (typeof window === "undefined") return "";
+  const params = new URLSearchParams(window.location.search);
+  const emailFromUrl = params.get("email");
+
+  return (
+    emailFromUrl ||
+    localStorage.getItem("appSquadEnrollmentEmail") ||
+    localStorage.getItem("appSquadUserEmail") ||
+    ""
+  ).trim().toLowerCase();
 }

@@ -1,3 +1,5 @@
+(global as any).WebSocket = class {};
+
 import app from "./app";
 import { logger } from "./lib/logger";
 

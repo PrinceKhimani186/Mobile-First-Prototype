@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Lock, Loader2 } from "lucide-react";
 
 export default function AdminLogin() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,12 +19,13 @@ export default function AdminLogin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
       if (res.ok) {
         navigate("/admin/projects");
       } else {
-        setError("Incorrect password. Try again.");
+        const d = await res.json() as { error: string };
+        setError(d.error || "Incorrect credentials. Try again.");
       }
     } catch {
       setError("Could not connect to server.");
@@ -61,6 +63,26 @@ export default function AdminLogin() {
 
         <form onSubmit={handleSubmit}>
           <label style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "hsl(218 16% 40%)", display: "block", marginBottom: 7 }}>
+            Email Address
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="admin@appsquad.com"
+            autoFocus
+            required
+            style={{
+              width: "100%", borderRadius: 10, padding: "11px 14px", marginBottom: 16,
+              fontFamily: "'Inter'", fontSize: 14,
+              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.85)", outline: "none", boxSizing: "border-box",
+            }}
+            onFocus={e => (e.target.style.borderColor = "hsl(35 90% 55% / 0.4)")}
+            onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
+          />
+
+          <label style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "hsl(218 16% 40%)", display: "block", marginBottom: 7 }}>
             Password
           </label>
           <input
@@ -68,7 +90,7 @@ export default function AdminLogin() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             placeholder="Enter admin password"
-            autoFocus
+            required
             style={{
               width: "100%", borderRadius: 10, padding: "11px 14px", marginBottom: 16,
               fontFamily: "'Inter'", fontSize: 14,
@@ -87,15 +109,15 @@ export default function AdminLogin() {
 
           <button
             type="submit"
-            disabled={!password || loading}
+            disabled={!email || !password || loading}
             style={{
               width: "100%", padding: "11px 0", borderRadius: 10, border: "none",
               fontFamily: "'Space Grotesk'", fontSize: 14, fontWeight: 600, letterSpacing: "0.01em",
-              background: password && !loading
+              background: email && password && !loading
                 ? "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)"
                 : "rgba(255,255,255,0.06)",
-              color: password && !loading ? "#050505" : "hsl(218 16% 30%)",
-              cursor: password && !loading ? "pointer" : "not-allowed",
+              color: email && password && !loading ? "#050505" : "hsl(218 16% 30%)",
+              cursor: email && password && !loading ? "pointer" : "not-allowed",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               boxSizing: "border-box",
             }}

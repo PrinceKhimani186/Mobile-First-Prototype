@@ -125,8 +125,8 @@ router.post("/ghl/contact", async (req, res) => {
   const locationId = process.env.GHL_LOCATION_ID;
 
   if (!apiKey || !locationId) {
-    req.log.error("GHL credentials not configured");
-    res.status(500).json({ error: "GHL credentials not configured" });
+    req.log.info("GHL credentials not configured — GHL proxy contact upsert skipped");
+    res.json({ ok: true, skipped: true });
     return;
   }
 
