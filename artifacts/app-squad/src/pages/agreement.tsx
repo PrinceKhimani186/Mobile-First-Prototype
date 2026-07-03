@@ -31,6 +31,10 @@ export default function Agreement() {
   const [signed, setSigned] = useState(false);
   const [error, setError] = useState("");
   const [embedUrl, setEmbedUrl] = useState("");
+  const [devSigning, setDevSigning] = useState(false);
+  const [enrollFullName, setEnrollFullName] = useState("");
+  const [enrollPackageName, setEnrollPackageName] = useState("");
+  const [enrollPrice, setEnrollPrice] = useState("");
 
   const emailFromUrl = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("email") : "";
   const email = emailFromUrl || localStorage.getItem("appSquadEnrollmentEmail") || "";
@@ -69,6 +73,11 @@ export default function Agreement() {
       const resolvedPackageName = planNames[planKey] || planNames.accelerator;
       const pricesForType = planPrices[pType as "subscription" | "monthly"] || planPrices.subscription;
       const resolvedPrice = pricesForType[planKey] || pricesForType.accelerator;
+
+      // Store for dev bypass
+      setEnrollFullName(record.full_name || "");
+      setEnrollPackageName(resolvedPackageName);
+      setEnrollPrice(resolvedPrice);
 
       // Check if user is already signed in the DB
       if (record.agreement_signed) {
@@ -247,23 +256,36 @@ export default function Agreement() {
                       <strong>Developer Mode:</strong> Zoho Sign API has hit its daily developer document limit. You can bypass the signature wall to verify the remainder of the client onboarding flow.
                     </p>
                     <button
-                      onClick={() => {
-                        localStorage.setItem("appSquadAgreementSigned", "true");
-                        const email = localStorage.getItem("appSquadEnrollmentEmail") || "";
-                        if (email) {
-                          fetch("/api/enrollment/update", {
+                      disabled={devSigning}
+                      onClick={async () => {
+                        const bypassEmail = email || localStorage.getItem("appSquadEnrollmentEmail") || "";
+                        if (!bypassEmail) { window.location.href = "/set-password"; return; }
+                        setDevSigning(true);
+                        setError("");
+                        try {
+                          const res = await fetch("/api/enrollment/dev-sign", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ email, fields: { agreement_signed: true, onboarding_status: "agreement_signed" } })
-                          }).then(() => {
-                            queryClient.invalidateQueries({ queryKey: ["onboardingProgress", email] }).then(() => {
-                              window.location.href = `/set-password?email=${encodeURIComponent(email)}`;
-                            });
-                          }).catch(() => {
-                            window.location.href = `/set-password?email=${encodeURIComponent(email)}`;
+                            body: JSON.stringify({
+                              email: bypassEmail,
+                              fullName: enrollFullName || bypassEmail,
+                              packageName: enrollPackageName,
+                              price: enrollPrice,
+                            }),
                           });
-                        } else {
-                          window.location.href = "/set-password";
+                          const data = await res.json() as { success?: boolean; pdfUrl?: string; error?: string };
+                          if (data.success) {
+                            localStorage.setItem("appSquadAgreementSigned", "true");
+                            if (data.pdfUrl) localStorage.setItem("appSquadAgreementPdfUrl", data.pdfUrl);
+                            await queryClient.invalidateQueries({ queryKey: ["onboardingProgress", bypassEmail] });
+                            window.location.href = `/set-password?email=${encodeURIComponent(bypassEmail)}`;
+                          } else {
+                            setError(data.error || "Developer mode bypass failed. Please try again.");
+                            setDevSigning(false);
+                          }
+                        } catch {
+                          setError("Network error during developer mode bypass.");
+                          setDevSigning(false);
                         }
                       }}
                       className="btn-gold"
@@ -278,11 +300,12 @@ export default function Agreement() {
                         fontSize: 14,
                         fontWeight: 600,
                         border: "none",
-                        cursor: "pointer",
+                        cursor: devSigning ? "not-allowed" : "pointer",
+                        opacity: devSigning ? 0.7 : 1,
                         transition: "all 0.2s"
                       }}
                     >
-                      Bypass Zoho Sign & Proceed (Dev Mode)
+                      {devSigning ? "Simulating Agreement…" : "Bypass Zoho Sign & Proceed (Dev Mode)"}
                     </button>
                   </div>
                 )}
