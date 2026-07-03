@@ -21,19 +21,34 @@ function ghlHeaders(apiKey: string) {
 // If neither env var is set the hardcoded fallback is used (works only for the
 // Stripe account where those prices were originally created).
 function getSetupFeePrice(planName: string): string | undefined {
+  const essentialsPrice =
+    process.env.STRIPE_PRICE_ESSENTIALS_SETUP ||
+    process.env.STRIPE_PRICE_ESSENTIALS ||
+    "price_1TnzBLJJdy0crHI8FHNhiOtw";
+  const acceleratorPrice =
+    process.env.STRIPE_PRICE_ACCELERATOR_SETUP ||
+    process.env.STRIPE_PRICE_ACCELERATOR ||
+    "price_1TnzBMJJdy0crHI8LawdE6HC";
+  const empirePrice =
+    process.env.STRIPE_PRICE_EMPIRE_SETUP ||
+    process.env.STRIPE_PRICE_EMPIRE ||
+    "price_1TnzBNJJdy0crHI8H5W2kR9L";
+
+  // Maps every name variant the frontend might send to its price ID.
+  // Frontend sends full names ("App Launch Essentials"), legacy code used short
+  // names ("Essentials") — both are handled here.
   const map: Record<string, string | undefined> = {
-    "Essentials":
-      process.env.STRIPE_PRICE_ESSENTIALS_SETUP ||
-      process.env.STRIPE_PRICE_ESSENTIALS ||
-      "price_1TnzBLJJdy0crHI8FHNhiOtw",
-    "Ownership Accelerator":
-      process.env.STRIPE_PRICE_ACCELERATOR_SETUP ||
-      process.env.STRIPE_PRICE_ACCELERATOR ||
-      "price_1TnzBMJJdy0crHI8LawdE6HC",
-    "Digital Asset Empire":
-      process.env.STRIPE_PRICE_EMPIRE_SETUP ||
-      process.env.STRIPE_PRICE_EMPIRE ||
-      "price_1TnzBNJJdy0crHI8H5W2kR9L",
+    // Full names (current frontend)
+    "App Launch Essentials":    essentialsPrice,
+    "App Ownership Accelerator": acceleratorPrice,
+    "Digital Asset Empire":     empirePrice,
+    // Short names (legacy / future-proofing)
+    "Essentials":            essentialsPrice,
+    "Ownership Accelerator": acceleratorPrice,
+    // Lowercase IDs (plan.id values)
+    "essentials":   essentialsPrice,
+    "accelerator":  acceleratorPrice,
+    "empire":       empirePrice,
   };
   return map[planName];
 }
