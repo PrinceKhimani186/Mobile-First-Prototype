@@ -13,14 +13,21 @@ function ghlHeaders(apiKey: string) {
   };
 }
 
-// Read price IDs at request time so env changes after startup are picked up.
-function getPriceId(planName: string): string | undefined {
+// ── One-time Setup Fee price IDs (used for ALL checkout sessions) ─────────────
+// These must point to one-time (not recurring) prices in your Stripe dashboard.
+// Fallbacks match the prices created during initial setup; override via env vars.
+function getSetupFeePrice(planName: string): string | undefined {
   const map: Record<string, string | undefined> = {
-    "Essentials":            process.env.STRIPE_PRICE_ESSENTIALS,
-    "Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR,
-    "Digital Asset Empire":  process.env.STRIPE_PRICE_EMPIRE,
+    "Essentials":            process.env.STRIPE_PRICE_ESSENTIALS_SETUP    || "price_1TnzBLJJdy0crHI8FHNhiOtw",
+    "Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR_SETUP   || "price_1TnzBMJJdy0crHI8LawdE6HC",
+    "Digital Asset Empire":  process.env.STRIPE_PRICE_EMPIRE_SETUP        || "price_1TnzBNJJdy0crHI8H5W2kR9L",
   };
   return map[planName];
+}
+
+// Kept for backward-compat (used by priceIdError only).
+function getPriceId(planName: string): string | undefined {
+  return getSetupFeePrice(planName);
 }
 
 function stripeConfigError(): string | null {
@@ -32,10 +39,10 @@ function stripeConfigError(): string | null {
 }
 
 function priceIdError(planName: string): string | null {
-  const id = getPriceId(planName) ?? "";
-  if (!id) return `STRIPE_PRICE_${planName.toUpperCase().replace(/\s+/g, "_")} is not set`;
-  if (id.startsWith("prod_")) return `Price ID for "${planName}" looks like a Product ID (prod_…). Set it to the Price ID (price_…) from the product's pricing tab.`;
-  if (!id.startsWith("price_")) return `Price ID for "${planName}" has an unexpected format: ${id.slice(0, 8)}…`;
+  const id = getSetupFeePrice(planName) ?? "";
+  if (!id) return `Setup fee price for "${planName}" is not set. Set STRIPE_PRICE_${planName.toUpperCase().replace(/\s+/g, "_")}_SETUP`;
+  if (id.startsWith("prod_")) return `Setup fee price for "${planName}" looks like a Product ID (prod_…). Use the Price ID (price_…) from the product's pricing tab.`;
+  if (!id.startsWith("price_")) return `Setup fee price for "${planName}" has an unexpected format: ${id.slice(0, 8)}…`;
   return null;
 }
 
@@ -70,39 +77,63 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
 
   const phoneVal = phone ?? "";
 
-  // 2 — Validate price ID format
-  const resolvedPriceId = stripe_price_id || getPriceId(planName);
-  if (!resolvedPriceId) {
-    req.log.error({ planName }, "Enrollment: price ID not found");
-    res.status(400).json({ error: `Price ID for "${planName}" is not set.` });
-    return;
-  }
-
-  if (resolvedPriceId.startsWith("prod_")) {
-    res.status(400).json({ error: `Price ID for "${planName}" looks like a Product ID (prod_…).` });
-    return;
-  }
-  if (!resolvedPriceId.startsWith("price_")) {
-    res.status(400).json({ error: `Price ID for "${planName}" has an unexpected format.` });
-    return;
-  }
-
-  if (payment_type === "monthly" && setup_price_id) {
-    if (setup_price_id.startsWith("prod_")) {
-      res.status(400).json({ error: `Setup Price ID looks like a Product ID (prod_…).` });
-      return;
-    }
-    if (!setup_price_id.startsWith("price_")) {
-      res.status(400).json({ error: `Setup Price ID has an unexpected format.` });
-      return;
-    }
-  }
-
   const stripeKey = process.env.STRIPE_SECRET_KEY!;
   const ghlApiKey = process.env.GHL_API_KEY;
   const ghlLocationId = process.env.GHL_LOCATION_ID;
 
-  req.log.info({ email, planName, resolvedPriceId: resolvedPriceId.slice(0, 14) + "…" }, "Enrollment: starting checkout");
+  // 2 — Always resolve to the one-time Setup Fee price for this plan.
+  //     We ignore whatever price ID the frontend sent (it may point to a recurring price)
+  //     and always use the Setup Fee price from env/hardcoded fallback.
+  const setupFeePrice = getSetupFeePrice(planName);
+  if (!setupFeePrice) {
+    req.log.error({ planName }, "Enrollment: setup fee price ID not configured");
+    res.status(400).json({ error: `Setup fee price for "${planName}" is not configured on the server.` });
+    return;
+  }
+
+  // 3 — Verify the setup fee price is actually one-time (not recurring) by querying Stripe.
+  const stripe = new Stripe(stripeKey);
+  let verifiedPriceId = setupFeePrice;
+  let priceType = "unknown";
+
+  try {
+    const priceObj = await stripe.prices.retrieve(setupFeePrice);
+    priceType = priceObj.type; // "one_time" or "recurring"
+
+    req.log.info({
+      selectedPlan: planName,
+      resolvedPriceId: setupFeePrice,
+      priceType,
+      checkoutMode: "payment",
+      frontendSentPriceId: stripe_price_id ?? "(none)",
+      planTag,
+      payment_type: payment_type ?? "(not sent)",
+    }, "Enrollment: pre-checkout price verification");
+
+    if (priceType === "recurring") {
+      // The setup fee price in env/fallback is itself recurring — this is a misconfiguration.
+      // Log a clear error and refuse to proceed with mode=payment.
+      req.log.error({
+        planName,
+        priceId: setupFeePrice,
+        priceType,
+      }, "Enrollment: SETUP FEE PRICE IS RECURRING — checkout aborted");
+
+      res.status(400).json({
+        error: `Configuration error: the price ID "${setupFeePrice}" for "${planName} Setup Fee" is a recurring price. ` +
+               `mode="payment" requires a one-time price. ` +
+               `Go to Stripe Dashboard → Products → find the one-time Setup Fee for ${planName} → copy its Price ID and set it in STRIPE_PRICE_${planName.toUpperCase().replace(/\s+/g, "_")}_SETUP.`,
+        priceId: setupFeePrice,
+        priceType,
+      });
+      return;
+    }
+  } catch (priceErr: unknown) {
+    const msg = priceErr instanceof Error ? priceErr.message : String(priceErr);
+    req.log.error({ err: priceErr, setupFeePrice, planName }, "Enrollment: failed to retrieve price from Stripe for verification");
+    res.status(502).json({ error: `Could not verify price ID "${setupFeePrice}" with Stripe: ${msg}` });
+    return;
+  }
 
   // 3 — Create / update GHL contact (non-fatal)
   if (ghlApiKey && ghlLocationId) {
@@ -125,42 +156,37 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
     }
   }
 
-  // 4 — Create Stripe checkout session
+  // 4 — Create Stripe checkout session (always one-time payment for setup fee)
   try {
-    const isMonthly = payment_type === "monthly";
-    const mode = isMonthly ? "subscription" : "payment";
-    
-    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [
-      { price: resolvedPriceId, quantity: 1 }
-    ];
+    req.log.info({
+      email,
+      planName,
+      priceId: verifiedPriceId,
+      priceType,
+      mode: "payment",
+    }, "Enrollment: creating Stripe checkout session");
 
-    // Add setup fee if monthly and setup fee price ID is provided
-    if (isMonthly && setup_price_id) {
-      line_items.push({ price: setup_price_id, quantity: 1 });
-    }
-
-    const stripe = new Stripe(stripeKey);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: line_items,
-      mode: mode,
+      line_items: [{ price: verifiedPriceId, quantity: 1 }],
+      mode: "payment",
       customer_email: email,
-      metadata: { 
-        firstName, 
-        lastName, 
-        email, 
-        phone: phoneVal, 
-        selectedPlan, 
-        planName, 
+      metadata: {
+        firstName,
+        lastName,
+        email,
+        phone: phoneVal,
+        selectedPlan,
+        planName,
         planTag,
-        payment_type: payment_type || "subscription",
-        setup_price_id: setup_price_id || ""
+        payment_type: payment_type || "one_time",
+        price_id_used: verifiedPriceId,
       },
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
 
-    req.log.info({ email, planName, sessionId: session.id, mode }, "Enrollment: Stripe session created successfully");
+    req.log.info({ email, planName, sessionId: session.id, mode: "payment", priceId: verifiedPriceId }, "Enrollment: Stripe session created successfully");
     res.json({ url: session.url });
 
   } catch (err: unknown) {
