@@ -30,7 +30,9 @@ async function resolveOnboardingRedirect(email: string): Promise<string> {
 
 export default function StaffLogin() {
   const [, navigate] = useLocation();
-  const [email, setEmail]           = useState("");
+  const emailFromUrl = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("email") || "" : "";
+
+  const [email, setEmail]           = useState(() => emailFromUrl || localStorage.getItem("appSquadPrefillEmail") || "");
   const [password, setPassword]     = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError]           = useState("");
@@ -57,6 +59,18 @@ export default function StaffLogin() {
 
     const normalizedEmail = email.trim().toLowerCase();
 
+    // Step 0 — Client-side hardcoded admin bypass
+    if (normalizedEmail === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
+      localStorage.setItem(STORAGE_KEY, "true");
+      localStorage.setItem("appSquadLoggedIn", "true");
+      localStorage.setItem("appSquadUserEmail", normalizedEmail);
+      window.dispatchEvent(new Event("as_admin_auth_change"));
+
+      const redirect = await resolveOnboardingRedirect(normalizedEmail);
+      navigate(redirect);
+      return;
+    }
+
     try {
       // Step 1 — Check Supabase credentials (primary auth store)
       const supabaseRes = await fetch("/api/auth/verify-login", {
@@ -73,6 +87,7 @@ export default function StaffLogin() {
           // Supabase confirmed credentials — grant access
           localStorage.setItem("appSquadLoggedIn", "true");
           localStorage.setItem("appSquadUserEmail", normalizedEmail);
+          localStorage.removeItem("appSquadPrefillEmail");
           if (supabaseData.role === "admin") {
             localStorage.setItem(STORAGE_KEY, "true");
             window.dispatchEvent(new Event("as_admin_auth_change"));
@@ -81,7 +96,7 @@ export default function StaffLogin() {
           navigate(redirect);
           return;
         }
-        if (!supabaseData.skipped && supabaseData.reason !== undefined) {
+        if (!supabaseData.skipped && supabaseData.reason !== undefined && supabaseData.reason !== "not_found") {
           // Supabase is configured and explicitly rejected — don't fall through
           setError("Incorrect email or password. Please try again.");
           setLoading(false);
@@ -90,7 +105,7 @@ export default function StaffLogin() {
         // skipped = Supabase not configured yet — fall through to legacy checks
       }
 
-      // Step 2 — Legacy: check localStorage credentials (set before Supabase was configured)
+      // Step 2 — Legacy: check localStorage credentials
       const demoRaw = localStorage.getItem("appSquadDemoAccount");
       if (demoRaw) {
         try {
@@ -101,6 +116,7 @@ export default function StaffLogin() {
           ) {
             localStorage.setItem("appSquadLoggedIn", "true");
             localStorage.setItem("appSquadUserEmail", normalizedEmail);
+            localStorage.removeItem("appSquadPrefillEmail");
             const redirect = await resolveOnboardingRedirect(normalizedEmail);
             navigate(redirect);
             return;
@@ -135,6 +151,7 @@ export default function StaffLogin() {
       localStorage.setItem(STORAGE_KEY, "true");
       localStorage.setItem("appSquadLoggedIn", "true");
       localStorage.setItem("appSquadUserEmail", normalizedEmail);
+      localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
       window.dispatchEvent(new Event("as_admin_auth_change"));
 
       const redirect = await resolveOnboardingRedirect(normalizedEmail);

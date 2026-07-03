@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { sendGameSelectionToCRM } from "@/lib/crm";
 import { updateOnboarding } from "@/services/auth";
+import { getOnboardingEmail } from "@/services/enrollment";
 
 interface Game {
   id: string;
@@ -735,7 +736,7 @@ export default function GameSelection() {
     setSelectedGame(prev => prev?.id === game.id ? null : game);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!selectedGame) return;
 
     const lead = JSON.parse(localStorage.getItem("as_lead") || "{}");
@@ -765,9 +766,9 @@ export default function GameSelection() {
     });
 
     // Persist game selection to app_users (non-fatal) and cache flag locally
-    const userEmail = localStorage.getItem("appSquadUserEmail") || email;
+    const userEmail = getOnboardingEmail() || email;
     if (userEmail) {
-      updateOnboarding(userEmail, {
+      await updateOnboarding(userEmail, {
         game_selection_completed: true,
         selected_game: selectedGame.name,
       }).catch(() => {});

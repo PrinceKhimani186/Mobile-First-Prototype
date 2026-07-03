@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { ArrowRight, CheckCircle2, Palette, Shield, Sparkles } from "lucide-react";
 import { sendCustomizationToCRM } from "@/lib/crm";
 import { updateOnboarding } from "@/services/auth";
+import { getOnboardingEmail } from "@/services/enrollment";
 
 const STEPS = ["Game Selected", "Customization", "Dashboard"];
 
@@ -165,7 +166,7 @@ export default function Customize() {
     onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => Object.assign(e.target.style, blurStyle),
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit) return;
 
@@ -207,9 +208,9 @@ export default function Customize() {
     });
 
     // Persist customization completion to app_users (non-fatal) and cache flag locally
-    const userEmail = localStorage.getItem("appSquadUserEmail") || email;
+    const userEmail = getOnboardingEmail() || email;
     if (userEmail) {
-      updateOnboarding(userEmail, { customization_form_completed: true }).catch(() => {});
+      await updateOnboarding(userEmail, { customization_form_completed: true }).catch(() => {});
     }
     localStorage.setItem("appSquadCustomizationCompleted", "true");
 
