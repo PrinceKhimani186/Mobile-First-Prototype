@@ -143,6 +143,7 @@ export default function AdminProjects() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
+  const [pmCount, setPmCount] = useState(0);
   const [currentUser, setCurrentUser] = useState<{ id: number; name: string; email: string; role: "super_admin" | "project_manager" } | null>(null);
 
   async function checkAuth() {
@@ -153,6 +154,12 @@ export default function AdminProjects() {
         navigate("/admin");
       } else {
         setCurrentUser(data.user);
+        if (data.user.role === "super_admin") {
+          fetch("/api/admin/stats", { credentials: "include" })
+            .then(r => r.json())
+            .then((d: any) => setPmCount(d.projectManagerCount ?? 0))
+            .catch(() => {});
+        }
       }
     } catch {
       navigate("/admin");
@@ -239,10 +246,14 @@ export default function AdminProjects() {
         {/* Stats bar */}
         <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
           {[
-            { label: currentUser?.role === "super_admin" ? "Total Projects" : "Assigned Projects", value: projects.length },
+            { label: currentUser?.role === "super_admin" ? "Total Projects" : "My Projects", value: projects.length },
             { label: "In Progress", value: projects.filter(p => !["App Launch", "Store Submission"].includes(p.currentStage)).length },
             { label: "Demo Ready", value: projects.filter(p => p.currentStage === "Demo Ready For Review").length },
             { label: "Launched", value: projects.filter(p => p.currentStage === "App Launch").length },
+            ...(currentUser?.role === "super_admin" ? [
+              { label: "Project Managers", value: pmCount },
+              { label: "Unassigned Projects", value: projects.filter(p => !p.assignedPms || p.assignedPms.length === 0).length },
+            ] : []),
           ].map(s => (
             <div key={s.label} style={{ padding: "14px 20px", borderRadius: 12, background: "hsl(226 32% 8%)", border: "1px solid hsl(224 22% 13%)" }}>
               <p style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", color: "hsl(218 16% 36%)", marginBottom: 4 }}>{s.label}</p>

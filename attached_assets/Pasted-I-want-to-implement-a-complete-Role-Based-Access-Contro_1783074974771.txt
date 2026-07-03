@@ -1,0 +1,274 @@
+I want to implement a complete Role-Based Access Control (RBAC) system for the App Squad Admin Panel.
+
+Current system:
+- There is only one admin who can access /admin/projects.
+- I want to support two roles:
+  1. Super Admin
+  2. Project Manager (Normal Admin)
+
+Keep the existing UI and design exactly the same.
+
+------------------------------------
+ROLE DEFINITIONS
+------------------------------------
+
+SUPER ADMIN
+- Full system access.
+- Can create/edit/delete Project Managers.
+- Can view every project.
+- Can create projects.
+- Can edit any project.
+- Can delete any project.
+- Can assign projects to Project Managers.
+- Can change project status.
+- Can access every admin page.
+- Can reset Project Manager passwords.
+- Can deactivate/reactivate Project Managers.
+- Can see Admin Management menu.
+
+PROJECT MANAGER
+- Can only log into the admin panel.
+- Cannot create other admins.
+- Cannot access Admin Management.
+- Can only view projects assigned to them.
+- Can update project status.
+- Can upload files, notes and comments.
+- Cannot delete projects.
+- Cannot change system settings.
+- Cannot assign projects.
+- Cannot view projects assigned to other managers.
+
+------------------------------------
+DATABASE
+------------------------------------
+
+Create an admin_users table.
+
+Columns:
+
+id
+name
+email
+password_hash
+role (super_admin | project_manager)
+status (active | inactive)
+created_at
+updated_at
+
+------------------------------------
+PROJECT TABLE
+------------------------------------
+
+Add:
+
+assigned_admin_id
+
+Each project belongs to one Project Manager.
+
+------------------------------------
+ADMIN MANAGEMENT PAGE
+------------------------------------
+
+Create:
+
+/admin/admin-users
+
+Visible ONLY for Super Admin.
+
+Features:
+
+Table Columns
+
+Name
+Email
+Role
+Status
+Assigned Projects
+Created Date
+Actions
+
+Actions:
+
+Edit
+Deactivate
+Reset Password
+Delete
+
+Top Right Button:
+
++ Add Admin
+
+------------------------------------
+CREATE ADMIN MODAL
+------------------------------------
+
+Fields:
+
+Full Name
+Email
+Password
+Role
+
+Dropdown:
+
+Super Admin
+Project Manager
+
+Status:
+
+Active by default
+
+------------------------------------
+PROJECT ASSIGNMENT
+------------------------------------
+
+Inside project details add:
+
+Assigned Project Manager
+
+Dropdown listing all active Project Managers.
+
+Super Admin can change assignment anytime.
+
+------------------------------------
+PROJECT FILTERING
+------------------------------------
+
+When Project Manager logs in:
+
+SELECT *
+FROM projects
+WHERE assigned_admin_id = currentAdmin.id
+
+Never show projects assigned to someone else.
+
+------------------------------------
+DASHBOARD
+------------------------------------
+
+SUPER ADMIN
+
+Cards:
+
+Total Projects
+In Progress
+Demo Ready
+Launched
+Project Managers
+Unassigned Projects
+
+PROJECT MANAGER
+
+Cards:
+
+My Projects
+In Progress
+Demo Ready
+Launched
+
+------------------------------------
+NAVIGATION
+------------------------------------
+
+SUPER ADMIN
+
+Dashboard
+Projects
+Admin Management
+Settings
+
+PROJECT MANAGER
+
+Dashboard
+Projects
+
+Nothing else.
+
+------------------------------------
+PERMISSIONS
+------------------------------------
+
+Protect every backend API.
+
+Do NOT rely only on frontend.
+
+Example:
+
+Only Super Admin
+
+POST /admin/admin-users
+
+DELETE /admin/admin-users/:id
+
+PATCH /projects/:id/assign
+
+Only assigned Project Manager OR Super Admin
+
+PATCH /projects/:id/status
+
+------------------------------------
+LOGIN
+------------------------------------
+
+Use the existing admin login.
+
+After login:
+
+If role == super_admin
+
+Go to
+
+/admin/projects
+
+If role == project_manager
+
+Go to
+
+/admin/projects
+
+but automatically filter projects assigned to that manager.
+
+------------------------------------
+UI
+------------------------------------
+
+Keep the current design.
+
+Only add:
+
+Admin Management menu
+
+Role badges
+
+Super Admin (Orange badge)
+
+Project Manager (Blue badge)
+
+Assigned Manager column inside Projects table.
+
+------------------------------------
+TESTING
+------------------------------------
+
+Create one default Super Admin.
+
+Example:
+
+Email:
+admin@appsquadinc.com
+
+Role:
+Super Admin
+
+Create one sample Project Manager.
+
+Assign one project to that manager.
+
+Verify:
+
+✓ Super Admin sees all projects.
+✓ Project Manager sees only assigned projects.
+✓ Project Manager cannot access /admin/admin-users.
+✓ Project Manager receives 403 for restricted APIs.
+✓ Super Admin can assign/reassign projects.
+✓ Existing functionality remains unchanged.

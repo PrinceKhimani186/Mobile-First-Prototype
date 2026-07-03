@@ -69,7 +69,7 @@ export default function AdminLogin() {
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            placeholder="admin@appsquad.com"
+            placeholder="admin@appsquadinc.com"
             autoFocus
             required
             style={{

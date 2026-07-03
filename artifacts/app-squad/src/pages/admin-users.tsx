@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, Link } from "wouter";
 import { motion } from "framer-motion";
 import {
-  LogOut, Plus, RefreshCw, ChevronRight, User, Search, X, Shield, ToggleLeft, ToggleRight, Edit2, Key,
+  LogOut, Plus, RefreshCw, User, Search, X, ToggleLeft, ToggleRight, Edit2, Key, Trash2,
 } from "lucide-react";
 
 interface AdminUser {
@@ -11,6 +11,7 @@ interface AdminUser {
   email: string;
   role: "super_admin" | "project_manager";
   status: "active" | "inactive";
+  assignedProjectCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -151,6 +152,68 @@ function UserModal({
   );
 }
 
+// ─── Reset Password Modal ──────────────────────────────────────────────────────
+function ResetPasswordModal({ user, onClose, onSaved }: { user: AdminUser; onClose: () => void; onSaved: () => void }) {
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) { onSaved(); onClose(); }
+      else { const d = await res.json() as { error: string }; setError(d.error || "Failed"); }
+    } catch { setError("Network error"); }
+    finally { setLoading(false); }
+  }
+
+  const inputSx: React.CSSProperties = {
+    width: "100%", borderRadius: 9, padding: "9px 12px",
+    fontFamily: "'Inter'", fontSize: 13,
+    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.09)",
+    color: "rgba(255,255,255,0.8)", outline: "none", boxSizing: "border-box",
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(5,5,7,0.82)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      onClick={onClose}>
+      <div style={{ background: "hsl(226 32% 9%)", border: "1px solid hsl(224 22% 16%)", borderRadius: 18, padding: 28, width: "100%", maxWidth: 380 }}
+        onClick={e => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+          <p style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, color: "hsl(220 20% 90%)" }}>Reset Password</p>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: "hsl(218 16% 38%)", padding: 4 }}>
+            <X style={{ width: 16, height: 16 }} />
+          </button>
+        </div>
+        <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 44%)", marginBottom: 20 }}>
+          Setting new password for <span style={{ color: "hsl(35 90% 62%)" }}>{user.name}</span>
+        </p>
+        <form onSubmit={submit}>
+          <p style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", color: "hsl(218 16% 38%)", display: "block", marginBottom: 5 }}>New Password</p>
+          <input style={{ ...inputSx, marginBottom: 12 }} type="password" value={password} onChange={e => { setPassword(e.target.value); setError(""); }} placeholder="••••••••" required autoFocus
+            onFocus={e => (e.target.style.borderColor = "hsl(35 90% 55% / 0.4)")} onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.09)")} />
+          {error && <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(0 70% 60%)", marginBottom: 12 }}>{error}</p>}
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button type="button" onClick={onClose} style={{ padding: "9px 16px", borderRadius: 9, background: "transparent", border: "1px solid rgba(255,255,255,0.09)", fontFamily: "'Inter'", fontSize: 13, color: "hsl(218 16% 44%)", cursor: "pointer" }}>Cancel</button>
+            <button type="submit" disabled={loading} style={{ padding: "9px 20px", borderRadius: 9, border: "none", background: "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)", fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 600, color: "#050505", cursor: "pointer" }}>
+              {loading ? "Saving..." : "Reset Password"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Admin Users Page ─────────────────────────────────────────────────────────
 export default function AdminUsers() {
   const [, navigate] = useLocation();
@@ -159,6 +222,8 @@ export default function AdminUsers() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
   const [currentUser, setCurrentUser] = useState<{ id: number; name: string; email: string; role: "super_admin" | "project_manager" } | null>(null);
 
   async function checkAuth() {
@@ -206,12 +271,21 @@ export default function AdminUsers() {
         credentials: "include",
         body: JSON.stringify({ status: nextStatus }),
       });
+      if (res.ok) loadUsers();
+    } catch { /* ignore */ }
+  }
+
+  async function handleDeleteUser(u: AdminUser) {
+    if (!window.confirm(`Delete "${u.name}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/admin/users/${u.id}`, { method: "DELETE", credentials: "include" });
       if (res.ok) {
         loadUsers();
+      } else {
+        const d = await res.json() as { error: string };
+        alert(d.error || "Failed to delete user");
       }
-    } catch (err) {
-      console.error(err);
-    }
+    } catch { alert("Network error"); }
   }
 
   const filtered = users.filter(u =>
@@ -226,10 +300,14 @@ export default function AdminUsers() {
       {showModal && (
         <UserModal
           user={selectedUser}
-          onClose={() => {
-            setShowModal(false);
-            setSelectedUser(null);
-          }}
+          onClose={() => { setShowModal(false); setSelectedUser(null); }}
+          onSaved={loadUsers}
+        />
+      )}
+      {showResetModal && resetPasswordUser && (
+        <ResetPasswordModal
+          user={resetPasswordUser}
+          onClose={() => { setShowResetModal(false); setResetPasswordUser(null); }}
           onSaved={loadUsers}
         />
       )}
@@ -298,8 +376,8 @@ export default function AdminUsers() {
         {/* Table */}
         <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid hsl(224 22% 12%)" }}>
           {/* Table header */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 150px 120px 140px 140px", gap: 0, background: "hsl(226 32% 7%)", padding: "10px 20px", borderBottom: "1px solid hsl(224 22% 12%)" }}>
-            {["Name", "Email", "Role", "Status", "Created", "Actions"].map(col => (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px 100px 80px 140px 180px", gap: 0, background: "hsl(226 32% 7%)", padding: "10px 20px", borderBottom: "1px solid hsl(224 22% 12%)" }}>
+            {["Name", "Email", "Role", "Status", "Projects", "Created", "Actions"].map(col => (
               <p key={col} style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "hsl(218 16% 34%)" }}>{col}</p>
             ))}
           </div>
@@ -322,7 +400,7 @@ export default function AdminUsers() {
               animate={{ opacity: 1 }}
               transition={{ delay: i * 0.03 }}
               style={{
-                display: "grid", gridTemplateColumns: "1fr 1fr 150px 120px 140px 140px",
+                display: "grid", gridTemplateColumns: "1fr 1fr 160px 100px 80px 140px 180px",
                 gap: 0, padding: "13px 20px", alignItems: "center",
                 borderBottom: i < filtered.length - 1 ? "1px solid hsl(224 22% 10%)" : "none",
                 background: "hsl(226 28% 6%)",
@@ -333,43 +411,57 @@ export default function AdminUsers() {
             >
               <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "hsl(220 20% 78%)", fontWeight: 500 }}>{u.name}</p>
               <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 48%)", fontWeight: 300 }}>{u.email}</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <Shield style={{ width: 12, height: 12, color: u.role === "super_admin" ? "hsl(35 90% 62%)" : "hsl(218 16% 40%)" }} />
-                <p style={{ fontFamily: "'Inter'", fontSize: 12, color: u.role === "super_admin" ? "hsl(35 90% 62%)" : "hsl(218 16% 60%)", fontWeight: 400 }}>
-                  {u.role === "super_admin" ? "Super Admin" : "Project Manager"}
-                </p>
-              </div>
-              <div style={{ display: "flex", alignItems: "center" }}>
+              <div>
                 <span style={{
-                  padding: "2px 8px", borderRadius: 10, fontSize: 10, fontWeight: 600,
-                  background: u.status === "active" ? "rgba(142, 252, 189, 0.08)" : "rgba(255, 100, 100, 0.08)",
+                  padding: "3px 9px", borderRadius: 8, fontSize: 10, fontWeight: 600, fontFamily: "'Inter'",
+                  background: u.role === "super_admin" ? "rgba(245,158,11,0.1)" : "rgba(59,130,246,0.1)",
+                  color: u.role === "super_admin" ? "hsl(38 95% 60%)" : "hsl(217 85% 65%)",
+                  border: `1px solid ${u.role === "super_admin" ? "rgba(245,158,11,0.22)" : "rgba(59,130,246,0.22)"}`,
+                  whiteSpace: "nowrap" as const,
+                }}>
+                  {u.role === "super_admin" ? "Super Admin" : "Project Manager"}
+                </span>
+              </div>
+              <div>
+                <span style={{
+                  padding: "2px 8px", borderRadius: 10, fontSize: 10, fontWeight: 600, fontFamily: "'Inter'",
+                  background: u.status === "active" ? "rgba(142,252,189,0.08)" : "rgba(255,100,100,0.08)",
                   color: u.status === "active" ? "hsl(142 76% 55%)" : "hsl(0 70% 60%)",
-                  border: `1px solid ${u.status === "active" ? "rgba(142, 252, 189, 0.15)" : "rgba(255, 100, 100, 0.15)"}`,
+                  border: `1px solid ${u.status === "active" ? "rgba(142,252,189,0.15)" : "rgba(255,100,100,0.15)"}`,
                 }}>
                   {u.status === "active" ? "Active" : "Inactive"}
                 </span>
               </div>
+              <p style={{ fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 600, color: "hsl(218 16% 46%)" }}>
+                {u.assignedProjectCount ?? 0}
+              </p>
               <p style={{ fontFamily: "'Inter'", fontSize: 11, color: "hsl(218 16% 34%)", fontWeight: 300 }}>
                 {new Date(u.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
               </p>
-              <div style={{ display: "flex", gap: 12 }}>
-                <button
-                  onClick={() => { setSelectedUser(u); setShowModal(true); }}
-                  title="Edit User"
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <button onClick={() => { setSelectedUser(u); setShowModal(true); }} title="Edit User"
                   style={{ background: "transparent", border: "none", cursor: "pointer", color: "hsl(218 16% 44%)", padding: 4, display: "flex", alignItems: "center" }}
                   onMouseEnter={e => (e.currentTarget.style.color = "hsl(220 20% 80%)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "hsl(218 16% 44%)")}
-                >
+                  onMouseLeave={e => (e.currentTarget.style.color = "hsl(218 16% 44%)")}>
                   <Edit2 style={{ width: 13, height: 13 }} />
                 </button>
-                <button
-                  onClick={() => toggleUserStatus(u)}
-                  title={u.status === "active" ? "Deactivate User" : "Activate User"}
+                <button onClick={() => { setResetPasswordUser(u); setShowResetModal(true); }} title="Reset Password"
+                  style={{ background: "transparent", border: "none", cursor: "pointer", color: "hsl(218 16% 44%)", padding: 4, display: "flex", alignItems: "center" }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "hsl(217 85% 65%)")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "hsl(218 16% 44%)")}>
+                  <Key style={{ width: 13, height: 13 }} />
+                </button>
+                <button onClick={() => toggleUserStatus(u)} title={u.status === "active" ? "Deactivate" : "Activate"}
                   style={{ background: "transparent", border: "none", cursor: "pointer", color: u.status === "active" ? "hsl(142 76% 45%)" : "hsl(218 16% 30%)", padding: 4, display: "flex", alignItems: "center" }}
                   onMouseEnter={e => (e.currentTarget.style.color = u.status === "active" ? "hsl(142 76% 55%)" : "hsl(218 16% 50%)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = u.status === "active" ? "hsl(142 76% 45%)" : "hsl(218 16% 30%)")}
-                >
+                  onMouseLeave={e => (e.currentTarget.style.color = u.status === "active" ? "hsl(142 76% 45%)" : "hsl(218 16% 30%)")}>
                   {u.status === "active" ? <ToggleRight style={{ width: 18, height: 18 }} /> : <ToggleLeft style={{ width: 18, height: 18 }} />}
+                </button>
+                <button onClick={() => handleDeleteUser(u)} title="Delete User"
+                  style={{ background: "transparent", border: "none", cursor: "pointer", color: "hsl(0 70% 38%)", padding: 4, display: "flex", alignItems: "center" }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "hsl(0 70% 58%)")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "hsl(0 70% 38%)")}>
+                  <Trash2 style={{ width: 13, height: 13 }} />
                 </button>
               </div>
             </motion.div>

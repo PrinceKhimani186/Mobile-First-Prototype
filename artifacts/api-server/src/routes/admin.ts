@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { db, projectsTable, PROJECT_STAGES, adminUsersTable, projectAssignmentsTable } from "@workspace/db";
-import { eq, desc, sql, and, inArray } from "drizzle-orm";
+import { eq, desc, sql, and, inArray, not } from "drizzle-orm";
 import crypto from "crypto";
 
 const router: IRouter = Router();
@@ -82,18 +82,33 @@ router.post("/admin/login", async (req: Request, res: Response) => {
   try {
     const normalizedEmail = email.trim().toLowerCase();
 
-    // 1. Seed default Super Admin if table is empty
+    // 1. Seed default accounts if table is empty
     const usersCount = await db.select({ count: sql<number>`cast(count(*) as int)` }).from(adminUsersTable);
     if ((usersCount[0]?.count ?? 0) === 0) {
-      const defaultPasswordHash = await hashPassword("appsquad2024");
-      await db.insert(adminUsersTable).values({
+      const saHash = await hashPassword("appsquad2024");
+      const pmHash = await hashPassword("appsquad2024");
+      const [sa] = await db.insert(adminUsersTable).values({
         name: "Super Admin",
-        email: "admin@appsquad.com",
-        passwordHash: defaultPasswordHash,
+        email: "admin@appsquadinc.com",
+        passwordHash: saHash,
         role: "super_admin",
         status: "active",
-      });
-      req.log.info("Seeded default Super Admin account (admin@appsquad.com)");
+      }).returning();
+      const [pm] = await db.insert(adminUsersTable).values({
+        name: "Sample Manager",
+        email: "manager@appsquadinc.com",
+        passwordHash: pmHash,
+        role: "project_manager",
+        status: "active",
+      }).returning();
+      req.log.info("Seeded Super Admin (admin@appsquadinc.com) and sample Project Manager (manager@appsquadinc.com)");
+      // Assign first existing project to the sample manager (non-fatal)
+      try {
+        const [firstProject] = await db.select({ id: projectsTable.id }).from(projectsTable).limit(1);
+        if (firstProject && pm && sa) {
+          await db.insert(projectAssignmentsTable).values({ projectId: firstProject.id, adminUserId: pm.id, assignedBy: sa.id });
+        }
+      } catch { /* non-fatal */ }
     }
 
     // 2. Lookup user
@@ -459,8 +474,11 @@ router.get("/admin/users", requireSuperAdmin, async (req: Request, res: Response
         status: adminUsersTable.status,
         createdAt: adminUsersTable.createdAt,
         updatedAt: adminUsersTable.updatedAt,
+        assignedProjectCount: sql<number>`cast(count(${projectAssignmentsTable.id}) as int)`,
       })
       .from(adminUsersTable)
+      .leftJoin(projectAssignmentsTable, eq(projectAssignmentsTable.adminUserId, adminUsersTable.id))
+      .groupBy(adminUsersTable.id)
       .orderBy(desc(adminUsersTable.createdAt));
     res.json({ users });
   } catch (err) {
@@ -566,6 +584,72 @@ router.put("/admin/users/:id", requireSuperAdmin, async (req: Request, res: Resp
     }
     req.log.error({ err }, "Failed to update admin user");
     res.status(500).json({ error: "Failed to update admin user" });
+  }
+});
+
+// ─── Admin Stats (Super Admin only) ──────────────────────────────────────────
+router.get("/admin/stats", requireSuperAdmin, async (req: Request, res: Response) => {
+  try {
+    const [pmResult] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(adminUsersTable)
+      .where(and(eq(adminUsersTable.role, "project_manager"), eq(adminUsersTable.status, "active")));
+
+    const assignedIds = db.select({ id: projectAssignmentsTable.projectId }).from(projectAssignmentsTable);
+    const [unassignedResult] = await db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(projectsTable)
+      .where(not(inArray(projectsTable.id, assignedIds)));
+
+    res.json({
+      projectManagerCount: pmResult?.count ?? 0,
+      unassignedProjectCount: unassignedResult?.count ?? 0,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to get admin stats");
+    res.status(500).json({ error: "Failed to get stats" });
+  }
+});
+
+// ─── Delete Admin User (Super Admin only) ────────────────────────────────────
+router.delete("/admin/users/:id", requireSuperAdmin, async (req: Request, res: Response) => {
+  const session = (req.session as any).adminUser;
+  const id = parseInt(req.params.id, 10);
+
+  if (Number.isNaN(id)) {
+    res.status(400).json({ error: "Invalid user ID" });
+    return;
+  }
+
+  if (id === session.id) {
+    res.status(400).json({ error: "You cannot delete your own account" });
+    return;
+  }
+
+  try {
+    const [user] = await db.select().from(adminUsersTable).where(eq(adminUsersTable.id, id));
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    if (user.role === "super_admin") {
+      const [{ count }] = await db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(adminUsersTable)
+        .where(eq(adminUsersTable.role, "super_admin"));
+      if ((count ?? 0) <= 1) {
+        res.status(400).json({ error: "Cannot delete the last Super Admin account" });
+        return;
+      }
+    }
+
+    await db.delete(adminUsersTable).where(eq(adminUsersTable.id, id));
+    req.log.info({ id, deletedBy: session.email }, "Admin user deleted");
+    res.json({ ok: true });
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete admin user");
+    res.status(500).json({ error: "Failed to delete admin user" });
   }
 });
 
