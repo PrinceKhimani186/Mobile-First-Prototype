@@ -52,7 +52,24 @@ router.get("/enrollment/agreement-status", async (req: Request, res: Response) =
     }
 
     if (agreement) {
-      res.json({ signed: true, pdfUrl: agreement.pdf_url, signedAt: agreement.signed_at });
+      // Resolve storage path — handle both legacy full URLs and new path-only values
+      let storagePath = agreement.pdf_url as string | null;
+      if (storagePath && storagePath.startsWith("http")) {
+        const marker = "/customer-documents/";
+        const idx = storagePath.indexOf(marker);
+        storagePath = idx !== -1 ? storagePath.substring(idx + marker.length) : null;
+      }
+
+      let signedUrl: string | undefined;
+      if (storagePath) {
+        const { data: signedData, error: signErr } = await supabase.storage
+          .from("customer-documents")
+          .createSignedUrl(storagePath, 60 * 60);
+        if (signErr) logger.warn({ signErr, storagePath }, "Agreement Status: Failed to generate signed URL");
+        signedUrl = signedData?.signedUrl;
+      }
+
+      res.json({ signed: true, pdfUrl: signedUrl, signedAt: agreement.signed_at });
     } else {
       res.json({ signed: false });
     }
@@ -132,12 +149,7 @@ router.post("/enrollment/custom-sign", async (req: Request, res: Response) => {
       return;
     }
 
-    // Retrieve PDF public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from("customer-documents")
-      .getPublicUrl(storagePath);
-
-    // 4 — Save audit record to user_agreements table
+    // 4 — Save audit record to user_agreements table (store storage path, not public URL)
     const { error: insertErr } = await supabase
       .from("user_agreements")
       .insert({
@@ -149,7 +161,7 @@ router.post("/enrollment/custom-sign", async (req: Request, res: Response) => {
         signed_at: timestamp,
         ip_address: ip,
         user_agent: userAgent,
-        pdf_url: publicUrl,
+        pdf_url: storagePath,
       });
 
     if (insertErr) {
@@ -158,12 +170,12 @@ router.post("/enrollment/custom-sign", async (req: Request, res: Response) => {
       return;
     }
 
-    // 5 — Update customer_enrollment row
+    // 5 — Update customer_enrollment row (store storage path, not public URL)
     const { error: updateErr } = await supabase
       .from("customer_enrollment")
       .update({
         agreement_signed: true,
-        document_url: publicUrl,
+        document_url: storagePath,
         document_name: "Enrollment Agreement.pdf",
         onboarding_status: "agreement_signed",
         updated_at: new Date().toISOString(),
@@ -176,8 +188,15 @@ router.post("/enrollment/custom-sign", async (req: Request, res: Response) => {
       return;
     }
 
-    logger.info({ email, publicUrl }, "Custom Sign: Agreement generated and signed successfully");
-    res.json({ success: true, pdfUrl: publicUrl });
+    // 6 — Generate a signed URL for the immediate response (1-hour expiry)
+    const { data: signedData, error: signErr } = await supabase.storage
+      .from("customer-documents")
+      .createSignedUrl(storagePath, 60 * 60);
+    if (signErr) logger.warn({ signErr }, "Custom Sign: Failed to generate signed URL for response");
+    const signedUrl = signedData?.signedUrl;
+
+    logger.info({ email, storagePath }, "Custom Sign: Agreement generated and signed successfully");
+    res.json({ success: true, pdfUrl: signedUrl });
   } catch (err) {
     logger.error({ err, email }, "Custom Sign: Unexpected error during signing process");
     res.status(500).json({ error: "Internal server error" });

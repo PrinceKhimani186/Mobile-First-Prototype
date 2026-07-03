@@ -253,11 +253,7 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage
-      .from("customer-documents")
-      .getPublicUrl(storagePath);
-
-    logger.info({ publicUrl }, "Zoho Webhook: uploaded completed PDF to storage");
+    logger.info({ storagePath }, "Zoho Webhook: uploaded completed PDF to storage");
 
     // 4 — Find customer enrollment ID
     const { data: enrollRecord, error: enrollErr } = await supabase
@@ -288,7 +284,7 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
         signed_at: timestamp,
         ip_address: ip,
         user_agent: userAgent,
-        pdf_url: publicUrl,
+        pdf_url: storagePath,
       });
 
     if (insertErr) {
@@ -302,7 +298,7 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
       .from("customer_enrollment")
       .update({
         agreement_signed: true,
-        document_url: publicUrl,
+        document_url: storagePath,
         document_name: "Enrollment Agreement.pdf",
         onboarding_status: "agreement_signed",
         updated_at: new Date().toISOString(),
