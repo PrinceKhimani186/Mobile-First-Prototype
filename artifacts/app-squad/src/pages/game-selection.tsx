@@ -8,7 +8,8 @@ import {
 import { cn } from "@/lib/utils";
 import { sendGameSelectionToCRM } from "@/lib/crm";
 import { updateOnboarding } from "@/services/auth";
-import { getOnboardingEmail } from "@/services/enrollment";
+import { getOnboardingEmail, markGameSelected } from "@/services/enrollment";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Game {
   id: string;
@@ -705,6 +706,7 @@ function GameCard({
 
 export default function GameSelection() {
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -765,13 +767,17 @@ export default function GameSelection() {
       source,
     });
 
-    // Persist game selection to app_users (non-fatal) and cache flag locally
+    // Persist game selection and mark it in customer_enrollment (source of truth for route guards)
     const userEmail = getOnboardingEmail() || email;
     if (userEmail) {
-      await updateOnboarding(userEmail, {
-        game_selection_completed: true,
-        selected_game: selectedGame.name,
-      }).catch(() => {});
+      await Promise.all([
+        updateOnboarding(userEmail, {
+          game_selection_completed: true,
+          selected_game: selectedGame.name,
+        }).catch(() => {}),
+        markGameSelected(userEmail).catch(() => {}),
+      ]);
+      queryClient.invalidateQueries({ queryKey: ["onboardingProgress", userEmail] });
     }
     localStorage.setItem("appSquadGameSelected", "true");
 

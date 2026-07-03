@@ -1,0 +1,225 @@
+The onboarding flow is currently broken after the user creates a password. I want you to fix the authentication, routing, and onboarding logic.
+
+## Required Flow
+
+Enrollment Form
+↓
+Select Package
+↓
+Stripe Checkout
+↓
+Generate Agreement (based on selected package)
+↓
+Embedded Zoho Sign
+↓
+Agreement Signed
+↓
+Set Password
+↓
+Login Page
+↓
+Game Selection (if not completed)
+↓
+Customization Form (if not completed)
+↓
+Dashboard
+
+--------------------------------------------------
+ISSUE 1
+--------------------------------------------------
+
+After the user creates a password, they remain on the Set Password page or get redirected incorrectly.
+
+Expected:
+
+After password creation:
+
+1. Save the password.
+2. Update onboarding_status = "password_created".
+3. Redirect immediately to:
+
+/login?email=<customer_email>
+
+The email must be the same email used during Enrollment and Stripe Checkout.
+
+Do NOT use any hardcoded email.
+
+--------------------------------------------------
+ISSUE 2
+--------------------------------------------------
+
+On the Login page:
+
+• Email should already be filled.
+• Email should be readonly.
+• User only enters password.
+• Login succeeds.
+
+--------------------------------------------------
+ISSUE 3
+--------------------------------------------------
+
+After successful login, determine where the user should go.
+
+Read the latest onboarding status from the database (not cached).
+
+Logic:
+
+IF game_selected == false
+
+Redirect:
+/onboarding/game-selection
+
+ELSE IF customization_completed == false
+
+Redirect:
+/onboarding/customization
+
+ELSE
+
+Redirect:
+/dashboard
+
+--------------------------------------------------
+ISSUE 4
+--------------------------------------------------
+
+Once the user creates a password:
+
+They must NEVER be able to access
+
+/set-password
+
+again.
+
+If password_created == true
+
+and someone visits
+
+/set-password
+
+redirect them to
+
+/login
+
+instead.
+
+--------------------------------------------------
+ISSUE 5
+--------------------------------------------------
+
+Once the user selects a game:
+
+Save immediately:
+
+game_selected = true
+
+selected_game_id
+
+selected_game_name
+
+onboarding_status = "game_selected"
+
+Refresh the onboarding progress from the database.
+
+Then automatically redirect to
+
+/onboarding/customization
+
+Do NOT wait for a page refresh.
+
+--------------------------------------------------
+ISSUE 6
+--------------------------------------------------
+
+Once customization is completed:
+
+Save
+
+customization_completed = true
+
+onboarding_status = "customization_completed"
+
+Then redirect to
+
+/dashboard
+
+--------------------------------------------------
+ISSUE 7
+--------------------------------------------------
+
+Fix all onboarding route guards.
+
+Users should NEVER move backwards.
+
+Rules:
+
+If password_created == true
+
+Never show Set Password.
+
+If game_selected == true
+
+Never show Game Selection.
+
+If customization_completed == true
+
+Never show Customization.
+
+Always continue from the latest incomplete step.
+
+--------------------------------------------------
+ISSUE 8
+--------------------------------------------------
+
+Remove any stale cache.
+
+After every onboarding step:
+
+• Re-fetch the customer record from the database.
+• Do not use cached onboarding values.
+• Always use the latest values before redirecting.
+
+--------------------------------------------------
+EXPECTED FLOW
+
+Enrollment
+↓
+Stripe Payment
+↓
+Agreement Signature
+↓
+Set Password
+↓
+Login (Email pre-filled)
+↓
+Game Selection (if required)
+↓
+Customization (if required)
+↓
+Dashboard
+
+--------------------------------------------------
+TEST THE COMPLETE FLOW
+
+Create a brand-new customer.
+
+Verify:
+
+✔ Enrollment works.
+✔ Stripe payment succeeds.
+✔ Agreement opens.
+✔ Signature completes.
+✔ Password is created.
+✔ Redirects to Login.
+✔ Email is automatically filled.
+✔ User enters password only.
+✔ Login succeeds.
+✔ If no game selected → Game Selection.
+✔ Selecting a game immediately redirects to Customization.
+✔ Completing Customization immediately redirects to Dashboard.
+✔ Refreshing the browser keeps the user on the correct onboarding step.
+✔ No redirect loops.
+✔ No stale onboarding data.
+✔ No access to previous completed onboarding pages.
+✔ Every redirect is based on the latest database values.

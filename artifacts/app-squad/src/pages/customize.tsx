@@ -4,7 +4,8 @@ import { useLocation } from "wouter";
 import { ArrowRight, CheckCircle2, Palette, Shield, Sparkles } from "lucide-react";
 import { sendCustomizationToCRM } from "@/lib/crm";
 import { updateOnboarding } from "@/services/auth";
-import { getOnboardingEmail } from "@/services/enrollment";
+import { getOnboardingEmail, markCustomizationCompleted } from "@/services/enrollment";
+import { useQueryClient } from "@tanstack/react-query";
 
 const STEPS = ["Game Selected", "Customization", "Dashboard"];
 
@@ -125,6 +126,7 @@ function Hint({ text }: { text: string }) {
 
 export default function Customize() {
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
 
   const [appName, setAppName] = useState("");
   const [tagline, setTagline] = useState("");
@@ -207,10 +209,14 @@ export default function Customize() {
       source,
     });
 
-    // Persist customization completion to app_users (non-fatal) and cache flag locally
+    // Persist customization and mark it in customer_enrollment (source of truth for route guards)
     const userEmail = getOnboardingEmail() || email;
     if (userEmail) {
-      await updateOnboarding(userEmail, { customization_form_completed: true }).catch(() => {});
+      await Promise.all([
+        updateOnboarding(userEmail, { customization_form_completed: true }).catch(() => {}),
+        markCustomizationCompleted(userEmail).catch(() => {}),
+      ]);
+      queryClient.invalidateQueries({ queryKey: ["onboardingProgress", userEmail] });
     }
     localStorage.setItem("appSquadCustomizationCompleted", "true");
 

@@ -2,28 +2,22 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Zap, Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
-import { getOnboardingStatus } from "@/services/auth";
+import { getEnrollmentProgress } from "@/services/enrollment";
 
 const ADMIN_EMAIL    = "princekhimani186@gmail.com";
 const ADMIN_PASSWORD = "Prince@123";
 const STORAGE_KEY    = "as_admin_auth";
 
 async function resolveOnboardingRedirect(email: string): Promise<string> {
-  // Always clear stale flags first so skipping steps is impossible
-  localStorage.removeItem("appSquadGameSelected");
-  localStorage.removeItem("appSquadCustomizationCompleted");
-
   try {
-    const { status, skipped } = await getOnboardingStatus(email);
-    if (!skipped && status) {
-      localStorage.setItem("appSquadGameSelected", status.game_selection_completed ? "true" : "false");
-      localStorage.setItem("appSquadCustomizationCompleted", status.customization_form_completed ? "true" : "false");
-      if (!status.game_selection_completed) return "/onboarding/game-selection";
-      if (!status.customization_form_completed) return "/onboarding/customization";
+    const { record } = await getEnrollmentProgress(email);
+    if (record) {
+      if (!record.game_selected) return "/onboarding/game-selection";
+      if (!record.customization_completed) return "/onboarding/customization";
       return "/onboarding/dashboard";
     }
   } catch {
-    // Supabase not reachable — fall through to first step
+    // DB not reachable — default to first onboarding step
   }
   return "/onboarding/game-selection";
 }
@@ -64,6 +58,7 @@ export default function StaffLogin() {
       localStorage.setItem(STORAGE_KEY, "true");
       localStorage.setItem("appSquadLoggedIn", "true");
       localStorage.setItem("appSquadUserEmail", normalizedEmail);
+      localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
       window.dispatchEvent(new Event("as_admin_auth_change"));
 
       const redirect = await resolveOnboardingRedirect(normalizedEmail);
@@ -87,6 +82,7 @@ export default function StaffLogin() {
           // Supabase confirmed credentials — grant access
           localStorage.setItem("appSquadLoggedIn", "true");
           localStorage.setItem("appSquadUserEmail", normalizedEmail);
+          localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
           localStorage.removeItem("appSquadPrefillEmail");
           if (supabaseData.role === "admin") {
             localStorage.setItem(STORAGE_KEY, "true");
@@ -116,6 +112,7 @@ export default function StaffLogin() {
           ) {
             localStorage.setItem("appSquadLoggedIn", "true");
             localStorage.setItem("appSquadUserEmail", normalizedEmail);
+            localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
             localStorage.removeItem("appSquadPrefillEmail");
             const redirect = await resolveOnboardingRedirect(normalizedEmail);
             navigate(redirect);
@@ -284,12 +281,13 @@ export default function StaffLogin() {
               <input
                 type="email"
                 value={email}
-                onChange={e => { setEmail(e.target.value); setError(""); }}
+                onChange={e => { if (!emailFromUrl) { setEmail(e.target.value); setError(""); } }}
+                readOnly={!!emailFromUrl}
                 placeholder="Enter your email"
                 autoComplete="email"
                 required
-                style={inputStyle}
-                onFocus={e => (e.target.style.borderColor = "hsl(35 90% 55% / 0.5)")}
+                style={{ ...inputStyle, ...(emailFromUrl ? { cursor: "default", opacity: 0.7 } : {}) }}
+                onFocus={e => { if (!emailFromUrl) e.target.style.borderColor = "hsl(35 90% 55% / 0.5)"; }}
                 onBlur={e => (e.target.style.borderColor = "rgba(255,255,255,0.1)")}
               />
             </div>

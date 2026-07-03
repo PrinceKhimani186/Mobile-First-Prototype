@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle, Lock } from "lucide-react";
-import { getEnrollmentProgress, getOnboardingEmail } from "@/services/enrollment";
+import { getEnrollmentProgress, getOnboardingEmail, markPasswordCreated } from "@/services/enrollment";
 import { useQueryClient } from "@tanstack/react-query";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -96,6 +96,9 @@ export default function SetPassword() {
         console.warn("[Auth] save-password API failed, using localStorage fallback:", err);
       }
 
+      // Mark password_created = true in customer_enrollment (source of truth for route guards)
+      await markPasswordCreated(normalizedEmail).catch(() => {});
+
       // Keep localStorage as offline/fallback credential store
       localStorage.setItem(
         "appSquadDemoAccount",
@@ -107,7 +110,7 @@ export default function SetPassword() {
         })
       );
 
-      // Invalidate query client cache for onboarding progress to prevent stale guard redirect loops
+      // Bust the cached onboarding record so guards re-read the updated password_created flag
       await queryClient.invalidateQueries({ queryKey: ["onboardingProgress", normalizedEmail] });
 
       setDone(true);
