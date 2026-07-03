@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 (global as any).WebSocket = class {};
 
 import app from "./app";
