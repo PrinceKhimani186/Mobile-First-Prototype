@@ -20,8 +20,10 @@ function ghlHeaders(apiKey: string) {
 
 // Exact tag names as stored in GHL (all lowercase)
 const PLAN_TAG_MAP: Record<string, string> = {
+  starter:     "purchased plan - starter",
   essentials:  "purchased plan - essentials",
   accelerator: "purchased plan - ownership accelerator",
+  growth:      "purchased plan - growth",
   empire:      "purchased plan - digital asset",
 };
 

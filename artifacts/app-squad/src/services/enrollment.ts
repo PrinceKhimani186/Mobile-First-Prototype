@@ -261,8 +261,11 @@ export async function createZohoSignRequest(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, fullName, packageName, price, paymentOption, packageId }),
     });
-    const json = (await res.json()) as { success?: boolean; embedUrl?: string; requestId?: string; error?: string };
-    return { success: !!json.success, embedUrl: json.embedUrl, requestId: json.requestId, error: json.error };
+    const json = (await res.json()) as { success?: boolean; embedUrl?: string; requestId?: string; error?: string; action?: string };
+    const errorMsg = json.error
+      ? (json.action ? `${json.error} — ${json.action}` : json.error)
+      : undefined;
+    return { success: !!json.success, embedUrl: json.embedUrl, requestId: json.requestId, error: errorMsg };
   } catch {
     return { success: false, error: "Unable to connect to the Zoho Sign service." };
   }

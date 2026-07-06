@@ -901,7 +901,22 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
 
   } catch (err) {
     logger.error({ err }, "Zoho Request: unexpected error");
-    res.status(500).json({ error: "Internal server error" });
+    const msg = (err as Error).message || "";
+    if (msg.includes("invalid_client_secret") || msg.includes("invalid_client") || msg.includes("ZOHO_SIGN_CLIENT_SECRET")) {
+      res.status(503).json({
+        error: "Zoho Sign credentials are misconfigured. The Client Secret is incorrect.",
+        action: "Update ZOHO_SIGN_CLIENT_SECRET in Replit Secrets with the correct value from api-console.zoho.in",
+        detail: msg,
+      });
+    } else if (msg.includes("refresh") || msg.includes("ZOHO_SIGN_REFRESH_TOKEN")) {
+      res.status(503).json({
+        error: "Zoho Sign refresh token is missing or invalid.",
+        action: "Visit /api/zoho/oauth/start to generate a valid refresh token",
+        detail: msg,
+      });
+    } else {
+      res.status(500).json({ error: "Internal server error", detail: msg });
+    }
   }
 });
 
