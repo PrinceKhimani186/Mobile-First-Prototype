@@ -210,8 +210,8 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
           pdfBuffer = await generateAgreementPDF(
             fullName,
             normalizedEmail,
-            "Essentials",
-            997,
+            "App Launch Essentials",
+            "$2,497",
             new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
             requestId.toString(),
             { ip: "127.0.0.1", userAgent: "ZohoSign-Bypass", timestamp: new Date().toISOString() }
@@ -255,10 +255,10 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
 
     logger.info({ storagePath }, "Zoho Webhook: uploaded completed PDF to storage");
 
-    // 4 — Find customer enrollment ID
+    // 4 — Find customer enrollment ID and package
     const { data: enrollRecord, error: enrollErr } = await supabase
       .from("customer_enrollment")
-      .select("id")
+      .select("id, selected_package")
       .eq("email", normalizedEmail)
       .maybeSingle();
 
@@ -273,9 +273,10 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
     const timestamp = new Date().toISOString();
 
     // 5 — Save audit trail record to user_agreements
-    const { error: insertErr } = await supabase
-      .from("user_agreements")
-      .insert({
+    const enrolledPackage = (enrollRecord as { id: string; selected_package?: string }).selected_package;
+    const webhookInsertErr = await (async () => {
+      const supabaseClient = supabase;
+      const record = {
         user_id: enrollRecord.id,
         email: normalizedEmail,
         full_name: fullName,
@@ -285,10 +286,25 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
         ip_address: ip,
         user_agent: userAgent,
         pdf_url: storagePath,
-      });
+        package_name: enrolledPackage,
+        payment_option: undefined as string | undefined,
+      };
+      const { error } = await supabaseClient.from("user_agreements").insert(record);
+      if (!error) return null;
+      const isMissingColumn =
+        error.code === "42703" ||
+        (error.message?.toLowerCase().includes("column") && error.message?.toLowerCase().includes("does not exist"));
+      if (isMissingColumn) {
+        logger.warn({ code: error.code }, "Zoho Webhook: package_name column missing — retrying without it");
+        const { package_name: _pn, payment_option: _po, ...base } = record;
+        const { error: retryErr } = await supabaseClient.from("user_agreements").insert(base);
+        return retryErr;
+      }
+      return error;
+    })();
 
-    if (insertErr) {
-      logger.error({ insertErr }, "Zoho Webhook: failed to save user_agreements audit record");
+    if (webhookInsertErr) {
+      logger.error({ webhookInsertErr }, "Zoho Webhook: failed to save user_agreements audit record");
       res.status(502).json({ error: "Failed to save signature audit record" });
       return;
     }
@@ -322,11 +338,13 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
 
 // POST /api/zoho/create-signature-request - generate agreement PDF and send to Zoho Sign
 router.post("/zoho/create-signature-request", async (req: Request, res: Response) => {
-  const { email, fullName, packageName, price } = req.body as {
+  const { email, fullName, packageName, price, paymentOption, packageId } = req.body as {
     email?: string;
     fullName?: string;
     packageName?: string;
     price?: string;
+    paymentOption?: string;
+    packageId?: string;
   };
 
   if (!email || !fullName || !packageName || !price) {
@@ -348,7 +366,8 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
       price,
       new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
       "ZOHO_PLACEHOLDER",
-      { ip, userAgent, timestamp }
+      { ip, userAgent, timestamp },
+      { packageId, paymentOption }
     );
 
     // 2 — Refresh access token
@@ -368,7 +387,7 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
 
     // 3 — Prepare Zoho Sign creation payload
     const formData = new FormData();
-    const pdfBlob = new Blob([pdfBuffer], { type: "application/pdf" });
+    const pdfBlob = new Blob([new Uint8Array(pdfBuffer)], { type: "application/pdf" });
     formData.append("file", pdfBlob, "Agreement.pdf");
 
     const requestData = {

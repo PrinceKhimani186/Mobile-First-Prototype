@@ -1,0 +1,77 @@
+I uploaded new App Squad agreement documents and I want the Replit project updated according to these new agreements.
+
+Please update the full agreement + pricing system.
+
+New agreement packages and prices:
+
+1. Starter Launch Package
+- Setup + Monthly: $997 setup/down payment + $197/month for 12 months
+- Paid In Full: $2,497
+
+2. App Launch Essentials
+- Setup + Monthly: $497 setup/down payment + $199/month for 12 months
+- Paid In Full: $2,497
+
+3. App Ownership Accelerator
+- Setup + Monthly: $997 setup/down payment + $399/month for 12 months
+- Paid In Full: $4,997
+
+4. Growth Launch Package
+- Setup + Monthly: $2,500 setup/down payment + $397/month for 12 months
+- Paid In Full: $4,997
+
+5. App Empire Package
+- Setup + Monthly: $5,000 setup/down payment + $497/month for 12 months
+- Paid In Full: $9,997
+
+Tasks:
+
+1. Replace the old agreement templates with these new package agreements.
+2. Map each selected package to the correct agreement template.
+3. When user selects a package, generate the matching agreement only.
+4. Auto-fill these placeholders:
+   [[Agreement_Date]]
+   [[Client_Full_Name]]
+   [[Client_Email]]
+   [[Client_Phone]]
+   [[Client_Address]]
+   [[Client_Signature]]
+   [[Client_Sign_Date]]
+   [[Company_Representative]]
+   [[Company_Title]]
+   [[Company_Signature]]
+   [[Company_Sign_Date]]
+
+5. Update pricing on the enrollment package cards to match the new documents.
+6. Update Stripe price mapping so each package uses the correct setup fee, monthly fee, and paid-in-full price.
+7. Add support for both payment options:
+   - Setup + Monthly
+   - Paid In Full
+
+8. After payment, continue this flow:
+   Enrollment Form
+   → Stripe Checkout
+   → Matching Agreement Signature
+   → Store signed agreement in Supabase
+   → Set Password
+   → Login
+   → Game Selection
+   → Customization Form
+   → Customer Dashboard
+
+9. Store agreement records in user_agreements with:
+   user_id
+   email
+   full_name
+   package_name
+   payment_option
+   agreement_version
+   signed_at
+   pdf_url
+   signature_image
+   user_agent
+   ip_address
+
+10. Do not break the existing onboarding flow.
+11. Add logs showing which agreement template and Stripe price was selected.
+12. Test all five packages and both payment options.

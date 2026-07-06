@@ -13,49 +13,60 @@ function ghlHeaders(apiKey: string) {
   };
 }
 
-// ── One-time Setup Fee price IDs (used for ALL checkout sessions) ─────────────
-// These must point to one-time (not recurring) prices in your Stripe dashboard.
-// Checks both naming conventions:
-//   STRIPE_PRICE_ESSENTIALS_SETUP  (legacy / Antigravity)
-//   STRIPE_PRICE_ESSENTIALS        (Replit secrets panel naming)
-// If neither env var is set the hardcoded fallback is used (works only for the
-// Stripe account where those prices were originally created).
-function getSetupFeePrice(planName: string): string | undefined {
-  const essentialsPrice =
-    process.env.STRIPE_PRICE_ESSENTIALS_SETUP ||
-    process.env.STRIPE_PRICE_ESSENTIALS ||
-    "price_1TnzBLJJdy0crHI8FHNhiOtw";
-  const acceleratorPrice =
-    process.env.STRIPE_PRICE_ACCELERATOR_SETUP ||
-    process.env.STRIPE_PRICE_ACCELERATOR ||
-    "price_1TnzBMJJdy0crHI8LawdE6HC";
-  const empirePrice =
-    process.env.STRIPE_PRICE_EMPIRE_SETUP ||
-    process.env.STRIPE_PRICE_EMPIRE ||
-    "price_1TnzBNJJdy0crHI8H5W2kR9L";
+// ── Checkout price resolver ───────────────────────────────────────────────────
+// Returns the one-time Stripe price ID appropriate for the plan + payment type.
+//   payment_type === "monthly"       → setup/down-payment price (one-time)
+//   payment_type === "subscription"  → paid-in-full price (one-time)
+// Env vars follow the pattern STRIPE_PRICE_{PLAN}_{TYPE}
+// All five packages: starter, essentials, accelerator, growth, empire
+function getCheckoutPrice(planName: string, paymentType?: string): string | undefined {
+  const isMonthly = paymentType === "monthly";
 
-  // Maps every name variant the frontend might send to its price ID.
-  // Frontend sends full names ("App Launch Essentials"), legacy code used short
-  // names ("Essentials") — both are handled here.
-  const map: Record<string, string | undefined> = {
-    // Full names (current frontend)
-    "App Launch Essentials":    essentialsPrice,
-    "App Ownership Accelerator": acceleratorPrice,
-    "Digital Asset Empire":     empirePrice,
-    // Short names (legacy / future-proofing)
-    "Essentials":            essentialsPrice,
-    "Ownership Accelerator": acceleratorPrice,
-    // Lowercase IDs (plan.id values)
-    "essentials":   essentialsPrice,
-    "accelerator":  acceleratorPrice,
-    "empire":       empirePrice,
+  // Setup fee (one-time) prices for monthly plans
+  const setup: Record<string, string | undefined> = {
+    // By full display name
+    "Starter Launch Package":    process.env.STRIPE_PRICE_STARTER_SETUP,
+    "App Launch Essentials":     process.env.STRIPE_PRICE_ESSENTIALS_SETUP || "price_1TnzBLJJdy0crHI8FHNhiOtw",
+    "App Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
+    "Growth Launch Package":     process.env.STRIPE_PRICE_GROWTH_SETUP,
+    "App Empire Package":        process.env.STRIPE_PRICE_EMPIRE_SETUP,
+    // By plan ID
+    "starter":    process.env.STRIPE_PRICE_STARTER_SETUP,
+    "essentials": process.env.STRIPE_PRICE_ESSENTIALS_SETUP || "price_1TnzBLJJdy0crHI8FHNhiOtw",
+    "accelerator": process.env.STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
+    "growth":  process.env.STRIPE_PRICE_GROWTH_SETUP,
+    "empire":  process.env.STRIPE_PRICE_EMPIRE_SETUP,
+    // Legacy names
+    "Essentials":        process.env.STRIPE_PRICE_ESSENTIALS_SETUP || "price_1TnzBLJJdy0crHI8FHNhiOtw",
+    "Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
+    "Digital Asset Empire": process.env.STRIPE_PRICE_EMPIRE_SETUP,
   };
-  return map[planName];
+
+  // Paid-in-full (one-time) prices
+  const full: Record<string, string | undefined> = {
+    "Starter Launch Package":    process.env.STRIPE_PRICE_STARTER,
+    "App Launch Essentials":     process.env.STRIPE_PRICE_ESSENTIALS || "price_1TnzBEJJdy0crHI8d1FLz9Et",
+    "App Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
+    "Growth Launch Package":     process.env.STRIPE_PRICE_GROWTH,
+    "App Empire Package":        process.env.STRIPE_PRICE_EMPIRE || "price_1TnzBGJJdy0crHI8zTHTCEUV",
+    "starter":    process.env.STRIPE_PRICE_STARTER,
+    "essentials": process.env.STRIPE_PRICE_ESSENTIALS || "price_1TnzBEJJdy0crHI8d1FLz9Et",
+    "accelerator": process.env.STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
+    "growth":  process.env.STRIPE_PRICE_GROWTH,
+    "empire":  process.env.STRIPE_PRICE_EMPIRE || "price_1TnzBGJJdy0crHI8zTHTCEUV",
+    "Essentials":        process.env.STRIPE_PRICE_ESSENTIALS || "price_1TnzBEJJdy0crHI8d1FLz9Et",
+    "Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
+    "Digital Asset Empire": process.env.STRIPE_PRICE_EMPIRE || "price_1TnzBGJJdy0crHI8zTHTCEUV",
+  };
+
+  if (isMonthly) return setup[planName];
+  // For subscription (paid-in-full): prefer full price, fall back to setup price for backward compat
+  return full[planName] ?? setup[planName];
 }
 
-// Kept for backward-compat (used by priceIdError only).
-function getPriceId(planName: string): string | undefined {
-  return getSetupFeePrice(planName);
+// Kept for backward-compat
+function getSetupFeePrice(planName: string): string | undefined {
+  return getCheckoutPrice(planName, "monthly");
 }
 
 function stripeConfigError(): string | null {
@@ -109,13 +120,15 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
   const ghlApiKey = process.env.GHL_API_KEY;
   const ghlLocationId = process.env.GHL_LOCATION_ID;
 
-  // 2 — Always resolve to the one-time Setup Fee price for this plan.
-  //     We ignore whatever price ID the frontend sent (it may point to a recurring price)
-  //     and always use the Setup Fee price from env/hardcoded fallback.
-  const setupFeePrice = getSetupFeePrice(planName);
+  // 2 — Resolve the one-time Stripe price for this plan + payment type.
+  //     We ignore whatever price ID the frontend sent and always look up by plan+type.
+  const setupFeePrice = getCheckoutPrice(planName, payment_type);
   if (!setupFeePrice) {
-    req.log.error({ planName }, "Enrollment: setup fee price ID not configured");
-    res.status(400).json({ error: `Setup fee price for "${planName}" is not configured on the server.` });
+    req.log.error({ planName, payment_type }, "Enrollment: checkout price ID not configured");
+    const envHint = payment_type === "monthly"
+      ? `STRIPE_PRICE_${planName.toUpperCase().replace(/\s+/g, "_")}_SETUP`
+      : `STRIPE_PRICE_${planName.toUpperCase().replace(/\s+/g, "_")}`;
+    res.status(400).json({ error: `Stripe price for "${planName}" (${payment_type || "subscription"}) is not configured. Set ${envHint} in environment secrets.` });
     return;
   }
 
@@ -230,7 +243,7 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
       if (typeof e["type"] === "string") stripeType = e["type"] as string;
     }
 
-    req.log.error({ err, planName, resolvedPriceId, stripeCode, stripeType }, "Enrollment: Stripe session creation failed");
+    req.log.error({ err, planName, priceId: verifiedPriceId, stripeCode, stripeType }, "Enrollment: Stripe session creation failed");
 
     res.status(502).json({
       error: message,

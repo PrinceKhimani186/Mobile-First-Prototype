@@ -79,16 +79,54 @@ router.get("/enrollment/agreement-status", async (req: Request, res: Response) =
   }
 });
 
+// ── Helper: insert user_agreements with graceful fallback for missing columns ──
+// SQL to add columns (run once in Supabase Dashboard → SQL Editor):
+//   ALTER TABLE user_agreements ADD COLUMN IF NOT EXISTS package_name TEXT;
+//   ALTER TABLE user_agreements ADD COLUMN IF NOT EXISTS payment_option TEXT;
+async function insertAgreementRecord(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  record: {
+    user_id: string; email: string; full_name: string; agreement_version: string;
+    signature_image: string; signed_at: string; ip_address: string; user_agent: string;
+    pdf_url: string; package_name?: string; payment_option?: string;
+  }
+): Promise<{ error: { message: string; code?: string } | null }> {
+  const { error } = await supabase.from("user_agreements").insert(record);
+  if (!error) return { error: null };
+
+  // If package_name/payment_option columns don't exist yet, retry without them
+  const isMissingColumn =
+    error.code === "42703" ||
+    (error.message?.toLowerCase().includes("column") && error.message?.toLowerCase().includes("does not exist"));
+
+  if (isMissingColumn) {
+    logger.warn(
+      { code: error.code, msg: error.message },
+      "user_agreements: package_name/payment_option columns missing — retrying without them. " +
+      "Run: ALTER TABLE user_agreements ADD COLUMN IF NOT EXISTS package_name TEXT; " +
+      "ALTER TABLE user_agreements ADD COLUMN IF NOT EXISTS payment_option TEXT;"
+    );
+    const { package_name: _pn, payment_option: _po, ...base } = record;
+    const { error: retryErr } = await supabase.from("user_agreements").insert(base);
+    return { error: retryErr };
+  }
+
+  return { error };
+}
+
 // ── POST /api/enrollment/custom-sign ─────────────────────────────────────────
 // Receives custom canvas signature / typed name, creates PDF, uploads to Supabase, 
 // and stores legal audit record in database.
 router.post("/enrollment/custom-sign", async (req: Request, res: Response) => {
-  const { email, fullName, packageName, price, signatureImage } = req.body as {
+  const { email, fullName, packageName, price, signatureImage, paymentOption, packageId } = req.body as {
     email?: string;
     fullName?: string;
     packageName?: string;
     price?: string;
     signatureImage?: string;
+    paymentOption?: string;
+    packageId?: string;
   };
 
   if (!email || !fullName || !packageName || !price || !signatureImage) {
@@ -131,7 +169,8 @@ router.post("/enrollment/custom-sign", async (req: Request, res: Response) => {
       price,
       new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
       signatureImage,
-      { ip, userAgent, timestamp }
+      { ip, userAgent, timestamp },
+      { packageId, paymentOption }
     );
 
     // 3 — Upload PDF to Supabase Storage bucket 'customer-documents'
@@ -150,19 +189,19 @@ router.post("/enrollment/custom-sign", async (req: Request, res: Response) => {
     }
 
     // 4 — Save audit record to user_agreements table (store storage path, not public URL)
-    const { error: insertErr } = await supabase
-      .from("user_agreements")
-      .insert({
-        user_id: enrollRecord.id,
-        email: normalizedEmail,
-        full_name: fullName,
-        agreement_version: "1.0",
-        signature_image: signatureImage,
-        signed_at: timestamp,
-        ip_address: ip,
-        user_agent: userAgent,
-        pdf_url: storagePath,
-      });
+    const { error: insertErr } = await insertAgreementRecord(supabase, {
+      user_id: enrollRecord.id,
+      email: normalizedEmail,
+      full_name: fullName,
+      agreement_version: "1.0",
+      signature_image: signatureImage,
+      signed_at: timestamp,
+      ip_address: ip,
+      user_agent: userAgent,
+      pdf_url: storagePath,
+      package_name: packageName,
+      payment_option: paymentOption,
+    });
 
     if (insertErr) {
       logger.error({ insertErr, email }, "Custom Sign: Failed to insert user_agreement record");
@@ -207,11 +246,13 @@ router.post("/enrollment/custom-sign", async (req: Request, res: Response) => {
 // Developer Mode bypass — simulates a full Zoho Sign completion without consuming
 // API quota. Performs every backend action the Zoho webhook performs.
 router.post("/enrollment/dev-sign", async (req: Request, res: Response) => {
-  const { email, fullName, packageName, price } = req.body as {
+  const { email, fullName, packageName, price, paymentOption, packageId } = req.body as {
     email?: string;
     fullName?: string;
     packageName?: string;
     price?: string;
+    paymentOption?: string;
+    packageId?: string;
   };
 
   if (!email || !fullName) {
@@ -259,7 +300,8 @@ router.post("/enrollment/dev-sign", async (req: Request, res: Response) => {
         resolvedPrice,
         new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
         "DEV_MODE",
-        { ip, userAgent: "Developer Mode Bypass", timestamp }
+        { ip, userAgent: "Developer Mode Bypass", timestamp },
+        { packageId, paymentOption }
       );
     } catch (pdfErr) {
       logger.error({ pdfErr }, "[DEV SIGN] Step 2 FAILED: PDF generation error");
@@ -285,19 +327,19 @@ router.post("/enrollment/dev-sign", async (req: Request, res: Response) => {
 
     // Step 4 — Insert user_agreements audit record
     logger.info("[DEV SIGN] Step 4: Inserting user_agreements audit record");
-    const { error: insertErr } = await supabase
-      .from("user_agreements")
-      .insert({
-        user_id: enrollRecord.id,
-        email: normalizedEmail,
-        full_name: fullName.trim(),
-        agreement_version: "1.0",
-        signature_image: "DEV_MODE",
-        signed_at: timestamp,
-        ip_address: ip,
-        user_agent: "Developer Mode",
-        pdf_url: storagePath,
-      });
+    const { error: insertErr } = await insertAgreementRecord(supabase, {
+      user_id: enrollRecord.id,
+      email: normalizedEmail,
+      full_name: fullName.trim(),
+      agreement_version: "1.0",
+      signature_image: "DEV_MODE",
+      signed_at: timestamp,
+      ip_address: ip,
+      user_agent: "Developer Mode",
+      pdf_url: storagePath,
+      package_name: packageName ?? resolvedPackage,
+      payment_option: paymentOption,
+    });
 
     if (insertErr) {
       logger.error({ insertErr }, "[DEV SIGN] Step 4 FAILED: user_agreements insert error");

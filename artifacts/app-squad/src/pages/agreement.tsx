@@ -6,21 +6,27 @@ import { getEnrollmentProgress, createZohoSignRequest } from "@/services/enrollm
 import { useQueryClient } from "@tanstack/react-query";
 
 const planNames: Record<string, string> = {
-  essentials: "App Launch Essentials Package",
-  accelerator: "App Ownership Accelerator Package",
-  empire: "Digital Asset Empire Package",
+  starter: "Starter Launch Package",
+  essentials: "App Launch Essentials",
+  accelerator: "App Ownership Accelerator",
+  growth: "Growth Launch Package",
+  empire: "App Empire Package",
 };
 
 const planPrices: Record<string, Record<string, string>> = {
   subscription: {
+    starter: "$2,497",
     essentials: "$2,497",
     accelerator: "$4,997",
+    growth: "$4,997",
     empire: "$9,997",
   },
   monthly: {
+    starter: "$997 setup/down payment today, then $197/month for 12 months",
     essentials: "$497 setup/down payment today, then $199/month for 12 months",
     accelerator: "$997 setup/down payment today, then $399/month for 12 months",
-    empire: "$2,500 setup/down payment today, then $697/month for 12 months",
+    growth: "$2,500 setup/down payment today, then $397/month for 12 months",
+    empire: "$5,000 setup/down payment today, then $497/month for 12 months",
   },
 };
 
@@ -35,6 +41,8 @@ export default function Agreement() {
   const [enrollFullName, setEnrollFullName] = useState("");
   const [enrollPackageName, setEnrollPackageName] = useState("");
   const [enrollPrice, setEnrollPrice] = useState("");
+  const [enrollPackageId, setEnrollPackageId] = useState("");
+  const [enrollPaymentType, setEnrollPaymentType] = useState("subscription");
 
   const emailFromUrl = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("email") : "";
   const email = emailFromUrl || localStorage.getItem("appSquadEnrollmentEmail") || "";
@@ -68,16 +76,18 @@ export default function Agreement() {
       }
 
       const pType = localStorage.getItem("appSquadEnrollmentPaymentType") || "subscription";
-      const planKey = record.selected_package?.toLowerCase() || "accelerator";
-      
-      const resolvedPackageName = planNames[planKey] || planNames.accelerator;
+      const planKey = record.selected_package?.toLowerCase() || "essentials";
+
+      const resolvedPackageName = planNames[planKey] || planNames.essentials;
       const pricesForType = planPrices[pType as "subscription" | "monthly"] || planPrices.subscription;
-      const resolvedPrice = pricesForType[planKey] || pricesForType.accelerator;
+      const resolvedPrice = pricesForType[planKey] || pricesForType.essentials;
 
       // Store for dev bypass
       setEnrollFullName(record.full_name || "");
       setEnrollPackageName(resolvedPackageName);
       setEnrollPrice(resolvedPrice);
+      setEnrollPackageId(planKey);
+      setEnrollPaymentType(pType);
 
       // Check if user is already signed in the DB
       if (record.agreement_signed) {
@@ -108,7 +118,9 @@ export default function Agreement() {
         email,
         record.full_name,
         resolvedPackageName,
-        resolvedPrice
+        resolvedPrice,
+        pType,
+        planKey
       );
 
       if (zohoRes.success && zohoRes.embedUrl) {
@@ -271,6 +283,8 @@ export default function Agreement() {
                               fullName: enrollFullName || bypassEmail,
                               packageName: enrollPackageName,
                               price: enrollPrice,
+                              paymentOption: enrollPaymentType || localStorage.getItem("appSquadEnrollmentPaymentType") || "subscription",
+                              packageId: enrollPackageId || "essentials",
                             }),
                           });
                           const data = await res.json() as { success?: boolean; pdfUrl?: string; error?: string };
