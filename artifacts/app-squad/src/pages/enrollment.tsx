@@ -112,7 +112,7 @@ const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, { priceT
     starter: {
       priceText: "$2,497",
       subtext: "paid in full",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER || "price_starter_full",
+      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER || "price_1Tq7OcJJdy0crHI8UPHFOPWn",
       setupPriceId: undefined,
     },
     essentials: {
@@ -130,7 +130,7 @@ const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, { priceT
     growth: {
       priceText: "$4,997",
       subtext: "paid in full",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH || "price_growth_full",
+      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH || "price_1Tq7OfJJdy0crHI8nMT7K4KI",
       setupPriceId: undefined,
     },
     empire: {
@@ -144,32 +144,32 @@ const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, { priceT
     starter: {
       priceText: "$997 today",
       subtext: "then $197/month for 12 months",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_MONTHLY || "price_starter_monthly",
-      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_SETUP || "price_starter_setup",
+      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_MONTHLY || "price_1Tq7OdJJdy0crHI8RSt92B6U",
+      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_SETUP   || "price_1Tq7OdJJdy0crHI8IRjnyxfq",
     },
     essentials: {
       priceText: "$497 today",
       subtext: "then $199/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_MONTHLY || "price_1TnzBIJJdy0crHI86gETElWE",
-      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_SETUP || "price_1TnzBLJJdy0crHI8FHNhiOtw",
+      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_SETUP   || "price_1TnzBLJJdy0crHI8FHNhiOtw",
     },
     accelerator: {
       priceText: "$997 today",
       subtext: "then $399/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_MONTHLY || "price_1TnzBJJJdy0crHI8ZCbKcKSd",
-      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
+      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_SETUP   || "price_1TnzBMJJdy0crHI8LawdE6HC",
     },
     growth: {
       priceText: "$2,500 today",
       subtext: "then $397/month for 12 months",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_MONTHLY || "price_growth_monthly",
-      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_SETUP || "price_growth_setup",
+      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_MONTHLY || "price_1Tq7OfJJdy0crHI82rNSWJmd",
+      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_SETUP   || "price_1Tq7OfJJdy0crHI8asymn3rv",
     },
     empire: {
       priceText: "$5,000 today",
       subtext: "then $497/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_MONTHLY || "price_1TnzBKJJdy0crHI8csCQAO2H",
-      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_SETUP || "price_empire_setup_5000",
+      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_SETUP   || "price_1Tq7OgJJdy0crHI8Pnq5oyrv",
     },
   },
 };
