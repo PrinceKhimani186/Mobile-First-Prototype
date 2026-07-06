@@ -1,0 +1,84 @@
+I want to automate the Zoho Sign template creation process for this project.
+
+The application will use Zoho Sign as the agreement engine, and I want to minimize manual setup.
+
+Tasks:
+
+1. Connect to Zoho Sign using the configured OAuth credentials:
+   - ZOHO_CLIENT_ID
+   - ZOHO_CLIENT_SECRET
+   - ZOHO_REFRESH_TOKEN
+   - ZOHO_REGION
+
+2. Verify that authentication is successful.
+
+3. Check whether the required agreement templates already exist.
+
+Required templates:
+- Starter Launch Package
+- App Launch Essentials
+- App Ownership Accelerator
+- Growth Launch Package
+- App Empire Package
+
+4. If a template does not exist:
+   - Upload the corresponding PDF agreement.
+   - Create a reusable Zoho Sign template.
+   - Configure it for one customer signer.
+   - Configure one company signer if required.
+   - Preserve all signature/date fields already present in the document if supported.
+   - If field placement cannot be automated through the Zoho Sign API, stop and clearly report which fields require manual placement instead of failing silently.
+
+5. After each template is created:
+   - Retrieve and store the Zoho Template ID.
+   - Save the Template IDs in the application configuration or environment variables.
+   - Log which package maps to which Template ID.
+
+6. Update the agreement generation service so it selects templates automatically:
+
+Starter Launch Package
+→ Starter Template
+
+App Launch Essentials
+→ Essentials Template
+
+App Ownership Accelerator
+→ Accelerator Template
+
+Growth Launch Package
+→ Growth Template
+
+App Empire Package
+→ Empire Template
+
+7. During onboarding:
+   - Detect the selected package.
+   - Load the matching Zoho template.
+   - Prefill customer information.
+   - Send the agreement for signature.
+
+8. Verify the complete flow:
+   Enrollment
+   → Stripe Payment
+   → Correct Zoho Template
+   → Customer Signature
+   → Webhook Received
+   → Signed PDF Saved to Supabase
+   → user_agreements Record Created
+   → Continue Onboarding
+
+9. If the Zoho API cannot create templates with the required signature field layout, automatically switch to "manual template mode" and generate a checklist showing:
+   - Which PDFs need to be uploaded manually.
+   - Which signature fields need to be added.
+   - The exact recipient roles required.
+   - Where to retrieve the Template ID after saving.
+
+10. Produce a final report containing:
+   - Zoho authentication status.
+   - Template creation status.
+   - Existing vs newly created templates.
+   - Template IDs.
+   - Package-to-template mapping.
+   - Any manual actions still required.
+
+Do not modify any existing onboarding, Stripe, Supabase, or webhook functionality. Only extend the project to support automated or semi-automated Zoho Sign template management.
