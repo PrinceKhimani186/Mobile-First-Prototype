@@ -347,13 +347,13 @@ export async function generateAgreementPDF(
 
   ctx = ensureY(ctx, 28);
   const optAY = ctx.y;
-  curPage(ctx).drawText(isMonthly ? "[\u2713]" : "[ ]", { x: MX, y: optAY, size: 9, font: bold, color: isMonthly ? COL_GREEN : COL_MGRAY });
+  curPage(ctx).drawText(isMonthly ? "[X]" : "[ ]", { x: MX, y: optAY, size: 9, font: bold, color: isMonthly ? COL_GREEN : COL_MGRAY });
   ctx = drawText({ ...ctx, y: optAY }, `  ${optALabel}`, 9, bold, aColor, 14);
   ctx = drawText(ctx, optADetail, 8.5, normal, aColor, 22);
   ctx = space(ctx, 3);
 
   const optBY = ctx.y;
-  curPage(ctx).drawText(!isMonthly ? "[\u2713]" : "[ ]", { x: MX, y: optBY, size: 9, font: bold, color: !isMonthly ? COL_GREEN : COL_MGRAY });
+  curPage(ctx).drawText(!isMonthly ? "[X]" : "[ ]", { x: MX, y: optBY, size: 9, font: bold, color: !isMonthly ? COL_GREEN : COL_MGRAY });
   ctx = drawText({ ...ctx, y: optBY }, `  ${optBLabel}`, 9, bold, bColor, 14);
   ctx = drawText(ctx, optBDetail, 8.5, normal, bColor, 22);
   ctx = space(ctx, 3);
