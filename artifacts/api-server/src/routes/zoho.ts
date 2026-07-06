@@ -179,6 +179,98 @@ router.get("/zoho/oauth/start", (req: Request, res: Response) => {
   res.send(oauthStartPage(authUrl.toString(), region, redirectUri, clientId));
 });
 
+// GET /api/zoho/oauth/manual — form to paste a Self Client authorization code
+router.get("/zoho/oauth/manual", (req: Request, res: Response) => {
+  const clientId = getZohoClientId() || "";
+  res.send(manualExchangePage(clientId, getZohoRegion()));
+});
+
+// POST /api/zoho/oauth/manual — exchange a pasted auth code for a refresh token
+router.post("/zoho/oauth/manual", async (req: Request, res: Response) => {
+  const { code, region: bodyRegion, client_id, client_secret } = req.body as Record<string, string>;
+
+  if (!code?.trim()) {
+    res.status(400).send(oauthErrorPage("No authorization code provided. Go back and paste the code from Zoho API Console."));
+    return;
+  }
+
+  const region     = (bodyRegion || getZohoRegion()).toLowerCase().trim();
+  const clientId   = (client_id?.trim())     || getZohoClientId()     || "";
+  const clientSec  = (client_secret?.trim()) || getZohoClientSecret() || "";
+
+  if (!clientId || !clientSec) {
+    res.status(400).send(oauthErrorPage("Client ID or Client Secret missing. Fill them in on the form or set ZOHO_SIGN_CLIENT_ID / ZOHO_SIGN_CLIENT_SECRET in Replit Secrets."));
+    return;
+  }
+
+  const params = new URLSearchParams();
+  params.append("grant_type",    "authorization_code");
+  params.append("code",          code.trim());
+  params.append("client_id",     clientId);
+  params.append("client_secret", clientSec);
+  // Self Client doesn't require redirect_uri — omitting it
+
+  logger.info({ region, clientIdPrefix: clientId.slice(0, 12) }, "Manual exchange: exchanging Self Client code for tokens");
+
+  let tokenData: { access_token?: string; refresh_token?: string; error?: string; message?: string };
+
+  try {
+    const tokenRes = await fetch(`https://accounts.zoho.${region}/oauth/v2/token`, {
+      method: "POST",
+      body: params,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
+    tokenData = await tokenRes.json() as { access_token?: string; refresh_token?: string; error?: string; message?: string };
+  } catch (e) {
+    res.send(oauthErrorPage(`Network error contacting accounts.zoho.${region}: ${(e as Error).message}`));
+    return;
+  }
+
+  if (!tokenData.refresh_token) {
+    const msg = tokenData.error || tokenData.message || "no refresh_token returned";
+    logger.error({ tokenData }, "Manual exchange: failed");
+    res.send(oauthErrorPage(
+      `Token exchange failed for region <strong>.${region}</strong>: <code>${msg}</code><br><br>` +
+      `Common fixes:<br>` +
+      `• Wrong region — try <a href="/api/zoho/oauth/manual">/api/zoho/oauth/manual</a> and pick a different region<br>` +
+      `• Expired code — Self Client codes expire in 10 minutes, generate a new one<br>` +
+      `• Wrong Client ID / Secret — double-check the values in the form<br>` +
+      `• <code>invalid_code</code> — the code was already used; generate a fresh one`
+    ));
+    return;
+  }
+
+  persistToken({ refresh_token: tokenData.refresh_token, access_token: tokenData.access_token || "", region, client_id: clientId });
+
+  // Persist the client ID too if it came from the form (overriding old env)
+  if (client_id?.trim()) {
+    process.env.ZOHO_SIGN_CLIENT_ID = clientId;
+  }
+
+  // Quick API verify
+  let verifyStatus = "—";
+  let zohoEmail    = "—";
+  let zohoOrgName  = "—";
+  try {
+    const vRes = await fetch(`https://sign.zoho.${region}/api/v1/requests?limit=1`, {
+      headers: { Authorization: `Zoho-oauthtoken ${tokenData.access_token}` },
+    });
+    verifyStatus = vRes.ok ? "✅ API call succeeded" : `⚠️ HTTP ${vRes.status}`;
+    if (vRes.ok) {
+      const oRes = await fetch(`https://sign.zoho.${region}/api/v1/settings`, {
+        headers: { Authorization: `Zoho-oauthtoken ${tokenData.access_token}` },
+      });
+      if (oRes.ok) {
+        const od = await oRes.json() as any;
+        zohoEmail   = od?.settings?.user_email || od?.user_email || "—";
+        zohoOrgName = od?.settings?.org_name   || od?.org_name   || "—";
+      }
+    }
+  } catch { /* ignore */ }
+
+  res.send(oauthSuccessPage({ refreshToken: tokenData.refresh_token, region, verifyStatus, zohoEmail, zohoOrgName }));
+});
+
 // GET /api/zoho/oauth/callback
 // Zoho redirects here with ?code=XXX&state=YYY after user approves.
 router.get("/zoho/oauth/callback", async (req: Request, res: Response) => {
@@ -326,6 +418,89 @@ router.get("/zoho/oauth/status", async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // HTML helpers
 // ─────────────────────────────────────────────────────────────────────────────
+function manualExchangePage(clientId: string, currentRegion: string): string {
+  const scopes = "ZohoSign.documents.ALL,ZohoSign.templates.ALL,ZohoSign.account.READ";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zoho Sign — Manual Token Exchange</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0f;color:#e8eaf0;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:32px 24px}
+  .wrap{max-width:620px;width:100%}
+  h1{font-size:22px;font-weight:700;margin-bottom:6px;text-align:center}
+  .sub{color:rgba(255,255,255,.45);font-size:14px;margin-bottom:32px;line-height:1.6;text-align:center}
+  .card{background:#141420;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px;margin-bottom:20px}
+  .card-title{font-size:13px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.07em;text-transform:uppercase;margin-bottom:16px}
+  .step{display:flex;gap:12px;margin-bottom:14px;font-size:13px;line-height:1.6;color:rgba(255,255,255,.7)}
+  .step-n{background:#f59e0b;color:#000;font-weight:700;font-size:11px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .copy-scope{background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12px;color:#7dd3fc;margin:8px 0;word-break:break-all;cursor:pointer;transition:border-color .2s}
+  .copy-scope:hover{border-color:#7dd3fc}
+  label{display:block;font-size:12px;font-weight:600;color:rgba(255,255,255,.45);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+  input,select{width:100%;background:#0d1117;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:11px 14px;color:#e8eaf0;font-size:13px;font-family:inherit;margin-bottom:16px;outline:none;transition:border-color .2s}
+  input:focus,select:focus{border-color:#f59e0b}
+  input[type=password]{letter-spacing:.1em}
+  .details-toggle{font-size:12px;color:rgba(255,255,255,.35);cursor:pointer;margin-bottom:16px;display:block;text-decoration:underline}
+  .hidden{display:none}
+  .btn{width:100%;background:#f59e0b;color:#000;border:none;font-weight:700;font-size:15px;padding:14px;border-radius:10px;cursor:pointer;transition:opacity .2s}
+  .btn:hover{opacity:.85}
+  code{background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px}
+  a{color:#7dd3fc}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 style="margin-bottom:6px">🔑 Manual Token Exchange</h1>
+  <p class="sub">Use Zoho's Self Client to generate a one-time code without any redirect URI</p>
+
+  <div class="card">
+    <div class="card-title">Step 1 — Generate a code in Zoho API Console</div>
+    <div class="step"><span class="step-n">1</span><div>Go to <a href="https://api-console.zoho.com" target="_blank">api-console.zoho.com</a> — make sure you're logged into the <strong>correct Zoho account</strong></div></div>
+    <div class="step"><span class="step-n">2</span><div>Click <strong>"Self Client"</strong> in the left sidebar (or top tabs)</div></div>
+    <div class="step"><span class="step-n">3</span><div>Click <strong>"Generate Code"</strong></div></div>
+    <div class="step"><span class="step-n">4</span><div>In the <strong>Scope</strong> field, paste exactly:<br>
+      <div class="copy-scope" onclick="navigator.clipboard.writeText(this.textContent.trim()).then(()=>{this.style.borderColor='#22c55e';setTimeout(()=>this.style.borderColor='',1500)})" title="Click to copy">${scopes}</div>
+    </div></div>
+    <div class="step"><span class="step-n">5</span><div>Set <strong>Time Duration</strong> to <code>10 minutes</code>, enter any description, click <strong>Create</strong></div></div>
+    <div class="step"><span class="step-n">6</span><div>Copy the authorization code shown — it expires in 10 min, use it immediately</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Step 2 — Exchange the code for a refresh token</div>
+    <form method="POST" action="/api/zoho/oauth/manual">
+      <label>Authorization Code (paste from step above)</label>
+      <input type="text" name="code" placeholder="1000.xxxxxxxx..." required autofocus>
+
+      <label>Zoho Region</label>
+      <select name="region">
+        <option value="com" ${currentRegion === "com" ? "selected" : ""}>zoho.com (US/Global — default)</option>
+        <option value="in"  ${currentRegion === "in"  ? "selected" : ""}>zoho.in (India)</option>
+        <option value="eu"  ${currentRegion === "eu"  ? "selected" : ""}>zoho.eu (Europe)</option>
+        <option value="com.au" ${currentRegion === "com.au" ? "selected" : ""}>zoho.com.au (Australia)</option>
+        <option value="ca"  ${currentRegion === "ca"  ? "selected" : ""}>zoho.ca (Canada)</option>
+        <option value="jp"  ${currentRegion === "jp"  ? "selected" : ""}>zoho.jp (Japan)</option>
+      </select>
+
+      <span class="details-toggle" onclick="document.getElementById('cred-fields').classList.toggle('hidden')">
+        ▸ Override Client ID / Secret (leave blank to use values from Replit Secrets)
+      </span>
+      <div id="cred-fields" class="hidden">
+        <label>Client ID <span style="color:rgba(255,255,255,.3);text-transform:none;font-weight:400">(current: ${clientId ? clientId.slice(0, 14) + "…" : "not set"})</span></label>
+        <input type="text" name="client_id" placeholder="1000.xxx… (leave blank to use saved value)">
+        <label>Client Secret</label>
+        <input type="password" name="client_secret" placeholder="leave blank to use saved value">
+      </div>
+
+      <button type="submit" class="btn">Exchange Code → Get Refresh Token</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
 function oauthStartPage(authUrl: string, region: string, redirectUri: string, clientId: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
