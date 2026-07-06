@@ -141,42 +141,9 @@ function readPersistedToken(): Record<string, string> | null {
 // OAUTH ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/zoho/oauth/start
-// Redirects the browser to the Zoho authorization page.
-// Query params:
-//   ?region=com|in|eu|com.au   (default: current ZOHO_REGION or "com")
+// GET /api/zoho/oauth/start → redirects to /manual (Self Client flow, no redirect URI needed)
 router.get("/zoho/oauth/start", (req: Request, res: Response) => {
-  const region = ((req.query.region as string) || getZohoRegion()).toLowerCase().trim();
-  const clientId = getZohoClientId();
-
-  if (!clientId) {
-    res.status(503).send(oauthErrorPage("ZOHO_SIGN_CLIENT_ID is not configured. Add it in Replit Secrets."));
-    return;
-  }
-
-  const redirectUri = getOAuthRedirectUri(req);
-  const scopes = [
-    "ZohoSign.documents.ALL",
-    "ZohoSign.templates.ALL",
-    "ZohoSign.account.READ",
-  ].join(",");
-
-  // Encode region in state so callback knows which token endpoint to use
-  const state = Buffer.from(JSON.stringify({ region, ts: Date.now() })).toString("base64url");
-
-  const authUrl = new URL(`https://accounts.zoho.${region}/oauth/v2/auth`);
-  authUrl.searchParams.set("scope", scopes);
-  authUrl.searchParams.set("client_id", clientId);
-  authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("access_type", "offline");
-  authUrl.searchParams.set("redirect_uri", redirectUri);
-  authUrl.searchParams.set("state", state);
-  authUrl.searchParams.set("prompt", "consent"); // force refresh token even if previously authorized
-
-  logger.info({ region, redirectUri, clientId: clientId.slice(0, 12) + "…" }, "OAuth: redirecting to Zoho authorization");
-
-  // Show a pre-flight page with a clickable link (in case the iframe blocks the redirect)
-  res.send(oauthStartPage(authUrl.toString(), region, redirectUri, clientId));
+  res.redirect(302, "/api/zoho/oauth/manual");
 });
 
 // GET /api/zoho/oauth/manual — form to paste a Self Client authorization code
