@@ -963,9 +963,13 @@ export default function Presentation() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.12fr 1fr 1fr", gap: 18, alignItems: "start" }}>
-            {PACKAGES.map((pkg, i) => (
-              <FadeUp key={pkg.name} delay={i * 0.1}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 22, alignItems: "start" }}>
+            {PACKAGES.map((pkg, i) => {
+              const gridColumn = i < 3
+                ? `${i * 2 + 1} / span 2`
+                : i === 3 ? "2 / span 2" : "4 / span 2";
+              return (
+              <FadeUp key={pkg.name} delay={i * 0.1} style={{ gridColumn }}>
                 <div style={{
                   background: pkg.isAccelerator
                     ? "linear-gradient(155deg, #0E1828 0%, #0A1220 60%, #08101A 100%)"
@@ -1113,7 +1117,8 @@ export default function Presentation() {
                   </button>
                 </div>
               </FadeUp>
-            ))}
+              );
+            })}
           </div>
 
           <FadeUp delay={0.3} style={{ textAlign: "center", marginTop: 60 }}>

@@ -680,10 +680,13 @@ export default function Enrollment() {
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
-                {PLANS.map(plan => {
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 16, marginBottom: 24 }}>
+                {PLANS.map((plan, idx) => {
                   const Icon = plan.icon;
                   const isSelected = selectedPlan === plan.id;
+                  const gridColumn = idx < 3
+                    ? `${idx * 2 + 1} / span 2`
+                    : idx === 3 ? "2 / span 2" : "4 / span 2";
                   return (
                     <motion.button
                       key={plan.id}
@@ -691,6 +694,7 @@ export default function Enrollment() {
                       whileHover={{ y: -2 }}
                       style={{
                         position: "relative",
+                        gridColumn,
                         padding: "24px 20px",
                         borderRadius: 18,
                         border: isSelected
