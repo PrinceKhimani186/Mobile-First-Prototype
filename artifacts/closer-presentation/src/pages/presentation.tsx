@@ -247,32 +247,32 @@ const PACKAGES = [
 ];
 
 const packagePricing = {
-  subscription: {
+  paid_in_full: {
     essentials: {
       priceText: "$2,497",
-      subtext: "paid in full",
+      subtext: "Paid In Full",
     },
     accelerator: {
       priceText: "$4,997",
-      subtext: "paid in full",
+      subtext: "Paid In Full",
     },
     empire: {
       priceText: "$9,997",
-      subtext: "paid in full",
+      subtext: "Paid In Full",
     },
   },
   monthly: {
     essentials: {
-      priceText: "$497",
-      subtext: "setup today, then $199/month for 12 months",
+      priceText: "$497 today",
+      subtext: "then $199/month for 12 months",
     },
     accelerator: {
-      priceText: "$997",
-      subtext: "setup today, then $399/month for 12 months",
+      priceText: "$997 today",
+      subtext: "then $399/month for 12 months",
     },
     empire: {
-      priceText: "$2,500",
-      subtext: "setup today, then $697/month for 12 months",
+      priceText: "$5,000 today",
+      subtext: "then $497/month for 12 months",
     },
   },
 } as const;
@@ -290,7 +290,7 @@ const ENROLLMENT_STEPS = [
 /* ─────────────────── page ──────────────────────────────────────── */
 
 export default function Presentation() {
-  const [paymentType, setPaymentType] = useState<"subscription" | "monthly">("subscription");
+  const [paymentType, setPaymentType] = useState<"paid_in_full" | "monthly">("paid_in_full");
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
   /* shared styles */
@@ -891,7 +891,7 @@ export default function Presentation() {
             }}>
               <button
                 type="button"
-                onClick={() => setPaymentType("subscription")}
+                onClick={() => setPaymentType("paid_in_full")}
                 style={{
                   padding: "10px 28px",
                   borderRadius: 99,
@@ -901,16 +901,16 @@ export default function Presentation() {
                   border: "none",
                   cursor: "pointer",
                   transition: "all 0.3s",
-                  background: paymentType === "subscription"
+                  background: paymentType === "paid_in_full"
                     ? "linear-gradient(135deg, #00D4FF 0%, #0099BB 100%)"
                     : "transparent",
-                  color: paymentType === "subscription" ? "#050505" : "rgba(255,255,255,0.4)",
-                  boxShadow: paymentType === "subscription"
+                  color: paymentType === "paid_in_full" ? "#050505" : "rgba(255,255,255,0.4)",
+                  boxShadow: paymentType === "paid_in_full"
                     ? "0 0 20px -4px rgba(0,212,255,0.4)"
                     : "none",
                 }}
               >
-                Subscription
+                One Time
               </button>
               <button
                 type="button"
@@ -983,25 +983,20 @@ export default function Presentation() {
                   <div style={{ fontFamily: "'Inter'", fontSize: 16, color: "rgba(255,255,255,0.38)", marginBottom: 24, lineHeight: 1.65, position: "relative", zIndex: 1 }}>{pkg.packageDesc}</div>
                   
                   {/* Pricing Display */}
-                  <div style={{ marginBottom: 28, position: "relative", zIndex: 1 }}>
-                    <div style={{ 
-                      fontFamily: "'Space Grotesk'", 
-                      fontSize: 36, 
-                      fontWeight: 700, 
-                      color: "white" 
-                    }}>
-                      {packagePricing[paymentType][pkg.id].priceText}
-                    </div>
-                    <div style={{ 
-                      fontFamily: "'Inter'", 
-                      fontSize: 14, 
-                      color: pkg.tagColor,
-                      fontWeight: 500,
-                      marginTop: 4
-                    }}>
-                      {packagePricing[paymentType][pkg.id].subtext}
-                    </div>
-                  </div>
+                  {(() => {
+                    type PkgId = keyof typeof packagePricing.paid_in_full;
+                    const pricing = packagePricing[paymentType][pkg.id as PkgId];
+                    return (
+                      <div style={{ marginBottom: 28, position: "relative", zIndex: 1 }}>
+                        <div style={{ fontFamily: "'Space Grotesk'", fontSize: 36, fontWeight: 700, color: "white" }}>
+                          {pricing.priceText}
+                        </div>
+                        <div style={{ fontFamily: "'Inter'", fontSize: 14, color: pkg.tagColor, fontWeight: 500, marginTop: 4 }}>
+                          {pricing.subtext}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div style={{ height: 1, background: pkg.isAccelerator ? `rgba(0,212,255,0.14)` : "rgba(255,255,255,0.06)", marginBottom: 36, position: "relative", zIndex: 1 }} />
 
@@ -1019,7 +1014,12 @@ export default function Presentation() {
 
                   {/* CTA */}
                   <button
-                    onClick={() => window.open(resolveEnrollmentUrl(`${pkg.route}&type=${paymentType}`), "_blank")}
+                    onClick={() => {
+                      const enrollType = paymentType === "paid_in_full" ? "subscription" : "monthly";
+                      localStorage.setItem("appSquadEnrollmentPaymentType", enrollType);
+                      localStorage.setItem("appSquadSelectedPackage", pkg.id);
+                      window.open(resolveEnrollmentUrl(`${pkg.route}&type=${enrollType}`), "_blank");
+                    }}
                     style={{
                       marginTop: 44,
                       width: "100%",
