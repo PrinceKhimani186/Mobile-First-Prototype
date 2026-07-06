@@ -141,9 +141,13 @@ function readPersistedToken(): Record<string, string> | null {
 // OAUTH ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/zoho/oauth/start → redirects to /manual (Self Client flow, no redirect URI needed)
+// GET /api/zoho/oauth/start → serves the manual exchange form directly (no redirect, cache-safe)
 router.get("/zoho/oauth/start", (req: Request, res: Response) => {
-  res.redirect(302, "/api/zoho/oauth/manual");
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  const clientId = getZohoClientId() || "";
+  res.send(manualExchangePage(clientId, getZohoRegion()));
 });
 
 // GET /api/zoho/oauth/manual — form to paste a Self Client authorization code
