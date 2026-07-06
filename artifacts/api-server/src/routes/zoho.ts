@@ -141,18 +141,65 @@ function readPersistedToken(): Record<string, string> | null {
 // OAUTH ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/zoho/oauth/start (and /zoho/oauth/setup) → serves manual exchange form, cache-busted
+const ZOHO_SCOPES = "ZohoSign.documents.ALL,ZohoSign.templates.ALL,ZohoSign.account.READ";
+
+// GET /api/zoho/oauth/start → landing page with both options (redirect + Self Client)
 router.get(["/zoho/oauth/start", "/zoho/oauth/setup", "/zoho/setup"], (req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
-  res.setHeader("Surrogate-Control", "no-store");
-  const clientId = getZohoClientId() || "";
-  res.send(manualExchangePage(clientId, getZohoRegion()));
+  const clientId   = getZohoClientId() || "";
+  const region     = getZohoRegion();
+  const redirectUri = getOAuthRedirectUri(req);
+  const state      = Buffer.from(JSON.stringify({ region, ts: Date.now() })).toString("base64url");
+  const authUrl    = `${getZohoAccountsBase()}/oauth/v2/auth?` + new URLSearchParams({
+    response_type: "code",
+    client_id:     clientId,
+    scope:         ZOHO_SCOPES,
+    redirect_uri:  redirectUri,
+    access_type:   "offline",
+    prompt:        "consent",
+    state,
+  }).toString();
+
+  if (!clientId) {
+    res.send(oauthErrorPage("ZOHO_SIGN_CLIENT_ID is not set. Add it to Replit Secrets first."));
+    return;
+  }
+
+  res.send(oauthLandingPage({ authUrl, clientId, region, redirectUri, scopes: ZOHO_SCOPES }));
+});
+
+// GET /api/zoho/oauth/authorize → builds redirect URL and shows the confirm page (standard OAuth redirect)
+router.get("/zoho/oauth/authorize", (req: Request, res: Response) => {
+  res.setHeader("Cache-Control", "no-store");
+  const clientId    = getZohoClientId() || "";
+  const region      = getZohoRegion();
+  const redirectUri = getOAuthRedirectUri(req);
+
+  if (!clientId) {
+    res.send(oauthErrorPage("ZOHO_SIGN_CLIENT_ID is not set in Replit Secrets."));
+    return;
+  }
+
+  const state   = Buffer.from(JSON.stringify({ region, ts: Date.now() })).toString("base64url");
+  const authUrl = `${getZohoAccountsBase()}/oauth/v2/auth?` + new URLSearchParams({
+    response_type: "code",
+    client_id:     clientId,
+    scope:         ZOHO_SCOPES,
+    redirect_uri:  redirectUri,
+    access_type:   "offline",
+    prompt:        "consent",
+    state,
+  }).toString();
+
+  logger.info({ region, redirectUri, clientId: clientId.slice(0, 14) + "…", authUrl }, "OAuth: authorization URL generated");
+  res.send(oauthStartPage(authUrl, region, redirectUri, clientId));
 });
 
 // GET /api/zoho/oauth/manual — form to paste a Self Client authorization code
 router.get("/zoho/oauth/manual", (req: Request, res: Response) => {
+  res.setHeader("Cache-Control", "no-store");
   const clientId = getZohoClientId() || "";
   res.send(manualExchangePage(clientId, getZohoRegion()));
 });
@@ -291,24 +338,60 @@ router.get("/zoho/oauth/callback", async (req: Request, res: Response) => {
     message?: string;
   };
 
+  const tokenUrl = `https://accounts.zoho.${region}/oauth/v2/token`;
+  logger.info({
+    tokenUrl,
+    region,
+    redirectUri,
+    clientId: clientId?.slice(0, 14) + "…",
+    grantType: "authorization_code",
+    codeLen: code.length,
+  }, "OAuth callback: attempting token exchange");
+
   try {
-    const tokenRes = await fetch(`https://accounts.zoho.${region}/oauth/v2/token`, {
+    const tokenRes = await fetch(tokenUrl, {
       method: "POST",
       body: params,
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
-    tokenData = await tokenRes.json() as { access_token?: string; refresh_token?: string; error?: string; message?: string };
+    const rawBody = await tokenRes.text();
+    logger.info({
+      httpStatus: tokenRes.status,
+      rawBody,
+      tokenUrl,
+    }, "OAuth callback: Zoho token endpoint raw response");
+    try {
+      tokenData = JSON.parse(rawBody) as { access_token?: string; refresh_token?: string; error?: string; message?: string };
+    } catch {
+      res.send(oauthErrorPage(`Zoho returned a non-JSON response (HTTP ${tokenRes.status}): <code>${rawBody.slice(0, 400)}</code>`));
+      return;
+    }
   } catch (fetchErr) {
-    logger.error({ fetchErr }, "OAuth: token exchange fetch failed");
+    logger.error({ fetchErr, tokenUrl }, "OAuth callback: token exchange network error");
     res.send(oauthErrorPage(`Network error during token exchange: ${(fetchErr as Error).message}`));
     return;
   }
 
   if (!tokenData.refresh_token) {
-    logger.error({ tokenData }, "OAuth: no refresh token in response");
+    logger.error({
+      error: tokenData.error,
+      message: tokenData.message,
+      hasAccessToken: !!tokenData.access_token,
+      region,
+      redirectUri,
+      tokenUrl,
+    }, "OAuth callback: no refresh_token in Zoho response");
+    const errCode = tokenData.error || tokenData.message || "no refresh_token returned";
+    let hint = "";
+    if (errCode === "invalid_code")         hint = "The code was already used or expired — generate a fresh one.";
+    else if (errCode === "invalid_client")  hint = "Client ID is wrong or doesn't exist in this region.";
+    else if (errCode === "invalid_client_secret") hint = "Client Secret is incorrect — check ZOHO_SIGN_CLIENT_SECRET.";
+    else if (errCode === "redirect_uri_mismatch") hint = `The redirect URI <code>${redirectUri}</code> is not registered in your Zoho OAuth app. Add it under Authorized Redirect URIs in api-console.zoho.${region}.`;
     res.send(oauthErrorPage(
-      `Token exchange failed: ${tokenData.error || tokenData.message || "no refresh_token returned"}. ` +
-      `Make sure "access_type=offline" is supported for your Zoho app type.`
+      `Token exchange failed: <strong>${errCode}</strong>${hint ? `<br><br>💡 ${hint}` : ""}<br><br>` +
+      `Region tried: <code>.${region}</code><br>` +
+      `Redirect URI sent: <code>${redirectUri}</code><br>` +
+      `<a href="/api/zoho/oauth/start">← Try again</a> &nbsp;|&nbsp; <a href="/api/zoho/oauth/manual">Self Client (no redirect needed)</a>`
     ));
     return;
   }
@@ -467,6 +550,65 @@ function manualExchangePage(clientId: string, currentRegion: string): string {
 
       <button type="submit" class="btn">Exchange Code → Get Refresh Token</button>
     </form>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+// Landing page — shows BOTH options: standard redirect and Self Client manual
+function oauthLandingPage(opts: { authUrl: string; clientId: string; region: string; redirectUri: string; scopes: string }): string {
+  const { authUrl, clientId, region, redirectUri, scopes } = opts;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zoho Sign — OAuth Setup</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0a0f;color:#e8eaf0;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:32px 24px}
+  .wrap{max-width:660px;width:100%}
+  h1{font-size:22px;font-weight:700;margin-bottom:6px;text-align:center}
+  .sub{color:rgba(255,255,255,.45);font-size:14px;margin-bottom:28px;line-height:1.6;text-align:center}
+  .card{background:#141420;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px;margin-bottom:20px}
+  .card-title{font-size:13px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.07em;text-transform:uppercase;margin-bottom:14px}
+  .badge{display:inline-block;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#86efac;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-left:8px;vertical-align:middle}
+  .badge-rec{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.3);color:#fcd34d}
+  .info-row{display:flex;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px;word-break:break-all}
+  .info-label{color:rgba(255,255,255,.4);flex-shrink:0;width:110px}
+  .info-value{color:#7dd3fc;font-family:monospace}
+  .warn{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);border-radius:10px;padding:14px 16px;font-size:13px;color:#fca5a5;margin-bottom:16px;line-height:1.6}
+  .btn{display:block;width:100%;background:#f59e0b;color:#000;border:none;font-weight:700;font-size:15px;padding:14px;border-radius:10px;cursor:pointer;transition:opacity .2s;text-align:center;text-decoration:none}
+  .btn:hover{opacity:.85}
+  .btn-sec{background:rgba(255,255,255,.07);color:#e8eaf0;border:1px solid rgba(255,255,255,.15);margin-top:10px;font-size:14px;padding:12px}
+  .divider{display:flex;align-items:center;gap:12px;margin:24px 0;color:rgba(255,255,255,.2);font-size:12px}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}
+  code{background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px}
+  a{color:#7dd3fc}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔑 Zoho Sign OAuth Setup</h1>
+  <p class="sub">Choose how to authorize App Squad to use Zoho Sign</p>
+
+  <div class="card">
+    <div class="card-title">Option A — Standard OAuth Redirect <span class="badge badge-rec">Recommended</span></div>
+    <div class="warn">⚠️ <strong>Required first:</strong> add the redirect URI below to your Zoho OAuth app's <em>Authorized Redirect URIs</em> list at <a href="https://api-console.zoho.${region}" target="_blank">api-console.zoho.${region}</a> before clicking Authorize.</div>
+    <div class="info-row"><span class="info-label">Region</span><span class="info-value">.${region}</span></div>
+    <div class="info-row"><span class="info-label">Client ID</span><span class="info-value">${clientId}</span></div>
+    <div class="info-row"><span class="info-label">Redirect URI</span><span class="info-value">${redirectUri}</span></div>
+    <div class="info-row"><span class="info-label">Scopes</span><span class="info-value">${scopes}</span></div>
+    <a class="btn" href="${authUrl}">Authorize with Zoho →</a>
+  </div>
+
+  <div class="divider">OR</div>
+
+  <div class="card">
+    <div class="card-title">Option B — Self Client (no redirect URI needed)</div>
+    <p style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:16px;line-height:1.6">Use Zoho API Console's Self Client to generate a one-time code — no redirect URI required. Best if the redirect URI isn't registered yet.</p>
+    <a class="btn btn-sec" href="/api/zoho/oauth/manual">Self Client → Paste Code</a>
   </div>
 </div>
 </body>
