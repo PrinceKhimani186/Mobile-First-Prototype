@@ -17,7 +17,7 @@ const PLANS = [
     color: "hsl(142 65% 45%)",
     glow: "hsl(142 65% 45% / 0.18)",
     border: "hsl(142 65% 45% / 0.3)",
-    description: "One branded mobile game app with basic setup and guided launch.",
+    description: "Perfect for entrepreneurs launching their first branded mobile app.",
     features: [
       "Mobile game template",
       "Basic branding & customization",
@@ -35,7 +35,7 @@ const PLANS = [
     color: "hsl(218 76% 60%)",
     glow: "hsl(218 76% 60% / 0.18)",
     border: "hsl(218 76% 60% / 0.3)",
-    description: "Branded mobile game app with full setup and launch support.",
+    description: "Complete app launch package with branding and launch support.",
     features: [
       "Custom mobile game app",
       "Logo, icon & theme customization",
@@ -54,7 +54,7 @@ const PLANS = [
     color: "hsl(35 90% 55%)",
     glow: "hsl(35 90% 55% / 0.18)",
     border: "hsl(35 90% 55% / 0.35)",
-    description: "Premium features, enhanced branding, and full monetization support.",
+    description: "The most popular package for founders wanting branding, monetization and growth.",
     features: [
       "Everything in Essentials",
       "Premium game templates",
@@ -73,7 +73,7 @@ const PLANS = [
     color: "hsl(175 70% 45%)",
     glow: "hsl(175 70% 45% / 0.18)",
     border: "hsl(175 70% 45% / 0.3)",
-    description: "Upgraded branding, ASO guidance, and monthly optimization check-ins.",
+    description: "Designed for scaling with enhanced branding, ASO and optimization support.",
     features: [
       "Premium game template",
       "Enhanced branding",
@@ -92,7 +92,7 @@ const PLANS = [
     color: "hsl(280 70% 65%)",
     glow: "hsl(280 70% 65% / 0.18)",
     border: "hsl(280 70% 65% / 0.3)",
-    description: "Premium launch experience with creative assets and VIP support.",
+    description: "Our premium, done-for-you ownership experience with VIP implementation.",
     features: [
       "Up to 2 game templates",
       "Premium branding & customization",
@@ -142,32 +142,32 @@ const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, { priceT
   },
   monthly: {
     starter: {
-      priceText: "$997",
-      subtext: "down today, then $197/month for 12 months",
+      priceText: "$997 today",
+      subtext: "then $197/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_MONTHLY || "price_starter_monthly",
       setupPriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_SETUP || "price_starter_setup",
     },
     essentials: {
-      priceText: "$497",
-      subtext: "down today, then $199/month for 12 months",
+      priceText: "$497 today",
+      subtext: "then $199/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_MONTHLY || "price_1TnzBIJJdy0crHI86gETElWE",
       setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_SETUP || "price_1TnzBLJJdy0crHI8FHNhiOtw",
     },
     accelerator: {
-      priceText: "$997",
-      subtext: "down today, then $399/month for 12 months",
+      priceText: "$997 today",
+      subtext: "then $399/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_MONTHLY || "price_1TnzBJJJdy0crHI8ZCbKcKSd",
       setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
     },
     growth: {
-      priceText: "$2,500",
-      subtext: "down today, then $397/month for 12 months",
+      priceText: "$2,500 today",
+      subtext: "then $397/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_MONTHLY || "price_growth_monthly",
       setupPriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_SETUP || "price_growth_setup",
     },
     empire: {
-      priceText: "$5,000",
-      subtext: "down today, then $497/month for 12 months",
+      priceText: "$5,000 today",
+      subtext: "then $497/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_MONTHLY || "price_1TnzBKJJdy0crHI8csCQAO2H",
       setupPriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_SETUP || "price_empire_setup_5000",
     },
@@ -633,10 +633,7 @@ export default function Enrollment() {
                 }}>
                   <button
                     type="button"
-                    onClick={() => {
-                      setPaymentType("subscription");
-                      setSelectedPlan(null);
-                    }}
+                    onClick={() => setPaymentType("subscription")}
                     style={{
                       padding: "8px 24px",
                       borderRadius: 99,
@@ -655,14 +652,11 @@ export default function Enrollment() {
                         : "none",
                     }}
                   >
-                    Subscription
+                    One Time
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setPaymentType("monthly");
-                      setSelectedPlan(null);
-                    }}
+                    onClick={() => setPaymentType("monthly")}
                     style={{
                       padding: "8px 24px",
                       borderRadius: 99,
@@ -686,7 +680,7 @@ export default function Enrollment() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <div className="grid sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
                 {PLANS.map(plan => {
                   const Icon = plan.icon;
                   const isSelected = selectedPlan === plan.id;

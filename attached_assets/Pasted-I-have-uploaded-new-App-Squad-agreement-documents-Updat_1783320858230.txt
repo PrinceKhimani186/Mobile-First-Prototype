@@ -1,0 +1,473 @@
+I have uploaded new App Squad agreement documents.
+
+Update the ENTIRE application to use these new agreements, pricing, Stripe mappings, and onboarding flow.
+
+DO NOT redesign the UI.
+
+Keep all existing layouts, colors, typography, spacing, animations, hover effects, and responsiveness.
+
+Only update the business logic, pricing, agreements, payment flow, and package information.
+
+========================================================
+NEW PACKAGES
+========================================================
+
+1. Starter Launch Package
+
+Monthly
+• $997 today
+• then $197/month for 12 months
+
+Paid In Full
+• $2,497
+
+--------------------------------------------------------
+
+2. App Launch Essentials
+
+Monthly
+• $497 today
+• then $199/month for 12 months
+
+Paid In Full
+• $2,497
+
+--------------------------------------------------------
+
+3. App Ownership Accelerator
+
+Monthly
+• $997 today
+• then $399/month for 12 months
+
+Paid In Full
+• $4,997
+
+--------------------------------------------------------
+
+4. Growth Launch Package
+
+Monthly
+• $2,500 today
+• then $397/month for 12 months
+
+Paid In Full
+• $4,997
+
+--------------------------------------------------------
+
+5. App Empire Package
+
+Monthly
+• $5,000 today
+• then $497/month for 12 months
+
+Paid In Full
+• $9,997
+
+========================================================
+UPDATE CLOSER PRESENTATION PAGE
+========================================================
+
+Replace the existing packages with all five packages.
+
+Package order
+
+1. Starter Launch Package
+
+2. App Launch Essentials
+
+3. App Ownership Accelerator
+(Most Popular)
+
+4. Growth Launch Package
+
+5. App Empire Package
+(Premium)
+
+Keep the existing premium dark UI.
+
+Do not redesign anything.
+
+========================================================
+PAYMENT TOGGLE
+========================================================
+
+Replace
+
+Subscription
+
+Monthly
+
+with
+
+One Time
+
+Monthly
+
+When Monthly is selected
+
+Show
+
+Setup payment
+
+Monthly payment
+
+for all packages.
+
+When One Time is selected
+
+Show
+
+Paid In Full price only.
+
+Hide monthly payment text.
+
+The toggle should update instantly without refreshing.
+
+========================================================
+UPDATE ENROLLMENT PAGE
+========================================================
+
+Apply the same package list.
+
+Apply the same pricing.
+
+Apply the same One Time / Monthly toggle.
+
+Keep all styling unchanged.
+
+The Continue button should update dynamically.
+
+Examples
+
+Proceed with Starter Launch Package
+
+Proceed with App Launch Essentials
+
+Proceed with App Ownership Accelerator
+
+Proceed with Growth Launch Package
+
+Proceed with App Empire Package
+
+========================================================
+PACKAGE DESCRIPTIONS
+========================================================
+
+Starter Launch Package
+
+Perfect for entrepreneurs launching their first branded mobile app.
+
+--------------------------------------------------------
+
+App Launch Essentials
+
+Complete app launch package with branding and launch support.
+
+--------------------------------------------------------
+
+App Ownership Accelerator
+
+The most popular package for founders wanting branding, monetization and growth.
+
+--------------------------------------------------------
+
+Growth Launch Package
+
+Designed for scaling with enhanced branding, ASO and optimization support.
+
+--------------------------------------------------------
+
+App Empire Package
+
+Our premium, done-for-you ownership experience with VIP implementation.
+
+========================================================
+PACKAGE SELECTION
+========================================================
+
+Whenever a user selects a package save
+
+selectedPackage
+
+paymentType
+
+packagePrice
+
+stripePriceId
+
+using the existing state management or localStorage.
+
+========================================================
+STRIPE
+========================================================
+
+Each package must support
+
+Monthly
+
+Paid In Full
+
+Monthly
+
+Use Setup / Down Payment Stripe Price ID.
+
+Paid In Full
+
+Use One-Time Stripe Price ID.
+
+Create a clear package mapping.
+
+========================================================
+AGREEMENTS
+========================================================
+
+Replace every old agreement with the new uploaded agreement templates.
+
+Generate the correct agreement depending on
+
+Selected Package
+
+Selected Payment Type
+
+Auto-fill
+
+Agreement Date
+
+Client Name
+
+Email
+
+Phone
+
+Address
+
+Company
+
+Selected Package
+
+Selected Payment Type
+
+Pricing
+
+Signature
+
+Sign Date
+
+Representative
+
+Representative Signature
+
+========================================================
+AGREEMENT STORAGE
+========================================================
+
+After signing
+
+Upload PDF to
+
+Supabase Storage
+
+customer-documents/agreements/
+
+Insert a record into
+
+user_agreements
+
+including
+
+user_id
+
+email
+
+full_name
+
+package_name
+
+payment_type
+
+agreement_version
+
+signature_image
+
+signed_at
+
+pdf_url
+
+ip_address
+
+user_agent
+
+created_at
+
+========================================================
+CUSTOMER ENROLLMENT
+========================================================
+
+Update customer_enrollment with
+
+selected_package
+
+payment_type
+
+agreement_signed
+
+agreement_url
+
+stripe_session
+
+onboarding_status
+
+========================================================
+FULL ONBOARDING FLOW
+========================================================
+
+Enrollment Form
+
+↓
+
+Choose Plan
+
+↓
+
+Stripe Checkout
+
+↓
+
+Agreement
+
+↓
+
+Password Setup
+
+↓
+
+Login
+
+↓
+
+Game Selection
+
+↓
+
+Customization
+
+↓
+
+Customer Dashboard
+
+The selected package and payment type must persist throughout the entire flow.
+
+========================================================
+GAME SELECTION
+========================================================
+
+If no game is selected
+
+Always redirect to Game Selection after login.
+
+If game already selected
+
+Skip directly to Customization.
+
+If customization already completed
+
+Go directly to Dashboard.
+
+========================================================
+ROLE SAFETY
+========================================================
+
+Do not break
+
+Admin Portal
+
+Super Admin
+
+Customer Dashboard
+
+Manager Dashboard
+
+Authentication
+
+Permissions
+
+========================================================
+DATABASE
+========================================================
+
+Update every table that references package names or pricing.
+
+Ensure all package names match exactly.
+
+========================================================
+LOGGING
+========================================================
+
+Log
+
+Selected Package
+
+Payment Type
+
+Stripe Price ID
+
+Agreement Template
+
+Agreement Generated
+
+Agreement Stored
+
+Stripe Checkout
+
+Login
+
+Dashboard Redirect
+
+========================================================
+TEST EVERYTHING
+========================================================
+
+Verify
+
+✓ Monthly pricing
+
+✓ One Time pricing
+
+✓ All 5 packages
+
+✓ Stripe mapping
+
+✓ Agreement generation
+
+✓ Agreement storage
+
+✓ Enrollment
+
+✓ Password setup
+
+✓ Login
+
+✓ Game Selection
+
+✓ Customization
+
+✓ Dashboard
+
+✓ Admin Portal
+
+✓ Super Admin
+
+✓ Customer Dashboard
+
+Ensure there are no regressions anywhere in the application.
+
+At the end, provide a summary of:
+
+• Files modified
+• Components updated
+• Database changes
+• Stripe mappings
+• Agreement mappings
+• Any migration required before deployment.

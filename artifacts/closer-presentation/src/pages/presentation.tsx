@@ -184,20 +184,40 @@ const TEMPLATES = [
 
 const PACKAGES = [
   {
+    id: "starter",
+    name: "Starter Launch\nPackage",
+    packageHeadline: "LAUNCH YOUR FIRST APP",
+    packageDesc: "Perfect for entrepreneurs launching their first branded mobile app.",
+    tag: "STARTER",
+    tagColor: "#34D399",
+    isAccelerator: false,
+    isEmpire: false,
+    features: [
+      "Mobile game template",
+      "Basic branding & customization",
+      "App store submission",
+      "1 revision round",
+      "30-day post-launch support",
+    ],
+    cta: "START STARTER ENROLLMENT",
+    route: "/enrollment?plan=starter",
+  },
+  {
     id: "essentials",
     name: "App Launch\nEssentials",
-    packageHeadline: "START YOUR FIRST APP LAUNCH",
-    packageDesc: "Perfect for first-time app owners who want to launch their first digital asset.",
-    tag: "ENTRY PATH",
+    packageHeadline: "COMPLETE LAUNCH PACKAGE",
+    packageDesc: "Complete app launch package with branding and launch support.",
+    tag: "ESSENTIALS",
     tagColor: CYAN,
     isAccelerator: false,
     isEmpire: false,
     features: [
-      "1 custom mobile game app",
-      "Template selection & branding",
-      "Ad monetization setup",
-      "App Store submission",
-      "30-day post-launch support",
+      "Custom mobile game app",
+      "Logo, icon & theme customization",
+      "Monetization preparation",
+      "App store submission",
+      "1 revision round",
+      "30-day launch support",
     ],
     cta: "START ESSENTIALS ENROLLMENT",
     route: "/enrollment?plan=essentials",
@@ -205,41 +225,60 @@ const PACKAGES = [
   {
     id: "accelerator",
     name: "App Ownership\nAccelerator",
-    packageHeadline: "BUILD A STRONGER APP BRAND",
-    packageDesc: "For entrepreneurs who want a more complete launch experience.",
+    packageHeadline: "BRANDING · MONETIZATION · GROWTH",
+    packageDesc: "The most popular package for founders wanting branding, monetization and growth.",
     tag: "MOST POPULAR",
     tagColor: CYAN,
     isAccelerator: true,
     isEmpire: false,
     features: [
-      "1 custom mobile game app",
-      "Advanced branding & custom UI",
+      "Everything in Essentials",
+      "Premium game templates",
       "Full monetization suite (ads + IAP)",
-      "App Store + Google Play",
-      "60-day growth support",
+      "Launch strategy consultation",
+      "2 revision rounds",
+      "45-day launch support",
       "Revenue optimization coaching",
-      "Analytics dashboard access",
     ],
     cta: "START ACCELERATOR ENROLLMENT",
     route: "/enrollment?plan=accelerator",
   },
   {
+    id: "growth",
+    name: "Growth Launch\nPackage",
+    packageHeadline: "SCALE · ASO · OPTIMIZATION",
+    packageDesc: "Designed for scaling with enhanced branding, ASO and optimization support.",
+    tag: "GROWTH",
+    tagColor: "#34D399",
+    isAccelerator: false,
+    isEmpire: false,
+    features: [
+      "Premium game template",
+      "Enhanced branding",
+      "App Store Optimization guidance",
+      "Priority email support",
+      "2 revision rounds",
+      "3-month optimization check-ins",
+    ],
+    cta: "START GROWTH ENROLLMENT",
+    route: "/enrollment?plan=growth",
+  },
+  {
     id: "empire",
-    name: "Digital Asset\nEmpire",
-    packageHeadline: "THE COMPLETE APP OWNERSHIP EXPERIENCE",
-    packageDesc: "For serious buyers who want the strongest implementation package available.",
+    name: "App Empire\nPackage",
+    packageHeadline: "DONE-FOR-YOU VIP EXPERIENCE",
+    packageDesc: "Our premium, done-for-you ownership experience with VIP implementation.",
     tag: "PREMIUM",
     tagColor: PURPLE,
     isAccelerator: false,
     isEmpire: true,
     features: [
-      "Up to 3 custom mobile game apps",
-      "Full custom design & development",
-      "Complete monetization architecture",
-      "Priority publishing & compliance",
-      "90-day dedicated launch manager",
-      "Quarterly strategy sessions",
-      "App portfolio growth roadmap",
+      "Up to 2 game templates",
+      "Premium branding & customization",
+      "AI promotional creative kit",
+      "VIP email support",
+      "3 revision rounds",
+      "6-month strategy check-ins",
     ],
     cta: "START EMPIRE ENROLLMENT",
     route: "/enrollment?plan=empire",
@@ -248,32 +287,18 @@ const PACKAGES = [
 
 const packagePricing = {
   paid_in_full: {
-    essentials: {
-      priceText: "$2,497",
-      subtext: "Paid In Full",
-    },
-    accelerator: {
-      priceText: "$4,997",
-      subtext: "Paid In Full",
-    },
-    empire: {
-      priceText: "$9,997",
-      subtext: "Paid In Full",
-    },
+    starter:     { priceText: "$2,497", subtext: "Paid In Full" },
+    essentials:  { priceText: "$2,497", subtext: "Paid In Full" },
+    accelerator: { priceText: "$4,997", subtext: "Paid In Full" },
+    growth:      { priceText: "$4,997", subtext: "Paid In Full" },
+    empire:      { priceText: "$9,997", subtext: "Paid In Full" },
   },
   monthly: {
-    essentials: {
-      priceText: "$497 today",
-      subtext: "then $199/month for 12 months",
-    },
-    accelerator: {
-      priceText: "$997 today",
-      subtext: "then $399/month for 12 months",
-    },
-    empire: {
-      priceText: "$5,000 today",
-      subtext: "then $497/month for 12 months",
-    },
+    starter:     { priceText: "$997 today",   subtext: "then $197/month for 12 months" },
+    essentials:  { priceText: "$497 today",   subtext: "then $199/month for 12 months" },
+    accelerator: { priceText: "$997 today",   subtext: "then $399/month for 12 months" },
+    growth:      { priceText: "$2,500 today", subtext: "then $397/month for 12 months" },
+    empire:      { priceText: "$5,000 today", subtext: "then $497/month for 12 months" },
   },
 } as const;
 
@@ -870,7 +895,7 @@ export default function Presentation() {
 
           <FadeUp delay={0.06} style={{ textAlign: "center", marginBottom: 88 }}>
             <p style={{ fontFamily: "'Inter'", fontSize: bodySize, color: "rgba(255,255,255,0.38)", maxWidth: 680, margin: "0 auto", lineHeight: 1.8 }}>
-              Three paths. One goal. The right entry point depends on where you are and how fast you want to move.
+              Five paths. One goal. The right entry point depends on where you are and how fast you want to move.
             </p>
           </FadeUp>
 
@@ -938,7 +963,7 @@ export default function Presentation() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.1fr 1fr", gap: 22, alignItems: "start" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.12fr 1fr 1fr", gap: 18, alignItems: "start" }}>
             {PACKAGES.map((pkg, i) => (
               <FadeUp key={pkg.name} delay={i * 0.1}>
                 <div style={{
