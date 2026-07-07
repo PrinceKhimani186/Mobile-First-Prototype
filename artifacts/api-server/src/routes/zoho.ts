@@ -512,7 +512,7 @@ function manualExchangePage(clientId: string, currentRegion: string): string {
 
   <div class="card">
     <div class="card-title">Step 1 — Generate a code in Zoho API Console</div>
-    <div class="step"><span class="step-n">1</span><div>Go to <a href="https://api-console.zoho.com" target="_blank">api-console.zoho.com</a> — make sure you're logged into the <strong>correct Zoho account</strong></div></div>
+    <div class="step"><span class="step-n">1</span><div>Go to <a href="https://api-console.zoho.${currentRegion}" target="_blank">api-console.zoho.${currentRegion}</a> — make sure you're logged into the <strong>correct Zoho account</strong></div></div>
     <div class="step"><span class="step-n">2</span><div>Click <strong>"Self Client"</strong> in the left sidebar (or top tabs)</div></div>
     <div class="step"><span class="step-n">3</span><div>Click <strong>"Generate Code"</strong></div></div>
     <div class="step"><span class="step-n">4</span><div>In the <strong>Scope</strong> field, paste exactly:<br>
