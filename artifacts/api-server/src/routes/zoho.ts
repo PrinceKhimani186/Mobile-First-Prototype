@@ -200,41 +200,55 @@ router.get("/zoho/oauth/authorize", (req: Request, res: Response) => {
 // GET /api/zoho/oauth/manual — form to paste a Self Client authorization code
 router.get("/zoho/oauth/manual", (req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-store");
-  const clientId = getZohoClientId() || "";
-  res.send(manualExchangePage(clientId, getZohoRegion()));
+  const clientId    = getZohoClientId() || "";
+  const redirectUri = process.env.ZOHO_OAUTH_REDIRECT_URI || "";
+  res.send(manualExchangePage(clientId, getZohoRegion(), redirectUri));
 });
 
 // POST /api/zoho/oauth/manual — exchange a pasted auth code for a refresh token
 router.post("/zoho/oauth/manual", async (req: Request, res: Response) => {
-  const { code, region: bodyRegion, client_id, client_secret } = req.body as Record<string, string>;
+  const { code, region: bodyRegion, client_id, client_secret, redirect_uri: bodyRedirectUri } = req.body as Record<string, string>;
 
   if (!code?.trim()) {
     res.status(400).send(oauthErrorPage("No authorization code provided. Go back and paste the code from Zoho API Console."));
     return;
   }
 
-  const region     = (bodyRegion || getZohoRegion()).toLowerCase().trim();
-  const clientId   = (client_id?.trim())     || getZohoClientId()     || "";
-  const clientSec  = (client_secret?.trim()) || getZohoClientSecret() || "";
+  const region      = (bodyRegion || getZohoRegion()).toLowerCase().trim();
+  const clientId    = (client_id?.trim())     || getZohoClientId()     || "";
+  const clientSec   = (client_secret?.trim()) || getZohoClientSecret() || "";
+  const redirectUri = (bodyRedirectUri?.trim()) || process.env.ZOHO_OAUTH_REDIRECT_URI || "";
 
   if (!clientId || !clientSec) {
     res.status(400).send(oauthErrorPage("Client ID or Client Secret missing. Fill them in on the form or set ZOHO_SIGN_CLIENT_ID / ZOHO_SIGN_CLIENT_SECRET in Replit Secrets."));
     return;
   }
 
+  const tokenEndpoint = `https://accounts.zoho.${region}/oauth/v2/token`;
+
   const params = new URLSearchParams();
   params.append("grant_type",    "authorization_code");
   params.append("code",          code.trim());
   params.append("client_id",     clientId);
   params.append("client_secret", clientSec);
-  // Self Client doesn't require redirect_uri — omitting it
+  if (redirectUri) {
+    params.append("redirect_uri", redirectUri);
+  }
 
-  logger.info({ region, clientIdPrefix: clientId.slice(0, 12) }, "Manual exchange: exchanging Self Client code for tokens");
+  // ── Diagnostic log (safe — no full secret) ────────────────────────────────
+  logger.info({
+    region,
+    tokenEndpoint,
+    clientId:    clientId.slice(0, 14) + "…",
+    codePrefix:  code.trim().slice(0, 12) + "…",
+    redirectUri: redirectUri || "(omitted — Self Client mode)",
+    hasSecret:   !!clientSec,
+  }, "Manual exchange: token request params");
 
   let tokenData: { access_token?: string; refresh_token?: string; error?: string; message?: string };
 
   try {
-    const tokenRes = await fetch(`https://accounts.zoho.${region}/oauth/v2/token`, {
+    const tokenRes = await fetch(tokenEndpoint, {
       method: "POST",
       body: params,
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -473,7 +487,7 @@ router.get("/zoho/oauth/status", async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // HTML helpers
 // ─────────────────────────────────────────────────────────────────────────────
-function manualExchangePage(clientId: string, currentRegion: string): string {
+function manualExchangePage(clientId: string, currentRegion: string, currentRedirectUri = ""): string {
   const scopes = "ZohoSign.documents.ALL,ZohoSign.templates.ALL,ZohoSign.account.READ";
   return `<!DOCTYPE html>
 <html lang="en">
@@ -508,7 +522,7 @@ function manualExchangePage(clientId: string, currentRegion: string): string {
 <body>
 <div class="wrap">
   <h1 style="margin-bottom:6px">🔑 Manual Token Exchange</h1>
-  <p class="sub">Use Zoho's Self Client to generate a one-time code without any redirect URI</p>
+  <p class="sub">Exchange a Zoho authorization code for a refresh token</p>
 
   <div class="card">
     <div class="card-title">Step 1 — Generate a code in Zoho API Console</div>
@@ -527,6 +541,9 @@ function manualExchangePage(clientId: string, currentRegion: string): string {
     <form method="POST" action="/api/zoho/oauth/manual">
       <label>Authorization Code (paste from step above)</label>
       <input type="text" name="code" placeholder="1000.xxxxxxxx..." required autofocus>
+
+      <label>Redirect URI <span style="color:rgba(255,255,255,.3);text-transform:none;font-weight:400">— must exactly match what's in Zoho API Console</span></label>
+      <input type="text" name="redirect_uri" value="${currentRedirectUri}" placeholder="https://yourdomain.com/ (leave blank for Self Client / no redirect URI)">
 
       <label>Zoho Region</label>
       <select name="region">
