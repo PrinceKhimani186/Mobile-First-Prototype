@@ -6,27 +6,21 @@ import { getEnrollmentProgress, createZohoSignRequest } from "@/services/enrollm
 import { useQueryClient } from "@tanstack/react-query";
 
 const planNames: Record<string, string> = {
-  starter: "Starter Launch Package",
-  essentials: "App Launch Essentials",
+  essentials:  "App Launch Essentials",
   accelerator: "App Ownership Accelerator",
-  growth: "Growth Launch Package",
-  empire: "App Empire Package",
+  empire:      "App Empire Package",
 };
 
 const planPrices: Record<string, Record<string, string>> = {
   subscription: {
-    starter: "$2,497",
-    essentials: "$2,497",
+    essentials:  "$2,497",
     accelerator: "$4,997",
-    growth: "$4,997",
-    empire: "$9,997",
+    empire:      "$9,997",
   },
   monthly: {
-    starter: "$997 setup/down payment today, then $197/month for 12 months",
-    essentials: "$497 setup/down payment today, then $199/month for 12 months",
-    accelerator: "$997 setup/down payment today, then $399/month for 12 months",
-    growth: "$2,500 setup/down payment today, then $397/month for 12 months",
-    empire: "$5,000 setup/down payment today, then $497/month for 12 months",
+    essentials:  "$497 setup/down payment today, then $197/month for 12 months",
+    accelerator: "$997 setup/down payment today, then $397/month for 12 months",
+    empire:      "$4,997 setup/down payment today, then $497/month for 12 months",
   },
 };
 

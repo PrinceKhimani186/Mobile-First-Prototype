@@ -3,30 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   Zap, ArrowRight, CheckCircle2, User, Mail,
-  ChevronRight, Loader2, AlertCircle, X, Sparkles, Crown, Rocket, TrendingUp,
+  ChevronRight, Loader2, AlertCircle, X, Sparkles, Crown, Rocket,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // ── Plan definitions ─────────────────────────────────────────────────────────
 const PLANS = [
-  {
-    id: "starter",
-    name: "Starter Launch Package",
-    tag: "Purchased Plan - Starter Launch",
-    icon: Rocket,
-    color: "hsl(142 65% 45%)",
-    glow: "hsl(142 65% 45% / 0.18)",
-    border: "hsl(142 65% 45% / 0.3)",
-    description: "Perfect for entrepreneurs launching their first branded mobile app.",
-    features: [
-      "Mobile game template",
-      "Basic branding & customization",
-      "App store submission",
-      "1 revision round",
-      "30-day post-launch support",
-    ],
-    popular: false,
-  },
   {
     id: "essentials",
     name: "App Launch Essentials",
@@ -35,14 +17,14 @@ const PLANS = [
     color: "hsl(218 76% 60%)",
     glow: "hsl(218 76% 60% / 0.18)",
     border: "hsl(218 76% 60% / 0.3)",
-    description: "Complete app launch package with branding and launch support.",
+    description: "For first-time app owners seeking one branded mobile game with guided setup.",
     features: [
-      "Custom mobile game app",
-      "Logo, icon & theme customization",
-      "Monetization preparation",
+      "One mobile game template",
+      "Basic branding & customization",
+      "Basic monetization preparation",
       "App store submission",
       "1 revision round",
-      "30-day launch support",
+      "30-day email support",
     ],
     popular: false,
   },
@@ -54,35 +36,17 @@ const PLANS = [
     color: "hsl(35 90% 55%)",
     glow: "hsl(35 90% 55% / 0.18)",
     border: "hsl(35 90% 55% / 0.35)",
-    description: "The most popular package for founders wanting branding, monetization and growth.",
+    description: "Enhanced branding, monetization prep, App Store Optimization, and priority support.",
     features: [
-      "Everything in Essentials",
-      "Premium game templates",
-      "In-app purchase setup",
-      "Launch strategy consultation",
-      "2 revision rounds",
-      "45-day launch support",
-    ],
-    popular: true,
-  },
-  {
-    id: "growth",
-    name: "Growth Launch Package",
-    tag: "Purchased Plan - Growth Launch",
-    icon: TrendingUp,
-    color: "hsl(175 70% 45%)",
-    glow: "hsl(175 70% 45% / 0.18)",
-    border: "hsl(175 70% 45% / 0.3)",
-    description: "Designed for scaling with enhanced branding, ASO and optimization support.",
-    features: [
-      "Premium game template",
-      "Enhanced branding",
+      "One premium game template",
+      "Enhanced branding & customization",
+      "Monetization preparation (ads + IAP)",
       "App Store Optimization guidance",
-      "Priority email support",
       "2 revision rounds",
       "3-month optimization check-ins",
+      "Priority email support",
     ],
-    popular: false,
+    popular: true,
   },
   {
     id: "empire",
@@ -92,14 +56,16 @@ const PLANS = [
     color: "hsl(280 70% 65%)",
     glow: "hsl(280 70% 65% / 0.18)",
     border: "hsl(280 70% 65% / 0.3)",
-    description: "Our premium, done-for-you ownership experience with VIP implementation.",
+    description: "Premium done-for-you experience with VIP support and strategic guidance.",
     features: [
       "Up to 2 game templates",
       "Premium branding & customization",
+      "Full monetization suite",
+      "ASO guidance + launch checklist",
       "AI promotional creative kit",
-      "VIP email support",
       "3 revision rounds",
       "6-month strategy check-ins",
+      "VIP email support",
     ],
     popular: false,
   },
@@ -107,14 +73,10 @@ const PLANS = [
 
 type PlanId = typeof PLANS[number]["id"];
 
-const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, { priceText: string; subtext: string; stripePriceId: string; setupPriceId: string | undefined }>> = {
+const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, {
+  priceText: string; subtext: string; stripePriceId: string; setupPriceId: string | undefined
+}>> = {
   subscription: {
-    starter: {
-      priceText: "$2,497",
-      subtext: "paid in full",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER || "price_1Tq7OcJJdy0crHI8UPHFOPWn",
-      setupPriceId: undefined,
-    },
     essentials: {
       priceText: "$2,497",
       subtext: "paid in full",
@@ -127,12 +89,6 @@ const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, { priceT
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
       setupPriceId: undefined,
     },
-    growth: {
-      priceText: "$4,997",
-      subtext: "paid in full",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH || "price_1Tq7OfJJdy0crHI8nMT7K4KI",
-      setupPriceId: undefined,
-    },
     empire: {
       priceText: "$9,997",
       subtext: "paid in full",
@@ -141,32 +97,20 @@ const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, { priceT
     },
   },
   monthly: {
-    starter: {
-      priceText: "$997 today",
-      subtext: "then $197/month for 12 months",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_MONTHLY || "price_1Tq7OdJJdy0crHI8RSt92B6U",
-      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_STARTER_SETUP   || "price_1Tq7OdJJdy0crHI8IRjnyxfq",
-    },
     essentials: {
       priceText: "$497 today",
-      subtext: "then $199/month for 12 months",
+      subtext: "then $197/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_MONTHLY || "price_1TnzBIJJdy0crHI86gETElWE",
       setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_SETUP   || "price_1TnzBLJJdy0crHI8FHNhiOtw",
     },
     accelerator: {
       priceText: "$997 today",
-      subtext: "then $399/month for 12 months",
+      subtext: "then $397/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_MONTHLY || "price_1TnzBJJJdy0crHI8ZCbKcKSd",
       setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_SETUP   || "price_1TnzBMJJdy0crHI8LawdE6HC",
     },
-    growth: {
-      priceText: "$2,500 today",
-      subtext: "then $397/month for 12 months",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_MONTHLY || "price_1Tq7OfJJdy0crHI82rNSWJmd",
-      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_GROWTH_SETUP   || "price_1Tq7OfJJdy0crHI8asymn3rv",
-    },
     empire: {
-      priceText: "$5,000 today",
+      priceText: "$4,997 today",
       subtext: "then $497/month for 12 months",
       stripePriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_MONTHLY || "price_1TnzBKJJdy0crHI8csCQAO2H",
       setupPriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_SETUP   || "price_1Tq7OgJJdy0crHI8Pnq5oyrv",
@@ -304,11 +248,9 @@ export default function Enrollment() {
     const planParam = params.get("plan");
     if (planParam) {
       const planMap: Record<string, PlanId> = {
-        starter: "starter",
-        essentials: "essentials",
+        essentials:  "essentials",
         accelerator: "accelerator",
-        growth: "growth",
-        empire: "empire",
+        empire:      "empire",
       };
       const matched = planMap[planParam.toLowerCase()];
       if (matched) setSelectedPlan(matched);

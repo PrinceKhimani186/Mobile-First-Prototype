@@ -14,9 +14,9 @@ interface PackageDef {
 }
 
 const PACKAGE_DEFS: Record<string, PackageDef> = {
-  starter: {
-    name: "Starter Launch Package",
-    setupAmt: "$997.00",
+  essentials: {
+    name: "App Launch Essentials",
+    setupAmt: "$497.00",
     monthlyAmt: "$197.00",
     fullAmt: "$2,497.00",
     bestFor: "First-time app owners seeking one branded mobile game app with guided setup.",
@@ -37,65 +37,9 @@ const PACKAGE_DEFS: Record<string, PackageDef> = {
     ],
     section15: "After the initial 30-day support period, ongoing support is available only if Client enrolls in a separate support or maintenance plan.",
   },
-  essentials: {
-    name: "App Launch Essentials",
-    setupAmt: "$497.00",
-    monthlyAmt: "$199.00",
-    fullAmt: "$2,497.00",
-    bestFor: "First-time app owners seeking one branded mobile game app with guided setup and launch support.",
-    servicesIncluded: [
-      "One mobile game template selected from App Squad's approved game library",
-      "Custom app name and basic branding integration",
-      "Logo placement and app icon setup",
-      "Color and theme customization",
-      "Basic monetization preparation support for supported ad placements and/or available in-app purchase options",
-      "Google Play and/or Apple App Store publishing assistance, subject to platform rules and approvals",
-      "Welcome onboarding portal access and development status updates",
-      "One (1) reasonable revision round within approved scope",
-      "Thirty (30) days of post-delivery launch support",
-    ],
-    servicesNotIncluded: [
-      "Custom game development from scratch unless separately agreed in writing",
-      "Advanced custom features, multiplayer systems, blockchain/crypto, gambling, sweepstakes, cash-prize, fantasy sports, wagering, or regulated gaming functionality",
-      "Paid advertising management, guaranteed downloads, app rankings, revenue, users, or return on investment",
-      "Developer account fees, platform fees, third-party subscriptions, advertising spend, app store fees, or payment processor fees unless stated in writing",
-      "Legal, tax, accounting, securities, investment, or financial advice",
-      "Premium branding packages, promotional trailer, ASO research, or launch content pack unless purchased separately",
-    ],
-    section15: "After the included thirty (30) days post-delivery support period, ongoing support is available only if Client enrolls in a separate support or maintenance plan. Optional support plans may include Basic Maintenance at $49/month, Growth Support at $149/month, or Marketing Assist at $499/month.",
-  },
   accelerator: {
     name: "App Ownership Accelerator",
     setupAmt: "$997.00",
-    monthlyAmt: "$399.00",
-    fullAmt: "$4,997.00",
-    bestFor: "Entrepreneurs seeking expanded customization, enhanced branding, monetization preparation, and launch support.",
-    servicesIncluded: [
-      "Everything included in App Launch Essentials",
-      "Premium game template options, subject to availability",
-      "Enhanced branding customization",
-      "Additional app customization within approved scope",
-      "In-app purchase setup support where available for selected game type",
-      "Monetization preparation support for supported ad placements and/or available in-app purchase options",
-      "Google Play and/or Apple App Store publishing assistance, subject to platform rules and approvals",
-      "Launch strategy consultation and priority fulfillment queue",
-      "Welcome onboarding portal and development status dashboard access",
-      "Two (2) reasonable revision rounds within approved scope",
-      "Forty-five (45) days of post-delivery launch support",
-    ],
-    servicesNotIncluded: [
-      "Custom game development from scratch unless separately agreed in writing",
-      "Advanced custom features, multiplayer systems, blockchain/crypto, gambling, sweepstakes, cash-prize, fantasy sports, wagering, or regulated gaming functionality",
-      "Paid advertising management, guaranteed downloads, app rankings, revenue, users, or return on investment",
-      "Developer account fees, platform fees, third-party subscriptions, advertising spend, app store fees, or payment processor fees unless stated in writing",
-      "Legal, tax, accounting, securities, investment, or financial advice",
-      "Promotional trailer, full launch content pack, paid advertising management, advanced ASO research, or multiple separate app builds unless purchased separately",
-    ],
-    section15: "After the included forty-five (45) days post-delivery support period, ongoing support is available only if Client enrolls in a separate support or maintenance plan. Optional support plans may include Basic Maintenance at $49/month, Growth Support at $149/month, or Marketing Assist at $499/month.",
-  },
-  growth: {
-    name: "Growth Launch Package",
-    setupAmt: "$2,500.00",
     monthlyAmt: "$397.00",
     fullAmt: "$4,997.00",
     bestFor: "Clients seeking upgraded branding, monetization preparation, app store guidance, and launch support.",
@@ -116,11 +60,11 @@ const PACKAGE_DEFS: Record<string, PackageDef> = {
       "Paid advertising management, influencer marketing, guaranteed downloads, app rankings, revenue, or return on investment",
       "Developer account fees, platform fees, third-party subscriptions, or advertising spend unless stated in writing",
     ],
-    section15: "Growth package includes limited monthly optimization check-ins for the first three (3) months after delivery. Additional support or maintenance requires a separate agreement or plan.",
+    section15: "App Ownership Accelerator includes limited monthly optimization check-ins for the first three (3) months after delivery. Additional support or maintenance requires a separate agreement or plan.",
   },
   empire: {
     name: "App Empire Package",
-    setupAmt: "$5,000.00",
+    setupAmt: "$4,997.00",
     monthlyAmt: "$497.00",
     fullAmt: "$9,997.00",
     bestFor: "Clients seeking a premium app launch experience, expanded creative assets, and strategic guidance.",
@@ -149,11 +93,9 @@ const PACKAGE_DEFS: Record<string, PackageDef> = {
 // ── Derive packageId from packageName string ─────────────────────────────────
 function resolvePackageId(packageName: string): string {
   const lower = packageName.toLowerCase();
-  if (lower.includes("starter"))     return "starter";
-  if (lower.includes("essentials"))  return "essentials";
-  if (lower.includes("accelerator")) return "accelerator";
-  if (lower.includes("growth"))      return "growth";
   if (lower.includes("empire"))      return "empire";
+  if (lower.includes("accelerator")) return "accelerator";
+  if (lower.includes("essentials"))  return "essentials";
   return "essentials";
 }
 

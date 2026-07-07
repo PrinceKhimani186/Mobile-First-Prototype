@@ -17,50 +17,33 @@ function ghlHeaders(apiKey: string) {
 // Returns the one-time Stripe price ID appropriate for the plan + payment type.
 //   payment_type === "monthly"       → setup/down-payment price (one-time)
 //   payment_type === "subscription"  → paid-in-full price (one-time)
-// Env vars follow the pattern STRIPE_PRICE_{PLAN}_{TYPE}
-// All five packages: starter, essentials, accelerator, growth, empire
+// Three packages: essentials, accelerator, empire
 function getCheckoutPrice(planName: string, paymentType?: string): string | undefined {
   const isMonthly = paymentType === "monthly";
 
   // Setup fee (one-time) prices for monthly plans
+  // essentials: $497 setup | accelerator: $997 setup | empire: $4,997 setup
   const setup: Record<string, string | undefined> = {
-    // By full display name
-    "Starter Launch Package":    process.env.STRIPE_PRICE_STARTER_SETUP    || "price_1Tq7OdJJdy0crHI8IRjnyxfq",
     "App Launch Essentials":     process.env.STRIPE_PRICE_ESSENTIALS_SETUP  || "price_1TnzBLJJdy0crHI8FHNhiOtw",
     "App Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
-    "Growth Launch Package":     process.env.STRIPE_PRICE_GROWTH_SETUP      || "price_1Tq7OfJJdy0crHI8asymn3rv",
     "App Empire Package":        process.env.STRIPE_PRICE_EMPIRE_SETUP      || "price_1Tq7OgJJdy0crHI8Pnq5oyrv",
-    // By plan ID
-    "starter":     process.env.STRIPE_PRICE_STARTER_SETUP    || "price_1Tq7OdJJdy0crHI8IRjnyxfq",
     "essentials":  process.env.STRIPE_PRICE_ESSENTIALS_SETUP  || "price_1TnzBLJJdy0crHI8FHNhiOtw",
     "accelerator": process.env.STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
-    "growth":      process.env.STRIPE_PRICE_GROWTH_SETUP      || "price_1Tq7OfJJdy0crHI8asymn3rv",
     "empire":      process.env.STRIPE_PRICE_EMPIRE_SETUP      || "price_1Tq7OgJJdy0crHI8Pnq5oyrv",
-    // Legacy names
-    "Essentials":            process.env.STRIPE_PRICE_ESSENTIALS_SETUP  || "price_1TnzBLJJdy0crHI8FHNhiOtw",
-    "Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
-    "Digital Asset Empire":  process.env.STRIPE_PRICE_EMPIRE_SETUP      || "price_1Tq7OgJJdy0crHI8Pnq5oyrv",
   };
 
   // Paid-in-full (one-time) prices
+  // essentials: $2,497 | accelerator: $4,997 | empire: $9,997
   const full: Record<string, string | undefined> = {
-    "Starter Launch Package":    process.env.STRIPE_PRICE_STARTER    || "price_1Tq7OcJJdy0crHI8UPHFOPWn",
     "App Launch Essentials":     process.env.STRIPE_PRICE_ESSENTIALS  || "price_1TnzBEJJdy0crHI8d1FLz9Et",
     "App Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
-    "Growth Launch Package":     process.env.STRIPE_PRICE_GROWTH      || "price_1Tq7OfJJdy0crHI8nMT7K4KI",
     "App Empire Package":        process.env.STRIPE_PRICE_EMPIRE      || "price_1TnzBGJJdy0crHI8zTHTCEUV",
-    "starter":     process.env.STRIPE_PRICE_STARTER    || "price_1Tq7OcJJdy0crHI8UPHFOPWn",
     "essentials":  process.env.STRIPE_PRICE_ESSENTIALS  || "price_1TnzBEJJdy0crHI8d1FLz9Et",
     "accelerator": process.env.STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
-    "growth":      process.env.STRIPE_PRICE_GROWTH      || "price_1Tq7OfJJdy0crHI8nMT7K4KI",
     "empire":      process.env.STRIPE_PRICE_EMPIRE      || "price_1TnzBGJJdy0crHI8zTHTCEUV",
-    "Essentials":            process.env.STRIPE_PRICE_ESSENTIALS  || "price_1TnzBEJJdy0crHI8d1FLz9Et",
-    "Ownership Accelerator": process.env.STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
-    "Digital Asset Empire":  process.env.STRIPE_PRICE_EMPIRE      || "price_1TnzBGJJdy0crHI8zTHTCEUV",
   };
 
   if (isMonthly) return setup[planName];
-  // For subscription (paid-in-full): prefer full price, fall back to setup price for backward compat
   return full[planName] ?? setup[planName];
 }
 
