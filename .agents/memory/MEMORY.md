@@ -1,0 +1,1 @@
+- [Zoho Sign template signing quirks](zoho-sign-templates.md) — field structure, required signature field, auto-submit, token caching, daily send quota

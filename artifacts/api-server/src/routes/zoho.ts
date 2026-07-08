@@ -49,7 +49,16 @@ function getSupabase() {
 }
 
 // ── Access token ──────────────────────────────────────────────────────────────
+// Zoho rate-limits how often a refresh token can be exchanged for a new access token.
+// Cache the access token in-memory (Zoho tokens are valid ~1hr) so bursts of requests
+// don't each trigger a fresh OAuth round-trip and get throttled ("Access Denied").
+let accessTokenCache: { token: string; expiresAt: number } | null = null;
+
 async function getZohoAccessToken(): Promise<string> {
+  if (accessTokenCache && accessTokenCache.expiresAt > Date.now()) {
+    return accessTokenCache.token;
+  }
+
   const refreshToken  = getZohoRefreshToken();
   const clientId      = getZohoClientId();
   const clientSecret  = getZohoClientSecret();
@@ -84,15 +93,22 @@ async function getZohoAccessToken(): Promise<string> {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
   });
 
-  const data = (await res.json()) as { access_token?: string; error?: string; message?: string };
+  const data = (await res.json()) as { access_token?: string; expires_in?: number; error?: string; message?: string };
 
   if (!res.ok || !data.access_token) {
+    // Don't blow away a still-valid cached token just because a refresh attempt was throttled
+    if (accessTokenCache && accessTokenCache.expiresAt > Date.now() - 5 * 60 * 1000) {
+      logger.warn({ error: data.error || data.message }, "Zoho: token refresh failed, reusing recent cached token");
+      return accessTokenCache.token;
+    }
     throw new Error(
       `Failed to refresh Zoho access token (region=${getZohoRegion()}): ` +
       (data.error || data.message || `HTTP ${res.status}`)
     );
   }
 
+  const ttlMs = ((data.expires_in || 3600) - 120) * 1000; // refresh 2 min before real expiry
+  accessTokenCache = { token: data.access_token, expiresAt: Date.now() + ttlMs };
   return data.access_token;
 }
 
@@ -178,15 +194,25 @@ async function fetchZohoTemplateDetail(templateId: string): Promise<{ actions: a
   }
   const data = (await res.json()) as any;
   const tpl = data.templates || data;
-  return { actions: tpl.actions || [], fields: tpl.fields || [] };
+  const actions = tpl.actions || [];
+  // Zoho nests actual field definitions inside each action's own `fields` array,
+  // not in a top-level `fields` array (which is typically empty). Flatten them here
+  // so callers can inspect/match against the real fields on the document.
+  const fields = actions.flatMap((a: any) => a.fields || []);
+  return { actions, fields };
 }
 
-// Best-effort mapping of template merge fields to our known agreement data, matched by field label
+// Best-effort mapping of template merge fields to our known agreement data, matched by field label.
+// Only fills plain text fields — never signature/date/checkbox/image fields, which Zoho
+// populates itself (signature capture, sign-date stamping) or which reject text_data.
 function mapTemplateFields(fields: any[], values: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const f of fields) {
     const fieldName = f.field_name;
     if (!fieldName) continue;
+    const category = String(f.field_category || "").toLowerCase();
+    if (category && category !== "textfield") continue; // skip signature/datefield/image/etc.
+
     const label = String(f.field_label || f.field_name || "").toLowerCase();
 
     if (label.includes("email")) out[fieldName] = values.email;
@@ -197,7 +223,6 @@ function mapTemplateFields(fields: any[], values: Record<string, string>): Recor
     else if (label.includes("paid in full") || label.includes("full amount") || label.includes("total")) out[fieldName] = values.paid_in_full_amount;
     else if (label.includes("payment") && (label.includes("type") || label.includes("option"))) out[fieldName] = values.payment_type_label;
     else if (label.includes("package") || label.includes("plan")) out[fieldName] = values.package;
-    else if (label.includes("date")) out[fieldName] = values.agreement_date;
     else if (label.includes("name") && !label.includes("company") && !label.includes("package")) out[fieldName] = values.full_name;
   }
   return out;
@@ -1215,25 +1240,39 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
 
     const requestId = requestObj.request_id;
     const actionId  = requestObj.actions?.[0]?.action_id;
+    const requestStatus = String(requestObj.request_status || "").toLowerCase();
 
     if (!requestId || !actionId) {
       res.status(502).json({ error: "Invalid response from signature service (missing request/action id)" });
       return;
     }
 
-    logger.info({ packageId, paymentType, templateId, requestId }, "Zoho Sign: document created from template");
+    logger.info({ packageId, paymentType, templateId, requestId, requestStatus }, "Zoho Sign: document created from template");
 
-    const submitRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${requestId}/submit`, {
-      method: "POST",
-      headers: { Authorization: `Zoho-oauthtoken ${token}` },
-    });
+    // Zoho's createdocument endpoint auto-submits/routes the request in some account
+    // configurations (request_status already "inprogress"/"completed"), in which case
+    // calling /submit again fails with "This document is already submitted." Only
+    // submit explicitly when the request is still sitting in draft.
+    if (requestStatus === "draft" || requestStatus === "") {
+      const submitRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${requestId}/submit`, {
+        method: "POST",
+        headers: { Authorization: `Zoho-oauthtoken ${token}` },
+      });
 
-    if (!submitRes.ok) {
-      const errText = await submitRes.text();
-      let errMsg = "Failed to activate signature request";
-      try { const p = JSON.parse(errText); if (p.message) errMsg = p.message; } catch {}
-      res.status(502).json({ error: errMsg });
-      return;
+      if (!submitRes.ok) {
+        const errText = await submitRes.text();
+        let errMsg = "Failed to activate signature request";
+        try { const p = JSON.parse(errText); if (p.message) errMsg = p.message; } catch {}
+        // "Already submitted" is not a real failure — the document is already active, proceed.
+        if (!/already submitted/i.test(errMsg)) {
+          logger.error({ errText, status: submitRes.status, requestId, templateId, packageId }, "Zoho Sign: failed to submit request");
+          res.status(502).json({ error: errMsg });
+          return;
+        }
+        logger.info({ requestId }, "Zoho Sign: request was already submitted by createdocument, continuing");
+      }
+    } else {
+      logger.info({ requestId, requestStatus }, "Zoho Sign: request already active from createdocument, skipping explicit submit");
     }
 
     const embedRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${requestId}/actions/${actionId}/embedtoken?host=${origin}`, {
@@ -1245,6 +1284,7 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
       const errText = await embedRes.text();
       let errMsg = "Failed to generate embedded signing URL";
       try { const p = JSON.parse(errText); if (p.message) errMsg = p.message; } catch {}
+      logger.error({ errText, status: embedRes.status, requestId, templateId, packageId }, "Zoho Sign: failed to generate embed token");
       res.status(502).json({ error: errMsg });
       return;
     }
