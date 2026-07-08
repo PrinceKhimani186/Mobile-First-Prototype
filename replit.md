@@ -38,7 +38,8 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Zoho Sign has a daily developer document quota. When hit, `agreement.tsx` shows a "Bypass Zoho Sign & Proceed (Dev Mode)" button (`POST /api/enrollment/dev-sign`) that simulates the full webhook flow without consuming quota.
+- Supabase/PostgREST returns `PGRST204` (not Postgres's `42703`) for a missing-column error. Any "retry insert without optional columns" fallback must check both codes — see `.agents/memory/supabase-postgrest-errors.md`.
 
 ## Pointers
 

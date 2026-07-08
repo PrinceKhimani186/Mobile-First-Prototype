@@ -95,10 +95,15 @@ async function insertAgreementRecord(
   const { error } = await supabase.from("user_agreements").insert(record);
   if (!error) return { error: null };
 
-  // If package_name/payment_option columns don't exist yet, retry without them
+  // If package_name/payment_option columns don't exist yet, retry without them.
+  // Postgres raises 42703 for a missing column; PostgREST (Supabase's REST layer)
+  // raises PGRST204 with a "schema cache" message when the column isn't in its
+  // cached schema — both must be handled or the retry silently never fires.
   const isMissingColumn =
     error.code === "42703" ||
-    (error.message?.toLowerCase().includes("column") && error.message?.toLowerCase().includes("does not exist"));
+    error.code === "PGRST204" ||
+    (error.message?.toLowerCase().includes("column") &&
+      (error.message?.toLowerCase().includes("does not exist") || error.message?.toLowerCase().includes("schema cache")));
 
   if (isMissingColumn) {
     logger.warn(

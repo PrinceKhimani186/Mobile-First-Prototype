@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { FileText, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { getEnrollmentProgress, createZohoSignRequest } from "@/services/enrollment";
+import { FileText, CheckCircle2, AlertCircle, Loader2, ArrowRight } from "lucide-react";
+import { getEnrollmentProgress, createZohoSignRequest, pollZohoRequestStatus } from "@/services/enrollment";
 import { useQueryClient } from "@tanstack/react-query";
+
+const POLL_INTERVAL_MS = 3000;
+const POLL_TIMEOUT_MS = 60000;
 
 const planNames: Record<string, string> = {
   essentials:  "App Launch Essentials",
@@ -37,6 +40,15 @@ export default function Agreement() {
   const [enrollPrice, setEnrollPrice] = useState("");
   const [enrollPackageId, setEnrollPackageId] = useState("");
   const [enrollPaymentType, setEnrollPaymentType] = useState("subscription");
+  const [requestId, setRequestId] = useState("");
+  const [pollTimedOut, setPollTimedOut] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+
+  const requestIdRef = useRef("");
+  const fullNameRef = useRef("");
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const redirectedRef = useRef(false);
 
   const emailFromUrl = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("email") : "";
   const email = emailFromUrl || localStorage.getItem("appSquadEnrollmentEmail") || "";
@@ -48,6 +60,77 @@ export default function Agreement() {
     }
     loadProgress();
   }, [email]);
+
+  function redirectToSetPassword(reason: string) {
+    if (redirectedRef.current) return;
+    redirectedRef.current = true;
+    stopPolling();
+    setRedirecting(true);
+    const target = `/set-password?email=${encodeURIComponent(email)}`;
+    // eslint-disable-next-line no-console
+    console.log(`[Zoho Sign] redirect target: ${target} (reason: ${reason})`);
+    localStorage.setItem("appSquadAgreementSigned", "true");
+    navigate(target);
+  }
+
+  function stopPolling() {
+    if (pollIntervalRef.current) { clearInterval(pollIntervalRef.current); pollIntervalRef.current = null; }
+    if (pollTimeoutRef.current) { clearTimeout(pollTimeoutRef.current); pollTimeoutRef.current = null; }
+  }
+
+  async function checkSignatureStatus(trigger: string) {
+    if (redirectedRef.current) return;
+    // eslint-disable-next-line no-console
+    console.log(`[Zoho Sign] agreement status polled (trigger: ${trigger})`, {
+      email, requestId: requestIdRef.current,
+    });
+    const result = await pollZohoRequestStatus(email, requestIdRef.current || undefined, fullNameRef.current || undefined);
+    if (result.signed) {
+      // eslint-disable-next-line no-console
+      console.log("[Zoho Sign] signing completion confirmed via poll — marking agreement_signed and redirecting");
+      setSigned(true);
+      await queryClient.invalidateQueries({ queryKey: ["onboardingProgress", email] });
+      redirectToSetPassword("poll-confirmed");
+    }
+  }
+
+  // Detect signing completion inside the embedded Zoho iframe via postMessage,
+  // then confirm with an immediate status poll (Zoho's postMessage payload shape
+  // isn't publicly guaranteed, so we treat any signal as a trigger to verify, not
+  // as proof by itself).
+  useEffect(() => {
+    if (!embedUrl) return;
+
+    function handleMessage(event: MessageEvent) {
+      const raw = event.data;
+      const text = typeof raw === "string" ? raw : JSON.stringify(raw ?? "");
+      const looksLikeCompletion = /complete|signed|success|finish/i.test(text) && /sign/i.test(text);
+      if (looksLikeCompletion) {
+        // eslint-disable-next-line no-console
+        console.log("[Zoho Sign] signing completed event detected via postMessage", { origin: event.origin, data: raw });
+        checkSignatureStatus("postMessage");
+      }
+    }
+
+    window.addEventListener("message", handleMessage);
+
+    // Fallback polling: every 3s for up to 60s in case the webhook / postMessage
+    // never arrives — the user should never be stuck waiting indefinitely.
+    pollIntervalRef.current = setInterval(() => checkSignatureStatus("interval"), POLL_INTERVAL_MS);
+    pollTimeoutRef.current = setTimeout(() => {
+      stopPolling();
+      if (!redirectedRef.current) {
+        // eslint-disable-next-line no-console
+        console.log("[Zoho Sign] polling timed out after 60s without confirmed completion — showing manual continue button");
+        setPollTimedOut(true);
+      }
+    }, POLL_TIMEOUT_MS);
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      stopPolling();
+    };
+  }, [embedUrl]);
 
   async function loadProgress() {
     setLoading(true);
@@ -90,11 +173,16 @@ export default function Agreement() {
         if (record.document_url) {
           localStorage.setItem("appSquadAgreementPdfUrl", record.document_url);
         }
+        // Already signed before landing on this page — only the set-password step
+        // is still relevant to the "stuck after signing" flow; other onboarding
+        // steps route independently of the Zoho redirect fix.
+        if (!record.password_created) {
+          setTimeout(() => redirectToSetPassword("already-signed-on-load"), 1200);
+          return;
+        }
         setTimeout(() => {
           const loggedIn = localStorage.getItem("appSquadLoggedIn") === "true" || localStorage.getItem("as_admin_auth") === "true";
-          if (!record.password_created) {
-            navigate(`/set-password?email=${encodeURIComponent(email)}`);
-          } else if (!loggedIn) {
+          if (!loggedIn) {
             navigate("/login");
           } else if (!record.game_selected) {
             navigate("/onboarding/game-selection");
@@ -106,6 +194,8 @@ export default function Agreement() {
         }, 1500);
         return;
       }
+
+      fullNameRef.current = record.full_name || "";
 
       // Create Zoho Sign Embedded signature session (template-based, auto-filled)
       const zohoRes = await createZohoSignRequest(
@@ -119,6 +209,10 @@ export default function Agreement() {
       );
 
       if (zohoRes.success && zohoRes.embedUrl) {
+        if (zohoRes.requestId) {
+          requestIdRef.current = zohoRes.requestId;
+          setRequestId(zohoRes.requestId);
+        }
         setEmbedUrl(zohoRes.embedUrl);
       } else {
         setError(zohoRes.error || "Failed to initialize secure signature session. Please reload or try again.");
@@ -200,7 +294,7 @@ export default function Agreement() {
               Agreement Signed Successfully!
             </h2>
             <p style={{ fontFamily: "'Inter'", fontSize: 14, color: "rgba(255,255,255,0.5)", maxWidth: 360, margin: "0 auto" }}>
-              Your signature has been verified. Redirecting to game selection…
+              {redirecting ? "Your signature has been verified. Redirecting to account setup…" : "Your signature has been verified."}
             </p>
           </motion.div>
         ) : embedUrl ? (
@@ -217,6 +311,10 @@ export default function Agreement() {
           >
             <iframe
               src={embedUrl}
+              onLoad={() => {
+                // eslint-disable-next-line no-console
+                console.log("[Zoho Sign] iframe loaded", { email, requestId: requestIdRef.current });
+              }}
               style={{
                 width: "100%",
                 height: 700,
@@ -227,6 +325,29 @@ export default function Agreement() {
               allow="signature"
               title="Zoho Sign Document"
             />
+            {pollTimedOut && (
+              <div style={{
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 12,
+                padding: "20px 18px", marginTop: 2,
+              }}>
+                <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "rgba(255,255,255,0.55)", textAlign: "center", maxWidth: 420 }}>
+                  Already signed? We're still confirming with Zoho — you can continue to account setup now instead of waiting.
+                </p>
+                <button
+                  onClick={() => redirectToSetPassword("manual-continue-button")}
+                  className="btn-gold"
+                  style={{
+                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "12px 24px", borderRadius: 10,
+                    fontFamily: "'Inter'", fontSize: 14, fontWeight: 600,
+                    border: "none", cursor: "pointer",
+                  }}
+                >
+                  Continue to Account Setup
+                  <ArrowRight style={{ width: 15, height: 15 }} />
+                </button>
+              </div>
+            )}
           </motion.div>
          ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>

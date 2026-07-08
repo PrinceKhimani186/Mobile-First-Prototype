@@ -965,9 +965,125 @@ router.get("/zoho/reset-database", async (req: Request, res: Response) => {
   } catch { res.status(500).json({ error: "Unexpected error" }); }
 });
 
+// ── Shared: finalize a completed signature (download PDF, store in Supabase, ─
+// mark customer_enrollment). Used by both the async webhook and the client-side
+// fallback polling endpoint below, so completion is detected whichever arrives first.
+async function finalizeSignedAgreement(params: {
+  requestId: string;
+  email: string;
+  fullName: string;
+  ip?: string;
+  source: "webhook" | "poll";
+}): Promise<{ ok: boolean; alreadySigned?: boolean; storagePath?: string; error?: string }> {
+  const { requestId, fullName, ip, source } = params;
+  const normalizedEmail = params.email.trim().toLowerCase();
+
+  const supabase = getSupabase();
+  if (!supabase) return { ok: false, error: "Database configuration error" };
+
+  // Idempotency: if already marked signed (by webhook or a prior poll), skip re-processing.
+  const { data: existing } = await supabase
+    .from("customer_enrollment")
+    .select("agreement_signed, document_url")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+
+  if (existing?.agreement_signed) {
+    logger.info({ email: normalizedEmail, requestId, source }, `Zoho ${source}: agreement already marked signed — skipping duplicate finalize`);
+    return { ok: true, alreadySigned: true, storagePath: existing.document_url ?? undefined };
+  }
+
+  logger.info({ requestId, email: normalizedEmail, source }, `Zoho ${source}: document signed, fetching completed PDF`);
+
+  const token = await getZohoAccessToken();
+  const pdfRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${requestId}/pdf?merge=true`, {
+    method: "GET",
+    headers: { Authorization: `Zoho-oauthtoken ${token}` },
+  });
+
+  let pdfBuffer: Buffer;
+
+  if (!pdfRes.ok) {
+    const errText = await pdfRes.text();
+    logger.error({ errText, status: pdfRes.status, source }, `Zoho ${source}: failed to download PDF from Zoho Sign`);
+
+    const isSample = normalizedEmail.includes("zohosign.com") ||
+      requestId.toString().startsWith("10000001020") ||
+      errText.includes("Invalid Request ID") ||
+      errText.includes("code\":4066");
+
+    if (isSample) {
+      logger.info({ requestId, email: normalizedEmail, source }, `Zoho ${source}: Generating mock PDF for test/sample bypass`);
+      try {
+        pdfBuffer = await generateAgreementPDF(fullName, normalizedEmail, "App Launch Essentials", "$2,497",
+          new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+          requestId.toString(), { ip: ip || "127.0.0.1", userAgent: "ZohoSign-Bypass", timestamp: new Date().toISOString() });
+      } catch (genErr) {
+        logger.error({ genErr, source }, `Zoho ${source}: Failed to generate mock PDF`);
+        return { ok: false, error: "PDF generation failed for test/sample bypass" };
+      }
+    } else {
+      return { ok: false, error: "Failed to download signed PDF" };
+    }
+  } else {
+    pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+  }
+
+  const storagePath = `agreements/${normalizedEmail}_agreement.pdf`;
+  const { error: uploadErr } = await supabase.storage.from("customer-documents").upload(storagePath, pdfBuffer, { contentType: "application/pdf", upsert: true });
+  if (uploadErr) { logger.error({ uploadErr, source }, `Zoho ${source}: upload failed`); return { ok: false, error: "Failed to store contract PDF" }; }
+  logger.info({ email: normalizedEmail, requestId, storagePath, source }, `Zoho ${source}: signed PDF stored in Supabase Storage`);
+
+  let enrollRecord: { id: string; selected_package?: string; payment_type?: string } | null = null;
+  let enrollErr: { code?: string; message?: string } | null = null;
+  {
+    const first = await supabase.from("customer_enrollment").select("id, selected_package, payment_type").eq("email", normalizedEmail).maybeSingle();
+    if (first.error && (first.error.code === "42703" || first.error.message?.toLowerCase().includes("column"))) {
+      // payment_type column doesn't exist on customer_enrollment — retry without it
+      const retry = await supabase.from("customer_enrollment").select("id, selected_package").eq("email", normalizedEmail).maybeSingle();
+      enrollRecord = retry.data;
+      enrollErr = retry.error;
+    } else {
+      enrollRecord = first.data;
+      enrollErr = first.error;
+    }
+  }
+  if (enrollErr || !enrollRecord) { logger.error({ enrollErr, email: normalizedEmail, source }, `Zoho ${source}: enrollment record not found`); return { ok: false, error: "Enrollment record not found" }; }
+
+  const timestamp = new Date().toISOString();
+  const enrollData = enrollRecord as { id: string; selected_package?: string; payment_type?: string };
+  const enrolledPackage = enrollData.selected_package;
+  const enrolledPaymentOption = enrollData.payment_type ? normalizePaymentType(enrollData.payment_type) : undefined;
+
+  const insertErr = await (async () => {
+    const record = { user_id: enrollRecord.id, email: normalizedEmail, full_name: fullName, agreement_version: "1.0", signature_image: "ZOHO_SIGNED", signed_at: timestamp, ip_address: ip || "Zoho Sign", user_agent: `Zoho Sign ${source === "webhook" ? "Webhook" : "Poll Fallback"}`, pdf_url: storagePath, package_name: enrolledPackage, payment_option: enrolledPaymentOption };
+    const { error } = await supabase.from("user_agreements").insert(record);
+    if (!error) return null;
+    const isMissingColumn =
+      error.code === "42703" ||
+      error.code === "PGRST204" ||
+      (error.message?.toLowerCase().includes("column") &&
+        (error.message?.toLowerCase().includes("does not exist") || error.message?.toLowerCase().includes("schema cache")));
+    if (isMissingColumn) {
+      const { package_name: _pn, payment_option: _po, ...base } = record;
+      const { error: retryErr } = await supabase.from("user_agreements").insert(base);
+      return retryErr;
+    }
+    return error;
+  })();
+
+  if (insertErr) { logger.error({ insertErr, source }, `Zoho ${source}: failed to save signature audit record`); return { ok: false, error: "Failed to save signature audit record" }; }
+
+  const { error: updateErr } = await supabase.from("customer_enrollment").update({ agreement_signed: true, document_url: storagePath, document_name: "Enrollment Agreement.pdf", onboarding_status: "agreement_signed", updated_at: timestamp }).eq("email", normalizedEmail);
+  if (updateErr) { logger.error({ updateErr, source }, `Zoho ${source}: failed to update enrollment progress status`); return { ok: false, error: "Failed to update enrollment progress status" }; }
+
+  logger.info({ email: normalizedEmail, requestId, package: enrolledPackage, paymentOption: enrolledPaymentOption, source }, `Zoho ${source}: Supabase updated — agreement_signed=true, onboarding_status=agreement_signed — customer can now proceed to set password`);
+  return { ok: true, storagePath };
+}
+
 // POST /api/zoho/webhook
 router.post("/zoho/webhook", async (req: Request, res: Response) => {
-  logger.info({ method: req.method, url: req.originalUrl, headers: req.headers, body: req.body, query: req.query }, "Zoho Webhook request received (POST)");
+  logger.info({ method: req.method, url: req.originalUrl, headers: req.headers, body: req.body, query: req.query }, "Zoho Webhook received (POST)");
 
   try {
     const requests = req.body?.requests;
@@ -998,98 +1114,106 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
       return;
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    logger.info({ requestId, email: normalizedEmail }, "Zoho Webhook: webhook received — document signed, fetching completed PDF");
-
-    const token = await getZohoAccessToken();
-    const pdfRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${requestId}/pdf?merge=true`, {
-      method: "GET",
-      headers: { Authorization: `Zoho-oauthtoken ${token}` },
+    const result = await finalizeSignedAgreement({
+      requestId: requestId.toString(),
+      email,
+      fullName,
+      ip: notifications?.ip_address,
+      source: "webhook",
     });
 
-    let pdfBuffer: Buffer;
-
-    if (!pdfRes.ok) {
-      const errText = await pdfRes.text();
-      logger.error({ errText, status: pdfRes.status }, "Zoho Webhook: failed to download PDF from Zoho Sign");
-
-      const isSample = normalizedEmail.includes("zohosign.com") ||
-        requestId.toString().startsWith("10000001020") ||
-        errText.includes("Invalid Request ID") ||
-        errText.includes("code\":4066");
-
-      if (isSample) {
-        logger.info({ requestId, email: normalizedEmail }, "Zoho Webhook: Generating mock PDF for test/sample bypass");
-        try {
-          pdfBuffer = await generateAgreementPDF(fullName, normalizedEmail, "App Launch Essentials", "$2,497",
-            new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
-            requestId.toString(), { ip: "127.0.0.1", userAgent: "ZohoSign-Bypass", timestamp: new Date().toISOString() });
-        } catch (genErr) {
-          logger.error({ genErr }, "Zoho Webhook: Failed to generate mock PDF");
-          res.status(200).json({ status: "success", message: "Webhook processed (test/sample bypass but PDF generation failed)" });
-          return;
-        }
-      } else {
-        res.status(502).json({ error: "Failed to download signed PDF" });
-        return;
-      }
-    } else {
-      pdfBuffer = Buffer.from(await pdfRes.arrayBuffer());
+    if (!result.ok) {
+      res.status(502).json({ error: result.error || "Failed to process webhook" });
+      return;
     }
 
-    const supabase = getSupabase();
-    if (!supabase) { res.status(503).json({ error: "Database configuration error" }); return; }
-
-    const storagePath = `agreements/${normalizedEmail}_agreement.pdf`;
-    const { error: uploadErr } = await supabase.storage.from("customer-documents").upload(storagePath, pdfBuffer, { contentType: "application/pdf", upsert: true });
-    if (uploadErr) { logger.error({ uploadErr }, "Zoho Webhook: upload failed"); res.status(502).json({ error: "Failed to store contract PDF" }); return; }
-    logger.info({ email: normalizedEmail, requestId, storagePath }, "Zoho Webhook: signed PDF stored in Supabase Storage");
-
-    let enrollRecord: { id: string; selected_package?: string; payment_type?: string } | null = null;
-    let enrollErr: { code?: string; message?: string } | null = null;
-    {
-      const first = await supabase.from("customer_enrollment").select("id, selected_package, payment_type").eq("email", normalizedEmail).maybeSingle();
-      if (first.error && (first.error.code === "42703" || first.error.message?.toLowerCase().includes("column"))) {
-        // payment_type column doesn't exist on customer_enrollment — retry without it
-        const retry = await supabase.from("customer_enrollment").select("id, selected_package").eq("email", normalizedEmail).maybeSingle();
-        enrollRecord = retry.data;
-        enrollErr = retry.error;
-      } else {
-        enrollRecord = first.data;
-        enrollErr = first.error;
-      }
-    }
-    if (enrollErr || !enrollRecord) { logger.error({ enrollErr, email: normalizedEmail }, "Zoho Webhook: enrollment record not found"); res.status(404).json({ error: "Enrollment record not found" }); return; }
-
-    const ip = notifications?.ip_address || "Zoho Sign";
-    const timestamp = new Date().toISOString();
-    const enrollData = enrollRecord as { id: string; selected_package?: string; payment_type?: string };
-    const enrolledPackage = enrollData.selected_package;
-    const enrolledPaymentOption = enrollData.payment_type ? normalizePaymentType(enrollData.payment_type) : undefined;
-
-    const webhookInsertErr = await (async () => {
-      const record = { user_id: enrollRecord.id, email: normalizedEmail, full_name: fullName, agreement_version: "1.0", signature_image: "ZOHO_SIGNED", signed_at: timestamp, ip_address: ip, user_agent: "Zoho Sign Webhook", pdf_url: storagePath, package_name: enrolledPackage, payment_option: enrolledPaymentOption };
-      const { error } = await supabase.from("user_agreements").insert(record);
-      if (!error) return null;
-      const isMissingColumn = error.code === "42703" || (error.message?.toLowerCase().includes("column") && error.message?.toLowerCase().includes("does not exist"));
-      if (isMissingColumn) {
-        const { package_name: _pn, payment_option: _po, ...base } = record;
-        const { error: retryErr } = await supabase.from("user_agreements").insert(base);
-        return retryErr;
-      }
-      return error;
-    })();
-
-    if (webhookInsertErr) { res.status(502).json({ error: "Failed to save signature audit record" }); return; }
-
-    const { error: updateErr } = await supabase.from("customer_enrollment").update({ agreement_signed: true, document_url: storagePath, document_name: "Enrollment Agreement.pdf", onboarding_status: "agreement_signed", updated_at: new Date().toISOString() }).eq("email", normalizedEmail);
-    if (updateErr) { res.status(502).json({ error: "Failed to update enrollment progress status" }); return; }
-
-    logger.info({ email: normalizedEmail, requestId, package: enrolledPackage, paymentOption: enrolledPaymentOption }, "Zoho Webhook: agreement processed successfully — customer can now proceed to set password");
     res.status(200).json({ success: true, message: "Agreement updated successfully" });
 
   } catch (err) {
     logger.error({ err }, "Zoho Webhook: unexpected error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /api/zoho/request-status — client-side fallback polling.
+// The embedded signing iframe doesn't reliably notify the parent window when signing
+// completes, and Zoho's async webhook can lag by several seconds. The agreement page
+// polls this endpoint so the user is never stuck looking at a "signed" screen that
+// hasn't actually progressed their record.
+router.get("/zoho/request-status", async (req: Request, res: Response) => {
+  const { requestId, email, fullName } = req.query as { requestId?: string; email?: string; fullName?: string };
+
+  if (!email) {
+    res.status(400).json({ error: "email is required" });
+    return;
+  }
+  const normalizedEmail = email.trim().toLowerCase();
+
+  logger.info({ requestId, email: normalizedEmail }, "Zoho request-status: agreement status polled");
+
+  try {
+    const supabase = getSupabase();
+    if (!supabase) { res.status(503).json({ error: "Database configuration error" }); return; }
+
+    // Fast path — another poll or the webhook may have already finalized this.
+    const { data: existing } = await supabase
+      .from("customer_enrollment")
+      .select("agreement_signed")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (existing?.agreement_signed) {
+      res.json({ signed: true, status: "completed", source: "database" });
+      return;
+    }
+
+    if (!requestId) {
+      res.json({ signed: false, status: "pending", source: "no-request-id" });
+      return;
+    }
+
+    // Authoritative check straight from Zoho, independent of webhook delivery.
+    const token = await getZohoAccessToken();
+    const statusRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${requestId}`, {
+      headers: { Authorization: `Zoho-oauthtoken ${token}` },
+    });
+
+    if (!statusRes.ok) {
+      const errText = await statusRes.text();
+      logger.warn({ errText, status: statusRes.status, requestId }, "Zoho request-status: failed to fetch request detail from Zoho");
+      res.json({ signed: false, status: "unknown", source: "zoho-error" });
+      return;
+    }
+
+    const statusData = (await statusRes.json()) as any;
+    const requestObj = statusData.requests || statusData;
+    const requestStatus = String(requestObj?.request_status || "").toLowerCase();
+
+    if (requestStatus !== "completed") {
+      res.json({ signed: false, status: requestStatus || "pending", source: "zoho" });
+      return;
+    }
+
+    const signerAction = requestObj.actions?.find((a: any) => a.action_type === "SIGN");
+    const resolvedFullName = fullName || signerAction?.recipient_name || "Client";
+
+    const result = await finalizeSignedAgreement({
+      requestId,
+      email: normalizedEmail,
+      fullName: resolvedFullName,
+      source: "poll",
+    });
+
+    if (!result.ok) {
+      logger.error({ error: result.error, requestId, email: normalizedEmail }, "Zoho request-status: finalize failed after Zoho reported completed");
+      res.json({ signed: false, status: "completed", finalizeError: result.error, source: "zoho" });
+      return;
+    }
+
+    res.json({ signed: true, status: "completed", source: "zoho" });
+
+  } catch (err) {
+    logger.error({ err, requestId, email: normalizedEmail }, "Zoho request-status: unexpected error");
     res.status(500).json({ error: "Internal server error" });
   }
 });

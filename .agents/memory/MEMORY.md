@@ -1,1 +1,2 @@
 - [Zoho Sign template signing quirks](zoho-sign-templates.md) — field structure, required signature field, auto-submit, token caching, daily send quota
+- [Supabase/PostgREST missing-column errors](supabase-postgrest-errors.md) — PostgREST returns code `PGRST204`, not Postgres's `42703`, for a column missing from its schema cache; graceful-fallback checks must handle both.

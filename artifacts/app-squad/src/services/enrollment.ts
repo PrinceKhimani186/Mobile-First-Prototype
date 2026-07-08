@@ -227,6 +227,29 @@ export async function verifySignature(
   }
 }
 
+// ── Poll Zoho signature completion (post-sign redirect fallback) ──────────────
+// Checks the DB first, then falls back to an authoritative Zoho request-status
+// lookup (which also finalizes the agreement server-side if Zoho reports it
+// completed but the webhook hasn't landed yet).
+export async function pollZohoRequestStatus(
+  email: string,
+  requestId?: string,
+  fullName?: string,
+): Promise<{ signed: boolean; status?: string; error?: string }> {
+  try {
+    const params = new URLSearchParams({ email });
+    if (requestId) params.set("requestId", requestId);
+    if (fullName) params.set("fullName", fullName);
+    const res = await fetch(`/api/zoho/request-status?${params.toString()}`, {
+      cache: "no-store",
+    });
+    const json = (await res.json()) as { signed?: boolean; status?: string; error?: string };
+    return { signed: !!json.signed, status: json.status, error: json.error };
+  } catch {
+    return { signed: false, error: "Unable to poll signature status." };
+  }
+}
+
 export async function customSign(
   email: string,
   fullName: string,
