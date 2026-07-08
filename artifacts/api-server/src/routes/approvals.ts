@@ -59,7 +59,7 @@ async function addTaskComment(taskId: string, commentText: string, token: string
   });
 }
 
-// Mappings from monday.ts
+// Shared ClickUp stage-mapping helpers
 function resolveStage(name: string): string {
   const lower = name.toLowerCase().trim();
   const exact = STAGE_ORDER.find(s => s.toLowerCase() === lower);
@@ -124,8 +124,8 @@ router.post("/projects/:projectId/approvals", async (req: Request, res: Response
     return;
   }
 
-  const token = process.env.CLICKUP_API_TOKEN || process.env.MONDAY_API_TOKEN;
-  const listId = process.env.CLICKUP_LIST_ID || process.env.MONDAY_BOARD_ID || "5029246685";
+  const token = process.env.CLICKUP_API_TOKEN;
+  const listId = process.env.CLICKUP_LIST_ID || "5029246685";
 
   try {
     // A. Route protection: verify stage is active and ready for client action in ClickUp
@@ -176,7 +176,7 @@ router.post("/projects/:projectId/approvals", async (req: Request, res: Response
         approvedBy: clientName,
       });
 
-      // 2. Advance the stage in ClickUp/Monday
+      // 2. Advance the stage in ClickUp
       let nextStageActivated: string | null = null;
       const stageIdx = STAGE_ORDER.indexOf(milestoneName as any);
       
@@ -230,7 +230,7 @@ router.post("/projects/:projectId/approvals", async (req: Request, res: Response
         requestedAt: new Date(),
       });
 
-      // 2. Add comment to ClickUp/Monday task
+      // 2. Add comment to ClickUp task
       if (token && clickUpTaskId) {
         try {
           await addTaskComment(clickUpTaskId, `Client requested revisions. Comment: ${comment}`, token);

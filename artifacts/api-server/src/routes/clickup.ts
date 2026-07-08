@@ -161,8 +161,8 @@ async function normalizeStageStatuses(listId: string, token: string): Promise<vo
 
 // ── POST /api/update-stage-status ────────────────────────────────────────────
 router.post("/update-stage-status", async (req: Request, res: Response) => {
-  const token = process.env.CLICKUP_API_TOKEN || process.env.MONDAY_API_TOKEN;
-  const listId = process.env.CLICKUP_LIST_ID || process.env.MONDAY_BOARD_ID || "5029246685";
+  const token = process.env.CLICKUP_API_TOKEN;
+  const listId = process.env.CLICKUP_LIST_ID || "5029246685";
 
   noCache(res);
 
@@ -259,8 +259,8 @@ router.post("/update-stage-status", async (req: Request, res: Response) => {
 
 // ── POST /api/approve-demo ────────────────────────────────────────────────────
 router.post("/approve-demo", async (req: Request, res: Response) => {
-  const token = process.env.CLICKUP_API_TOKEN || process.env.MONDAY_API_TOKEN;
-  const listId = process.env.CLICKUP_LIST_ID || process.env.MONDAY_BOARD_ID || "5029246685";
+  const token = process.env.CLICKUP_API_TOKEN;
+  const listId = process.env.CLICKUP_LIST_ID || "5029246685";
 
   noCache(res);
 
@@ -315,8 +315,8 @@ router.post("/approve-demo", async (req: Request, res: Response) => {
 
 // ── POST /api/submit-revision ────────────────────────────────────────────────
 router.post("/submit-revision", async (req: Request, res: Response) => {
-  const token = process.env.CLICKUP_API_TOKEN || process.env.MONDAY_API_TOKEN;
-  const listId = process.env.CLICKUP_LIST_ID || process.env.MONDAY_BOARD_ID || "5029246685";
+  const token = process.env.CLICKUP_API_TOKEN;
+  const listId = process.env.CLICKUP_LIST_ID || "5029246685";
 
   noCache(res);
 
@@ -393,8 +393,8 @@ router.post("/submit-revision", async (req: Request, res: Response) => {
 
 // ── POST /api/approve-final ──────────────────────────────────────────────────
 router.post("/approve-final", async (req: Request, res: Response) => {
-  const token = process.env.CLICKUP_API_TOKEN || process.env.MONDAY_API_TOKEN;
-  const listId = process.env.CLICKUP_LIST_ID || process.env.MONDAY_BOARD_ID || "5029246685";
+  const token = process.env.CLICKUP_API_TOKEN;
+  const listId = process.env.CLICKUP_LIST_ID || "5029246685";
 
   noCache(res);
 
@@ -449,8 +449,8 @@ router.post("/approve-final", async (req: Request, res: Response) => {
 
 // ── GET /api/project-progress ────────────────────────────────────────────────
 router.get("/project-progress", async (req: Request, res: Response) => {
-  const token = process.env.CLICKUP_API_TOKEN || process.env.MONDAY_API_TOKEN;
-  const listId = process.env.CLICKUP_LIST_ID || process.env.MONDAY_BOARD_ID || "5029246685";
+  const token = process.env.CLICKUP_API_TOKEN;
+  const listId = process.env.CLICKUP_LIST_ID || "5029246685";
 
   noCache(res);
 
@@ -487,11 +487,10 @@ router.get("/project-progress", async (req: Request, res: Response) => {
   }
 });
 
-// ── GET /api/debug-monday ────────────────────────────────────────────────────
-// Keeping route name for compatibility, but queries ClickUp.
-router.get("/debug-monday", async (req: Request, res: Response) => {
-  const token = process.env.CLICKUP_API_TOKEN || process.env.MONDAY_API_TOKEN;
-  const listId = process.env.CLICKUP_LIST_ID || process.env.MONDAY_BOARD_ID || "5029246685";
+// ── GET /api/debug-clickup ────────────────────────────────────────────────────
+router.get("/debug-clickup", async (req: Request, res: Response) => {
+  const token = process.env.CLICKUP_API_TOKEN;
+  const listId = process.env.CLICKUP_LIST_ID || "5029246685";
 
   noCache(res);
 
@@ -520,11 +519,11 @@ router.get("/debug-monday", async (req: Request, res: Response) => {
   }
 });
 
-// ── GET /api/monday/project ──────────────────────────────────────────────────
+// ── GET /api/clickup/project ─────────────────────────────────────────────────
 // Returns the list metadata.
-router.get("/monday/project", async (req: Request, res: Response) => {
-  const token = process.env.CLICKUP_API_TOKEN || process.env.MONDAY_API_TOKEN;
-  const listId = process.env.CLICKUP_LIST_ID || process.env.MONDAY_BOARD_ID || "5029246685";
+router.get("/clickup/project", async (req: Request, res: Response) => {
+  const token = process.env.CLICKUP_API_TOKEN;
+  const listId = process.env.CLICKUP_LIST_ID || "5029246685";
 
   noCache(res);
 

@@ -213,8 +213,8 @@ export default function Dashboard() {
   // Project stage
   const [projectStage, setProjectStage] = useState<ProjectStage>("Project Received");
 
-  // Monday.com live data
-  const [mondayData, setMondayData] = useState<{
+  // ClickUp live data
+  const [clickupData, setClickupData] = useState<{
     currentStage?: string;
     progressPct?: number;
     completedCount?: number;
@@ -226,7 +226,7 @@ export default function Dashboard() {
     monetization?: string;
     _items?: Array<{ id: string; name: string; status: string }>;
   } | null>(null);
-  const [mondayLoading, setMondayLoading] = useState(false);
+  const [clickupLoading, setClickupLoading] = useState(false);
 
   // Project progress from /api/project-progress (count-based, replaces weighted STAGE_PCT)
   const [projectProgress, setProjectProgress] = useState<{
@@ -279,7 +279,7 @@ export default function Dashboard() {
       });
       setReviewComment("");
       fetchApprovalsHistory(projectId);
-      refreshMondayData(email);
+      refreshClickupData(email);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast({
@@ -324,7 +324,7 @@ export default function Dashboard() {
       });
       setReviewComment("");
       fetchApprovalsHistory(projectId);
-      refreshMondayData(email);
+      refreshClickupData(email);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast({
@@ -337,8 +337,8 @@ export default function Dashboard() {
     }
   };
 
-  // Shared refetch helper — called after any Monday mutation
-  const refreshMondayData = useCallback((emailParam: string) => {
+  // Shared refetch helper — called after any ClickUp mutation
+  const refreshClickupData = useCallback((emailParam: string) => {
     if (projectId) {
       fetchApprovalsHistory(projectId);
     }
@@ -351,13 +351,13 @@ export default function Dashboard() {
       .catch(console.error);
 
     fetch(
-      `/api/monday/project${emailParam ? `?email=${encodeURIComponent(emailParam.toLowerCase())}` : ""}`,
+      `/api/clickup/project${emailParam ? `?email=${encodeURIComponent(emailParam.toLowerCase())}` : ""}`,
       { cache: "no-store" }
     )
       .then(r => r.ok ? r.json() : null)
       .then((d: { ok?: boolean; fallback?: boolean; currentStage?: string; progressPct?: number; completedCount?: number; totalStages?: number; clientName?: string; appName?: string; gameType?: string; tagline?: string; monetization?: string; _items?: Array<{ id: string; name: string; status: string }> } | null) => {
         if (d?.ok && !d.fallback) {
-          setMondayData(d);
+          setClickupData(d);
           if (d.currentStage && STAGE_ORDER.includes(d.currentStage as ProjectStage)) {
             setProjectStage(d.currentStage as ProjectStage);
             localStorage.setItem("as_project_stage", d.currentStage);
@@ -367,7 +367,7 @@ export default function Dashboard() {
       .catch(console.error);
   }, [projectId, fetchApprovalsHistory]);
 
-  // Update a stage status in Monday.com (admin only — sequential, with next-stage activation)
+  // Update a stage status in ClickUp (admin only — sequential, with next-stage activation)
   const updateStageStatus = useCallback(async (stageName: string) => {
     setUpdatingStage(stageName);
     try {
@@ -378,13 +378,13 @@ export default function Dashboard() {
         body: JSON.stringify({ stageName, status: "Complete" }),
       });
       const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Monday update failed");
+      if (!res.ok) throw new Error(data.error ?? "ClickUp update failed");
 
       toast({
         title: "Stage updated successfully.",
-        description: `${stageName} marked as Complete in Monday.com.`,
+        description: `${stageName} marked as Complete in ClickUp.`,
       });
-      refreshMondayData(email);
+      refreshClickupData(email);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("updateStageStatus error:", message);
@@ -392,7 +392,7 @@ export default function Dashboard() {
     } finally {
       setUpdatingStage(null);
     }
-  }, [email, toast, refreshMondayData]);
+  }, [email, toast, refreshClickupData]);
 
   // Approve Demo — client action that marks Demo Ready For Review Done and activates Revision Window
   const approveDemo = useCallback(async () => {
@@ -411,7 +411,7 @@ export default function Dashboard() {
         title: "Demo approved successfully.",
         description: "Your demo has been approved. Revision Window is now active.",
       });
-      refreshMondayData(email);
+      refreshClickupData(email);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("approveDemo error:", message);
@@ -419,7 +419,7 @@ export default function Dashboard() {
     } finally {
       setApprovingDemo(false);
     }
-  }, [email, toast, refreshMondayData]);
+  }, [email, toast, refreshClickupData]);
 
   // Modals
   const [showDemoModal, setShowDemoModal] = useState(false);
@@ -537,15 +537,15 @@ export default function Dashboard() {
 
     fetchProjectProgress();
 
-    // Fetch Monday.com live project data — highest-priority source of truth (no cache)
-    function fetchMonday(emailParam: string) {
-      setMondayLoading(true);
+    // Fetch ClickUp live project data — highest-priority source of truth (no cache)
+    function fetchClickupProject(emailParam: string) {
+      setClickupLoading(true);
       fetch(
-        `/api/monday/project${emailParam ? `?email=${encodeURIComponent(emailParam.toLowerCase())}` : ""}`,
+        `/api/clickup/project${emailParam ? `?email=${encodeURIComponent(emailParam.toLowerCase())}` : ""}`,
         { cache: "no-store" }
       )
         .then(r => {
-          if (!r.ok) { console.error("monday/project HTTP error:", r.status); return null; }
+          if (!r.ok) { console.error("clickup/project HTTP error:", r.status); return null; }
           return r.json();
         })
         .then((data: {
@@ -557,7 +557,7 @@ export default function Dashboard() {
           _items?: Array<{ id: string; name: string; status: string }>;
         } | null) => {
           if (data?.ok && !data.fallback) {
-            setMondayData(data);
+            setClickupData(data);
             if (data.currentStage && STAGE_ORDER.includes(data.currentStage as ProjectStage)) {
               const urlStageCheck = new URLSearchParams(window.location.search).get("stage");
               if (!urlStageCheck) {
@@ -567,14 +567,14 @@ export default function Dashboard() {
             }
           }
         })
-        .catch((err) => { console.error("monday/project fetch error:", err); })
-        .finally(() => setMondayLoading(false));
+        .catch((err) => { console.error("clickup/project fetch error:", err); })
+        .finally(() => setClickupLoading(false));
     }
 
-    fetchMonday(em);
+    fetchClickupProject(em);
 
-    // Refresh Monday data every 5 minutes
-    const mondayInterval = setInterval(() => fetchMonday(em), 5 * 60 * 1000);
+    // Refresh ClickUp data every 5 minutes
+    const clickupInterval = setInterval(() => fetchClickupProject(em), 5 * 60 * 1000);
 
     if (savedRevision) {
       try { setRevisionData(JSON.parse(savedRevision)); } catch { /* ignore */ }
@@ -591,7 +591,7 @@ export default function Dashboard() {
       source: src,
     });
 
-    return () => clearInterval(mondayInterval);
+    return () => clearInterval(clickupInterval);
   }, [fetchApprovalsHistory]);
 
   function advanceTo(stage: ProjectStage) {
@@ -669,7 +669,7 @@ export default function Dashboard() {
     if (approvingFinal) return;
     setApprovingFinal(true);
     console.log("Approve For Publishing clicked");
-    console.log("Updating Monday Final Approval");
+    console.log("Updating ClickUp Final Approval");
 
     try {
       const res = await fetch("/api/approve-final", {
@@ -679,9 +679,9 @@ export default function Dashboard() {
         body: JSON.stringify({}),
       });
       const data = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Unable to update Monday.com.");
+      if (!res.ok) throw new Error(data.error ?? "Unable to update ClickUp.");
 
-      console.log("Monday update success");
+      console.log("ClickUp update success");
       console.log("Publishing Requirements activated");
 
       const payload = { clientName, email, appName: customization?.appName ?? "", finalApprovedAt: new Date().toISOString() };
@@ -692,15 +692,15 @@ export default function Dashboard() {
         description: "Publishing Requirements is now active.",
       });
 
-      refreshMondayData(email);
+      refreshClickupData(email);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("confirmFinalApproval error:", message);
-      toast({ title: "Unable to update Monday.com.", description: message, variant: "destructive" });
+      toast({ title: "Unable to update ClickUp.", description: message, variant: "destructive" });
     } finally {
       setApprovingFinal(false);
     }
-  }, [approvingFinal, clientName, email, customization, toast, refreshMondayData]);
+  }, [approvingFinal, clientName, email, customization, toast, refreshClickupData]);
 
   // ── Submit Publishing Requirements ────────────────────────────────────────
   const [submittingPublishing, setSubmittingPublishing] = useState(false);
@@ -764,15 +764,15 @@ export default function Dashboard() {
   }, [submittingPublishing, pubApple, pubAppleCreated, pubAppleEmail, pubGoogle, pubGoogleCreated, pubGoogleEmail, pubContactName, pubContactEmail, pubNotes, clientName, email, phone, customization, toast]);
 
   // ── Timeline — driven by /api/project-progress stages when available,
-  //    falling back to Monday _items, then local projectStage ─────────────────
+  //    falling back to ClickUp _items, then local projectStage ─────────────────
   const progressStageMap = new Map(
     (projectProgress?.stages ?? []).map(s => [s.name, s.status])
   );
-  const mondayItemMap = new Map(
-    (mondayData?._items ?? []).map(item => [item.name, item.status])
+  const clickupItemMap = new Map(
+    (clickupData?._items ?? []).map(item => [item.name, item.status])
   );
   const hasProgressData = progressStageMap.size > 0;
-  const hasMondayItems  = mondayItemMap.size > 0;
+  const hasClickupItems  = clickupItemMap.size > 0;
 
   const currentIdx = STAGE_ORDER.indexOf(projectStage);
   const timeline = STAGE_ORDER.map((label, i) => {
@@ -783,11 +783,11 @@ export default function Dashboard() {
       else if (ps === "In Progress") status = "active";
       else if (ps === "Client Review Required") status = "review";
       else status = "pending";
-    } else if (hasMondayItems) {
-      const mondayStatus = mondayItemMap.get(label) ?? "Not Started";
-      if (mondayStatus === "Done") status = "complete";
-      else if (mondayStatus === "Working on it") status = "active";
-      else if (mondayStatus === "Ready to Review") status = "review";
+    } else if (hasClickupItems) {
+      const clickupStatus = clickupItemMap.get(label) ?? "Not Started";
+      if (clickupStatus === "Done") status = "complete";
+      else if (clickupStatus === "Working on it") status = "active";
+      else if (clickupStatus === "Ready to Review") status = "review";
       else status = "pending";
     } else {
       status = i < currentIdx ? "complete" : i === currentIdx ? "active" : "pending";
@@ -803,7 +803,7 @@ export default function Dashboard() {
 
   // Count-based progress from /api/project-progress; fall back to weighted STAGE_PCT
   const completedCount = projectProgress?.completedStages ?? timeline.filter(t => t.status === "complete").length;
-  const progressPct    = projectProgress?.percentage ?? mondayData?.progressPct ?? STAGE_PCT[projectStage];
+  const progressPct    = projectProgress?.percentage ?? clickupData?.progressPct ?? STAGE_PCT[projectStage];
 
   // ── Revision type checkboxes ──────────────────────────────────────────────
   const REVISION_TYPES = [
@@ -878,20 +878,20 @@ export default function Dashboard() {
                 Client Portal — Live
               </span>
             </div>
-            {mondayLoading && (
+            {clickupLoading && (
               <span style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(218 16% 38%)", letterSpacing: "0.06em" }}>
-                Syncing with Monday…
+                Syncing with ClickUp…
               </span>
             )}
-            {mondayData && !mondayLoading && (
+            {clickupData && !clickupLoading && (
               <span style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", color: "hsl(35 90% 55%)", display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: "hsl(35 90% 55%)", display: "inline-block" }} />
-                Monday.com Live
+                ClickUp Live
               </span>
             )}
           </div>
           <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 8 }}>
-            {(mondayData?.clientName || clientName) ? `Welcome back, ${(mondayData?.clientName || clientName).split(" ")[0]}.` : "App Launch Dashboard"}
+            {(clickupData?.clientName || clientName) ? `Welcome back, ${(clickupData?.clientName || clientName).split(" ")[0]}.` : "App Launch Dashboard"}
           </h1>
           <p style={{ fontFamily: "'Inter'", fontSize: 14, color: "hsl(218 16% 48%)", fontWeight: 300 }}>
             {completedCount} of {timeline.length} launch stages complete.
@@ -906,11 +906,11 @@ export default function Dashboard() {
             {/* Client stats */}
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <StatCard label="Client Name" value={mondayData?.clientName || clientName || "Not set"} />
-                <StatCard label="Game Type" value={mondayData?.gameType || gameSelection?.selectedGameType || "Pending"} sub={!mondayData?.gameType ? gameSelection?.gameCategory : undefined} />
-                <StatCard label="App Name" value={mondayData?.appName || customization?.appName || "Pending"} />
-                <StatCard label="Tagline" value={mondayData?.tagline || customization?.tagline || "Pending"} />
-                <StatCard label="Monetization" value={mondayData?.monetization || customization?.monetization || "Pending"} />
+                <StatCard label="Client Name" value={clickupData?.clientName || clientName || "Not set"} />
+                <StatCard label="Game Type" value={clickupData?.gameType || gameSelection?.selectedGameType || "Pending"} sub={!clickupData?.gameType ? gameSelection?.gameCategory : undefined} />
+                <StatCard label="App Name" value={clickupData?.appName || customization?.appName || "Pending"} />
+                <StatCard label="Tagline" value={clickupData?.tagline || customization?.tagline || "Pending"} />
+                <StatCard label="Monetization" value={clickupData?.monetization || customization?.monetization || "Pending"} />
                 <StatCard label="Source" value={source || "Direct"} />
               </div>
             </motion.div>
