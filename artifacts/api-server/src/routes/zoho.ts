@@ -96,6 +96,113 @@ async function getZohoAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+// ── Package → Zoho Template mapping (3-package structure) ─────────────────────
+const PACKAGE_TEMPLATE_NAMES: Record<string, string> = {
+  essentials:  "App Squad Essentials Agreement",
+  accelerator: "App Squad Ownership Accelerator Agreement",
+  empire:      "App Squad Empire Agreement",
+};
+
+const PACKAGE_PRICING: Record<string, { name: string; setup: string; monthly: string; pif: string }> = {
+  essentials:  { name: "App Launch Essentials",     setup: "$497",   monthly: "$197", pif: "$2,497" },
+  accelerator: { name: "App Ownership Accelerator", setup: "$997",   monthly: "$397", pif: "$4,997" },
+  empire:      { name: "App Empire Package",        setup: "$4,997", monthly: "$497", pif: "$9,997" },
+};
+
+function normalizePaymentType(pt?: string): "monthly" | "paid_in_full" {
+  const v = (pt || "").toLowerCase().trim();
+  if (v === "monthly") return "monthly";
+  return "paid_in_full"; // covers "subscription" (legacy label), "paid_in_full", "pif", and default
+}
+
+// ── Zoho Templates (cached list lookup by name) ────────────────────────────────
+let templateListCache: { fetchedAt: number; templates: Array<{ template_id: string; template_name: string }> } | null = null;
+
+async function fetchZohoTemplateList(): Promise<Array<{ template_id: string; template_name: string }>> {
+  if (templateListCache && Date.now() - templateListCache.fetchedAt < 5 * 60 * 1000) {
+    return templateListCache.templates;
+  }
+  const token = await getZohoAccessToken();
+  const res = await fetch(`${getZohoSignBase()}/api/v1/templates`, {
+    headers: { Authorization: `Zoho-oauthtoken ${token}` },
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Failed to list Zoho templates: HTTP ${res.status} ${errText}`);
+  }
+  const data = (await res.json()) as { templates?: Array<{ template_id: string; template_name: string }> };
+  const templates = data.templates || [];
+  templateListCache = { fetchedAt: Date.now(), templates };
+  return templates;
+}
+
+// Normalize a template name for lenient comparison: lowercase, underscores→spaces,
+// strip trailing "(n)" duplicate-suffixes and collapse whitespace.
+function normalizeTemplateName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\s*\(\d+\)\s*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function resolveTemplateId(packageId: string): Promise<{ templateId: string; templateName: string }> {
+  const wantedName = PACKAGE_TEMPLATE_NAMES[packageId];
+  if (!wantedName) throw new Error(`Unknown package "${packageId}" — no Zoho template mapping configured`);
+  const templates = await fetchZohoTemplateList();
+  const wantedNorm = normalizeTemplateName(wantedName);
+
+  let match = templates.find(t => (t.template_name || "").trim().toLowerCase() === wantedName.toLowerCase());
+  if (!match) {
+    match = templates.find(t => normalizeTemplateName(t.template_name || "") === wantedNorm);
+  }
+
+  if (!match) {
+    throw new Error(
+      `Zoho template "${wantedName}" not found in your Zoho Sign account. ` +
+      `Available templates: ${templates.map(t => t.template_name).join(", ") || "none"}`
+    );
+  }
+  return { templateId: match.template_id, templateName: match.template_name };
+}
+
+async function fetchZohoTemplateDetail(templateId: string): Promise<{ actions: any[]; fields: any[] }> {
+  const token = await getZohoAccessToken();
+  const res = await fetch(`${getZohoSignBase()}/api/v1/templates/${templateId}`, {
+    headers: { Authorization: `Zoho-oauthtoken ${token}` },
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Failed to fetch Zoho template detail for ${templateId}: HTTP ${res.status} ${errText}`);
+  }
+  const data = (await res.json()) as any;
+  const tpl = data.templates || data;
+  return { actions: tpl.actions || [], fields: tpl.fields || [] };
+}
+
+// Best-effort mapping of template merge fields to our known agreement data, matched by field label
+function mapTemplateFields(fields: any[], values: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of fields) {
+    const fieldName = f.field_name;
+    if (!fieldName) continue;
+    const label = String(f.field_label || f.field_name || "").toLowerCase();
+
+    if (label.includes("email")) out[fieldName] = values.email;
+    else if (label.includes("phone")) out[fieldName] = values.phone;
+    else if (label.includes("address")) out[fieldName] = values.address;
+    else if (label.includes("setup")) out[fieldName] = values.setup_amount;
+    else if (label.includes("monthly")) out[fieldName] = values.monthly_amount;
+    else if (label.includes("paid in full") || label.includes("full amount") || label.includes("total")) out[fieldName] = values.paid_in_full_amount;
+    else if (label.includes("payment") && (label.includes("type") || label.includes("option"))) out[fieldName] = values.payment_type_label;
+    else if (label.includes("package") || label.includes("plan")) out[fieldName] = values.package;
+    else if (label.includes("date")) out[fieldName] = values.agreement_date;
+    else if (label.includes("name") && !label.includes("company") && !label.includes("package")) out[fieldName] = values.full_name;
+  }
+  return out;
+}
+
 // ── OAuth redirect URI ────────────────────────────────────────────────────────
 function getOAuthRedirectUri(req: Request): string {
   // Allow explicit override via env var
@@ -867,7 +974,7 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    logger.info({ requestId, email: normalizedEmail }, "Zoho Webhook: document signed, fetching completed PDF");
+    logger.info({ requestId, email: normalizedEmail }, "Zoho Webhook: webhook received — document signed, fetching completed PDF");
 
     const token = await getZohoAccessToken();
     const pdfRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${requestId}/pdf?merge=true`, {
@@ -911,16 +1018,32 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
     const storagePath = `agreements/${normalizedEmail}_agreement.pdf`;
     const { error: uploadErr } = await supabase.storage.from("customer-documents").upload(storagePath, pdfBuffer, { contentType: "application/pdf", upsert: true });
     if (uploadErr) { logger.error({ uploadErr }, "Zoho Webhook: upload failed"); res.status(502).json({ error: "Failed to store contract PDF" }); return; }
+    logger.info({ email: normalizedEmail, requestId, storagePath }, "Zoho Webhook: signed PDF stored in Supabase Storage");
 
-    const { data: enrollRecord, error: enrollErr } = await supabase.from("customer_enrollment").select("id, selected_package").eq("email", normalizedEmail).maybeSingle();
+    let enrollRecord: { id: string; selected_package?: string; payment_type?: string } | null = null;
+    let enrollErr: { code?: string; message?: string } | null = null;
+    {
+      const first = await supabase.from("customer_enrollment").select("id, selected_package, payment_type").eq("email", normalizedEmail).maybeSingle();
+      if (first.error && (first.error.code === "42703" || first.error.message?.toLowerCase().includes("column"))) {
+        // payment_type column doesn't exist on customer_enrollment — retry without it
+        const retry = await supabase.from("customer_enrollment").select("id, selected_package").eq("email", normalizedEmail).maybeSingle();
+        enrollRecord = retry.data;
+        enrollErr = retry.error;
+      } else {
+        enrollRecord = first.data;
+        enrollErr = first.error;
+      }
+    }
     if (enrollErr || !enrollRecord) { logger.error({ enrollErr, email: normalizedEmail }, "Zoho Webhook: enrollment record not found"); res.status(404).json({ error: "Enrollment record not found" }); return; }
 
     const ip = notifications?.ip_address || "Zoho Sign";
     const timestamp = new Date().toISOString();
-    const enrolledPackage = (enrollRecord as { id: string; selected_package?: string }).selected_package;
+    const enrollData = enrollRecord as { id: string; selected_package?: string; payment_type?: string };
+    const enrolledPackage = enrollData.selected_package;
+    const enrolledPaymentOption = enrollData.payment_type ? normalizePaymentType(enrollData.payment_type) : undefined;
 
     const webhookInsertErr = await (async () => {
-      const record = { user_id: enrollRecord.id, email: normalizedEmail, full_name: fullName, agreement_version: "1.0", signature_image: "ZOHO_SIGNED", signed_at: timestamp, ip_address: ip, user_agent: "Zoho Sign Webhook", pdf_url: storagePath, package_name: enrolledPackage, payment_option: undefined as string | undefined };
+      const record = { user_id: enrollRecord.id, email: normalizedEmail, full_name: fullName, agreement_version: "1.0", signature_image: "ZOHO_SIGNED", signed_at: timestamp, ip_address: ip, user_agent: "Zoho Sign Webhook", pdf_url: storagePath, package_name: enrolledPackage, payment_option: enrolledPaymentOption };
       const { error } = await supabase.from("user_agreements").insert(record);
       if (!error) return null;
       const isMissingColumn = error.code === "42703" || (error.message?.toLowerCase().includes("column") && error.message?.toLowerCase().includes("does not exist"));
@@ -937,7 +1060,7 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
     const { error: updateErr } = await supabase.from("customer_enrollment").update({ agreement_signed: true, document_url: storagePath, document_name: "Enrollment Agreement.pdf", onboarding_status: "agreement_signed", updated_at: new Date().toISOString() }).eq("email", normalizedEmail);
     if (updateErr) { res.status(502).json({ error: "Failed to update enrollment progress status" }); return; }
 
-    logger.info({ email: normalizedEmail }, "Zoho Webhook: agreement processed successfully");
+    logger.info({ email: normalizedEmail, requestId, package: enrolledPackage, paymentOption: enrolledPaymentOption }, "Zoho Webhook: agreement processed successfully — customer can now proceed to set password");
     res.status(200).json({ success: true, message: "Agreement updated successfully" });
 
   } catch (err) {
@@ -946,28 +1069,66 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/zoho/templates - debug/verification: list Zoho templates and confirm package mapping resolves
+router.get("/zoho/templates", async (req: Request, res: Response) => {
+  try {
+    const templates = await fetchZohoTemplateList();
+    const mapping = Object.fromEntries(
+      Object.entries(PACKAGE_TEMPLATE_NAMES).map(([pkg, expectedName]) => {
+        const match = templates.find(t => (t.template_name || "").trim().toLowerCase() === expectedName.toLowerCase());
+        return [pkg, { expectedName, found: !!match, templateId: match?.template_id || null }];
+      })
+    );
+    res.json({
+      totalTemplates: templates.length,
+      allTemplateNames: templates.map(t => t.template_name),
+      mapping,
+    });
+  } catch (err) {
+    logger.error({ err }, "Zoho Templates: failed to list/resolve templates");
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 // POST /api/zoho/create-signature-request
+// Template-based signing: resolves the Zoho template matching the client's selected package,
+// auto-fills client + package + payment data into the template's merge fields, and returns
+// an embedded signing URL for that request.
 router.post("/zoho/create-signature-request", async (req: Request, res: Response) => {
-  const { email, fullName, packageName, price, paymentOption, packageId } = req.body as {
-    email?: string; fullName?: string; packageName?: string; price?: string; paymentOption?: string; packageId?: string;
+  const {
+    email, fullName, phone, address, packageId,
+    paymentOption, paymentType: rawPaymentType,
+  } = req.body as {
+    email?: string; fullName?: string; phone?: string; address?: string; packageId?: string;
+    paymentOption?: string; paymentType?: string;
   };
 
-  if (!email || !fullName || !packageName || !price) {
-    res.status(400).json({ error: "Missing required fields" });
+  if (!email || !fullName || !packageId) {
+    res.status(400).json({ error: "Missing required fields (email, fullName, packageId)" });
+    return;
+  }
+
+  const pkg = PACKAGE_PRICING[packageId];
+  if (!pkg) {
+    res.status(400).json({ error: `Unknown packageId "${packageId}". Must be one of: ${Object.keys(PACKAGE_PRICING).join(", ")}` });
     return;
   }
 
   const normalizedEmail = email.trim().toLowerCase();
+  const paymentType = normalizePaymentType(rawPaymentType || paymentOption);
+  const agreementDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const paymentTypeLabel = paymentType === "monthly"
+    ? `Monthly (${pkg.setup} setup + ${pkg.monthly}/month for 12 months)`
+    : `Paid In Full (${pkg.pif})`;
+
+  logger.info({ email: normalizedEmail, packageId, packageName: pkg.name, paymentType },
+    "Zoho Sign: create-signature-request — selected package & payment type");
 
   try {
-    const ip = (req.headers["x-forwarded-for"] as string || req.socket.remoteAddress || "").split(",")[0].trim();
-    const userAgent = req.headers["user-agent"] || "Unknown User Agent";
-    const timestamp = new Date().toISOString();
+    const { templateId, templateName } = await resolveTemplateId(packageId);
+    logger.info({ packageId, templateId, templateName }, "Zoho Sign: resolved Zoho template for package");
 
-    const pdfBuffer = await generateAgreementPDF(fullName, normalizedEmail, packageName, price,
-      new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
-      "ZOHO_PLACEHOLDER", { ip, userAgent, timestamp }, { packageId, paymentOption });
-
+    const detail = await fetchZohoTemplateDetail(templateId);
     const token = await getZohoAccessToken();
 
     let origin = req.headers.referer || req.headers.origin || "https://localhost:22474";
@@ -977,49 +1138,75 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
       origin = parsed.origin;
     } catch { origin = "https://localhost:22474"; }
 
-    const formData = new FormData();
-    formData.append("file", new Blob([new Uint8Array(pdfBuffer)], { type: "application/pdf" }), "Agreement.pdf");
-    formData.append("data", JSON.stringify({
-      requests: {
-        request_name: "App Squad Program Agreement",
-        is_sequential: true,
-        redirect_pages: {
-          sign_success:  `${origin}/onboarding/agreement/success?email=${encodeURIComponent(normalizedEmail)}`,
-          sign_completed:`${origin}/onboarding/agreement/success?email=${encodeURIComponent(normalizedEmail)}`,
-          sign_declined: `${origin}/onboarding/agreement?status=declined&email=${encodeURIComponent(normalizedEmail)}`,
-          sign_later:    `${origin}/onboarding/agreement?status=later&email=${encodeURIComponent(normalizedEmail)}`,
-        },
-        actions: [{ action_type: "SIGN", recipient_name: fullName, recipient_email: normalizedEmail, is_embedded: true, signing_order: 1 }],
-      },
-    }));
+    const fieldValues: Record<string, string> = {
+      full_name: fullName,
+      email: normalizedEmail,
+      phone: phone || "",
+      address: address || "",
+      package: pkg.name,
+      setup_amount: pkg.setup,
+      monthly_amount: pkg.monthly,
+      paid_in_full_amount: pkg.pif,
+      payment_type_label: paymentTypeLabel,
+      agreement_date: agreementDate,
+    };
 
-    const createRes = await fetch(`${getZohoSignBase()}/api/v1/requests`, {
+    const fieldTextData = mapTemplateFields(detail.fields, fieldValues);
+
+    const signAction = detail.actions.find(a => String(a.action_type || "").toUpperCase() === "SIGN") || detail.actions[0];
+    if (!signAction) {
+      throw new Error(`Zoho template "${templateName}" has no signer action configured`);
+    }
+
+    const requestPayload = {
+      templates: {
+        field_data: { field_text_data: fieldTextData },
+        actions: [{
+          action_id: signAction.action_id,
+          recipient_name: fullName,
+          recipient_email: normalizedEmail,
+          is_embedded: true,
+          signing_order: signAction.signing_order ?? 1,
+        }],
+        notes: `App Squad ${pkg.name} Agreement — ${paymentTypeLabel}`,
+        request_name: `App Squad ${pkg.name} Agreement`,
+      },
+    };
+
+    const formData = new FormData();
+    formData.append("data", JSON.stringify(requestPayload));
+
+    const createRes = await fetch(`${getZohoSignBase()}/api/v1/templates/${templateId}/createdocument`, {
       method: "POST", body: formData,
       headers: { Authorization: `Zoho-oauthtoken ${token}` },
     });
 
     if (!createRes.ok) {
       const errText = await createRes.text();
-      logger.error({ errText, status: createRes.status }, "Zoho Request: failed to create draft");
-      let errMsg = "Failed to create signature request in Zoho Sign";
+      logger.error({ errText, status: createRes.status, templateId, packageId }, "Zoho Sign: failed to create document from template");
+      let errMsg = "Failed to create signature request from Zoho template";
       try { const p = JSON.parse(errText); if (p.message) errMsg = p.message; } catch {}
       res.status(502).json({ error: errMsg });
       return;
     }
 
     const createData = (await createRes.json()) as any;
-    if (createData.status !== "success" || !createData.requests) {
-      res.status(502).json({ error: createData.message || "Failed to create signature request" });
+    const requestObj = createData.requests || createData.templates;
+    if (!requestObj) {
+      logger.error({ createData, templateId }, "Zoho Sign: unexpected createdocument response shape");
+      res.status(502).json({ error: "Unexpected response from Zoho when creating document from template" });
       return;
     }
 
-    const requestId = createData.requests.request_id;
-    const actionId  = createData.requests.actions?.[0]?.action_id;
+    const requestId = requestObj.request_id;
+    const actionId  = requestObj.actions?.[0]?.action_id;
 
     if (!requestId || !actionId) {
-      res.status(502).json({ error: "Invalid response from signature service" });
+      res.status(502).json({ error: "Invalid response from signature service (missing request/action id)" });
       return;
     }
+
+    logger.info({ packageId, paymentType, templateId, requestId }, "Zoho Sign: document created from template");
 
     const submitRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${requestId}/submit`, {
       method: "POST",
@@ -1055,11 +1242,11 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
       return;
     }
 
-    logger.info({ email: normalizedEmail, requestId }, "Zoho Request: embedded signing link generated");
+    logger.info({ email: normalizedEmail, requestId, templateId, packageId, paymentType }, "Zoho Sign: embedded signing link generated");
     res.json({ success: true, embedUrl: signUrl, requestId });
 
   } catch (err) {
-    logger.error({ err }, "Zoho Request: unexpected error");
+    logger.error({ err, packageId, email: normalizedEmail }, "Zoho Sign: unexpected error creating template-based request");
     const msg = (err as Error).message || "";
     if (msg.includes("invalid_client_secret") || msg.includes("invalid_client") || msg.includes("ZOHO_SIGN_CLIENT_SECRET")) {
       res.status(503).json({
@@ -1072,6 +1259,11 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
         error: "Zoho Sign refresh token is missing or invalid.",
         action: "Visit /api/zoho/oauth/start to generate a valid refresh token",
         detail: msg,
+      });
+    } else if (msg.toLowerCase().includes("template")) {
+      res.status(503).json({
+        error: msg,
+        action: "Verify the Zoho template exists in your account and its name matches exactly. Check /api/zoho/templates to confirm.",
       });
     } else {
       res.status(500).json({ error: "Internal server error", detail: msg });

@@ -254,12 +254,14 @@ export async function createZohoSignRequest(
   price: string,
   paymentOption?: string,
   packageId?: string,
+  phone?: string,
+  address?: string,
 ): Promise<{ success: boolean; embedUrl?: string; requestId?: string; error?: string }> {
   try {
     const res = await fetch(`/api/zoho/create-signature-request`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, fullName, packageName, price, paymentOption, packageId }),
+      body: JSON.stringify({ email, fullName, packageName, price, paymentOption, packageId, phone, address }),
     });
     const json = (await res.json()) as { success?: boolean; embedUrl?: string; requestId?: string; error?: string; action?: string };
     const errorMsg = json.error

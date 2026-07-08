@@ -107,14 +107,15 @@ export default function Agreement() {
         return;
       }
 
-      // Create Zoho Sign Embedded signature session
+      // Create Zoho Sign Embedded signature session (template-based, auto-filled)
       const zohoRes = await createZohoSignRequest(
         email,
         record.full_name,
         resolvedPackageName,
         resolvedPrice,
         pType,
-        planKey
+        planKey,
+        record.phone,
       );
 
       if (zohoRes.success && zohoRes.embedUrl) {
