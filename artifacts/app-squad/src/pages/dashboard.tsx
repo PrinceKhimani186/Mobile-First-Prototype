@@ -205,6 +205,23 @@ export default function Dashboard() {
   const [source, setSource] = useState("");
   const [gameSelection, setGameSelection] = useState<{ selectedGameType: string; gameCategory: string; templateName: string } | null>(null);
   const [customization, setCustomization] = useState<{ appName: string; tagline?: string; monetization?: string } | null>(null);
+
+  // Authoritative per-email record from customer_enrollment (Supabase) — this is
+  // the single source of truth for the logged-in client's own data. It always
+  // wins over local funnel blobs, which can belong to a different client on a
+  // shared browser.
+  const [enrollmentRecord, setEnrollmentRecord] = useState<{
+    full_name?: string;
+    email?: string;
+    phone?: string;
+    selected_package?: string;
+    payment_type?: string;
+    game_type?: string;
+    app_name?: string;
+    tagline?: string;
+    monetization?: string;
+    source?: string;
+  } | null>(null);
   
   // Custom agreement PDF
   const [agreementPdfUrl, setAgreementPdfUrl] = useState("");
@@ -483,14 +500,41 @@ export default function Dashboard() {
 
     // Always refetch the authoritative record from the database for the logged-in email.
     // This overrides any stale/foreign funnel data left in localStorage from a previous
-    // client session on this browser (name, phone, and which package/agreement to show).
+    // client session on this browser (name, phone, package, game/app/customization, etc).
     if (em) {
+      console.log("[Dashboard] Loading data for logged-in email:", em);
       fetch(`/api/enrollment/progress?email=${encodeURIComponent(em)}`)
         .then(r => r.ok ? r.json() : null)
-        .then((data: { record?: { full_name?: string; phone?: string } | null } | null) => {
-          if (data?.record) {
-            if (data.record.full_name) setClientName(data.record.full_name);
-            if (data.record.phone) setPhone(data.record.phone);
+        .then((data: {
+          record?: {
+            full_name?: string;
+            phone?: string;
+            selected_package?: string;
+            payment_type?: string;
+            game_type?: string;
+            app_name?: string;
+            tagline?: string;
+            monetization?: string;
+            source?: string;
+          } | null;
+        } | null) => {
+          const record = data?.record ?? null;
+          console.log("[Dashboard] Enrollment record found:", !!record, record);
+          if (!record) return;
+
+          setEnrollmentRecord(record);
+          if (record.full_name) setClientName(record.full_name);
+          if (record.phone) setPhone(record.phone);
+          if (record.source) setSource(record.source);
+          if (record.game_type) {
+            setGameSelection({ selectedGameType: record.game_type, gameCategory: "", templateName: record.game_type });
+          }
+          if (record.app_name || record.tagline || record.monetization) {
+            setCustomization({
+              appName: record.app_name ?? "",
+              tagline: record.tagline,
+              monetization: record.monetization,
+            });
           }
         })
         .catch(() => { /* non-fatal — keep local/funnel fallback */ });
@@ -948,12 +992,14 @@ export default function Dashboard() {
             {/* Client stats */}
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <StatCard label="Client Name" value={clickupData?.clientName || clientName || "Not set"} />
-                <StatCard label="Game Type" value={clickupData?.gameType || gameSelection?.selectedGameType || "Pending"} sub={!clickupData?.gameType ? gameSelection?.gameCategory : undefined} />
-                <StatCard label="App Name" value={clickupData?.appName || customization?.appName || "Pending"} />
-                <StatCard label="Tagline" value={clickupData?.tagline || customization?.tagline || "Pending"} />
-                <StatCard label="Monetization" value={clickupData?.monetization || customization?.monetization || "Pending"} />
-                <StatCard label="Source" value={source || "Direct"} />
+                <StatCard label="Client Name" value={clickupData?.clientName || clientName || enrollmentRecord?.full_name || "Not set"} />
+                <StatCard label="Game Type" value={clickupData?.gameType || gameSelection?.selectedGameType || enrollmentRecord?.game_type || "Pending"} sub={!clickupData?.gameType ? gameSelection?.gameCategory : undefined} />
+                <StatCard label="App Name" value={clickupData?.appName || customization?.appName || enrollmentRecord?.app_name || "Pending"} />
+                <StatCard label="Tagline" value={clickupData?.tagline || customization?.tagline || enrollmentRecord?.tagline || "Pending"} />
+                <StatCard label="Monetization" value={clickupData?.monetization || customization?.monetization || enrollmentRecord?.monetization || "Pending"} />
+                <StatCard label="Package" value={enrollmentRecord?.selected_package || "Not set"} />
+                <StatCard label="Payment Type" value={enrollmentRecord?.payment_type || "Not set"} />
+                <StatCard label="Source" value={source || enrollmentRecord?.source || "Direct"} />
               </div>
             </motion.div>
 

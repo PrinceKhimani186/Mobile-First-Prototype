@@ -24,6 +24,12 @@ export interface EnrollmentRecord {
   agreement_signed?: boolean;
   agreement_signing_url?: string;
   agreement_contract_id?: string;
+  game_type?: string;
+  app_name?: string;
+  tagline?: string;
+  monetization?: string;
+  payment_type?: string;
+  source?: string;
 }
 
 // ── Upload document to Supabase Storage ───────────────────────────────────────
@@ -80,6 +86,9 @@ export async function initEnrollment(data: {
   preferredContact?: string;
   documentName?: string;
   documentUrl?: string;
+  selectedPackage?: string;
+  paymentType?: string;
+  source?: string;
 }): Promise<{ ok: boolean; error?: string }> {
   try {
     const res = await fetch(`${BASE}/init`, {
@@ -172,6 +181,28 @@ export async function markCustomizationCompleted(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, fields: { customization_completed: true, onboarding_status: "customization_completed" } }),
+    });
+    const json = (await res.json()) as { ok?: boolean; error?: string };
+    return { ok: !!json.ok, error: json.error };
+  } catch {
+    return { ok: false, error: "Unable to save your information." };
+  }
+}
+
+// ── Persist onboarding content fields (game/customization/payment/source) ─────
+// These are the customer-facing values shown on the dashboard. Unlike the
+// completion flags above, they carry actual content, so the dashboard can
+// display the right client data even on a different device/browser than the
+// one that filled out onboarding.
+export async function updateEnrollmentFields(
+  email: string,
+  fields: Partial<Pick<EnrollmentRecord, "game_type" | "app_name" | "tagline" | "monetization" | "payment_type" | "source">>,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${BASE}/update`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, fields }),
     });
     const json = (await res.json()) as { ok?: boolean; error?: string };
     return { ok: !!json.ok, error: json.error };

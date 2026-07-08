@@ -1,2 +1,4 @@
 - [Zoho Sign template signing quirks](zoho-sign-templates.md) — field structure, required signature field, auto-submit, token caching, daily send quota
 - [Supabase/PostgREST missing-column errors](supabase-postgrest-errors.md) — PostgREST returns code `PGRST204`, not Postgres's `42703`, for a column missing from its schema cache; graceful-fallback checks must handle both.
+- [GHL contact dedup pattern](ghl-contact-dedup.md) — always search by email before create/update; create-then-catch-duplicate is unreliable and causes duplicate contacts.
+- [Unapplied Supabase migrations](unapplied-supabase-migrations.md) — no automated migration runner for the Supabase DB; several columns across tables are still missing live and rely on retry-without-column fallbacks.

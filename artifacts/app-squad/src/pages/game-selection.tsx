@@ -8,7 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { sendGameSelectionToCRM } from "@/lib/crm";
 import { updateOnboarding } from "@/services/auth";
-import { getOnboardingEmail, markGameSelected } from "@/services/enrollment";
+import { getOnboardingEmail, markGameSelected, updateEnrollmentFields } from "@/services/enrollment";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Game {
@@ -776,6 +776,7 @@ export default function GameSelection() {
           selected_game: selectedGame.name,
         }).catch(() => {}),
         markGameSelected(userEmail).catch(() => {}),
+        updateEnrollmentFields(userEmail, { game_type: selectedGame.name, source }).catch(() => {}),
       ]);
       queryClient.invalidateQueries({ queryKey: ["onboardingProgress", userEmail] });
     }

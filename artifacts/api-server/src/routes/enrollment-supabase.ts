@@ -1,11 +1,31 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, type PostgrestError } from "@supabase/supabase-js";
 
 const router: IRouter = Router();
 
 function noCache(res: Response) {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   res.set("Pragma", "no-cache");
+}
+
+// PostgREST reports a missing column as PGRST204 ("Could not find the 'X'
+// column of 'table' in the schema cache"), NOT Postgres's own 42703 — so a
+// "detect missing column, retry without it" fallback must check both. This
+// lets writes to game_type / app_name / tagline / monetization / payment_type
+// / source degrade gracefully (rather than fail outright) until migration
+// 005_customer_enrollment_customization.sql is applied in Supabase.
+function isMissingColumnError(error: PostgrestError): boolean {
+  return (
+    error.code === "PGRST204" ||
+    error.code === "42703" ||
+    /schema cache/i.test(error.message) ||
+    /does not exist/i.test(error.message)
+  );
+}
+
+function extractMissingColumn(error: PostgrestError): string | null {
+  const match = error.message.match(/'([a-zA-Z_]+)'\s+column/i);
+  return match?.[1] ?? null;
 }
 
 function getSupabase(): SupabaseClient | null {
@@ -95,6 +115,8 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
     documentName,
     documentUrl,
     selectedPackage,
+    paymentType,
+    source,
   } = req.body as {
     fullName?: string;
     email?: string;
@@ -106,6 +128,8 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
     documentName?: string;
     documentUrl?: string;
     selectedPackage?: string;
+    paymentType?: string;
+    source?: string;
   };
 
   if (!email || !fullName) {
@@ -113,39 +137,60 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
     return;
   }
 
-  try {
-    const { error } = await supabase
-      .from("customer_enrollment")
-      .upsert(
-        {
-          full_name: fullName,
-          email: email.trim().toLowerCase(),
-          phone: phone ?? null,
-          company_name: companyName ?? null,
-          country: country ?? null,
-          business_type: businessType ?? null,
-          preferred_contact: preferredContact ?? null,
-          document_name: documentName ?? null,
-          document_url: documentUrl ?? null,
-          selected_package: selectedPackage ?? null,
-          onboarding_status: "enrollment_completed",
-          payment_status: "pending",
-          password_created: false,
-          game_selected: false,
-          customization_completed: false,
-          dashboard_completed: false,
-        },
-        { onConflict: "email" }
-      );
+  const normalizedEmail = email.trim().toLowerCase();
+  req.log.info({ email: normalizedEmail, selectedPackage, paymentType, source }, "enrollment/init: request received");
 
-    if (error) {
-      req.log.error({ err: error }, "enrollment/init: supabase upsert failed");
+  const payload: Record<string, unknown> = {
+    full_name: fullName,
+    email: normalizedEmail,
+    phone: phone ?? null,
+    company_name: companyName ?? null,
+    country: country ?? null,
+    business_type: businessType ?? null,
+    preferred_contact: preferredContact ?? null,
+    document_name: documentName ?? null,
+    document_url: documentUrl ?? null,
+    selected_package: selectedPackage ?? null,
+    ...(paymentType ? { payment_type: paymentType } : {}),
+    ...(source ? { source } : {}),
+    onboarding_status: "enrollment_completed",
+    payment_status: "pending",
+    password_created: false,
+    game_selected: false,
+    customization_completed: false,
+    dashboard_completed: false,
+  };
+
+  try {
+    // Retry without any column PostgREST reports as missing — lets the record
+    // still save even if migration 005 hasn't been applied yet in Supabase.
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const { error } = await supabase
+        .from("customer_enrollment")
+        .upsert(payload, { onConflict: "email" });
+
+      if (!error) {
+        req.log.info({ email: normalizedEmail }, "enrollment/init: record upserted");
+        res.json({ ok: true });
+        return;
+      }
+
+      if (isMissingColumnError(error)) {
+        const missingCol = extractMissingColumn(error);
+        if (missingCol && missingCol in payload) {
+          req.log.warn({ email: normalizedEmail, missingCol }, "enrollment/init: column missing in Supabase schema — retrying without it (run migration 005)");
+          delete payload[missingCol];
+          continue;
+        }
+      }
+
+      req.log.error({ err: error, email: normalizedEmail }, "enrollment/init: supabase upsert failed");
       res.status(502).json({ error: "Unable to save your information." });
       return;
     }
 
-    req.log.info({ email }, "enrollment/init: record upserted");
-    res.json({ ok: true });
+    req.log.error({ email: normalizedEmail }, "enrollment/init: too many missing-column retries");
+    res.status(502).json({ error: "Unable to save your information." });
   } catch (err) {
     req.log.error({ err }, "enrollment/init: unexpected error");
     res.status(500).json({ error: "Unable to save your information." });
@@ -189,6 +234,12 @@ router.post("/enrollment/update", async (req: Request, res: Response) => {
     "preferred_contact",
     "document_name",
     "document_url",
+    "game_type",
+    "app_name",
+    "tagline",
+    "monetization",
+    "payment_type",
+    "source",
   ]);
 
   const safeFields = Object.fromEntries(
@@ -200,20 +251,49 @@ router.post("/enrollment/update", async (req: Request, res: Response) => {
     return;
   }
 
-  try {
-    const { error } = await supabase
-      .from("customer_enrollment")
-      .update(safeFields)
-      .eq("email", email.trim().toLowerCase());
+  const normalizedEmail = email.trim().toLowerCase();
+  req.log.info({ email: normalizedEmail, safeFields }, "enrollment/update: request received");
 
-    if (error) {
-      req.log.error({ err: error, email, safeFields }, "enrollment/update: supabase update failed");
+  const updateFields: Record<string, unknown> = { ...safeFields };
+
+  try {
+    // Retry without any column PostgREST reports as missing — lets the update
+    // still save the remaining fields even if migration 005 hasn't been
+    // applied yet in Supabase.
+    for (let attempt = 0; attempt < 10; attempt++) {
+      if (Object.keys(updateFields).length === 0) {
+        req.log.warn({ email: normalizedEmail }, "enrollment/update: no fields left after stripping missing columns");
+        res.status(502).json({ error: "Unable to save your information." });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("customer_enrollment")
+        .update(updateFields)
+        .eq("email", normalizedEmail);
+
+      if (!error) {
+        req.log.info({ email: normalizedEmail, safeFields: updateFields }, "enrollment/update: fields updated");
+        res.json({ ok: true });
+        return;
+      }
+
+      if (isMissingColumnError(error)) {
+        const missingCol = extractMissingColumn(error);
+        if (missingCol && missingCol in updateFields) {
+          req.log.warn({ email: normalizedEmail, missingCol }, "enrollment/update: column missing in Supabase schema — retrying without it (run migration 005)");
+          delete updateFields[missingCol];
+          continue;
+        }
+      }
+
+      req.log.error({ err: error, email: normalizedEmail, safeFields: updateFields }, "enrollment/update: supabase update failed");
       res.status(502).json({ error: "Unable to save your information." });
       return;
     }
 
-    req.log.info({ email, safeFields }, "enrollment/update: fields updated");
-    res.json({ ok: true });
+    req.log.error({ email: normalizedEmail }, "enrollment/update: too many missing-column retries");
+    res.status(502).json({ error: "Unable to save your information." });
   } catch (err) {
     req.log.error({ err }, "enrollment/update: unexpected error");
     res.status(500).json({ error: "Unable to save your information." });
@@ -237,18 +317,33 @@ router.get("/enrollment/progress", async (req: Request, res: Response) => {
     return;
   }
 
+  const normalizedEmail = email.trim().toLowerCase();
+  req.log.info({ email: normalizedEmail }, "enrollment/progress: looking up record for logged-in email");
+
   try {
     const { data, error } = await supabase
       .from("customer_enrollment")
       .select("*")
-      .eq("email", email.trim().toLowerCase())
+      .eq("email", normalizedEmail)
       .maybeSingle();
 
     if (error) {
-      req.log.error({ err: error, email }, "enrollment/progress: supabase select failed");
+      req.log.error({ err: error, email: normalizedEmail }, "enrollment/progress: supabase select failed");
       res.status(502).json({ error: "Unable to connect to the database." });
       return;
     }
+
+    req.log.info(
+      {
+        email: normalizedEmail,
+        found: !!data,
+        fullName: data?.full_name ?? null,
+        gameType: data?.game_type ?? null,
+        appName: data?.app_name ?? null,
+        selectedPackage: data?.selected_package ?? null,
+      },
+      data ? "enrollment/progress: dashboard data returned" : "enrollment/progress: no enrollment record found for this email"
+    );
 
     res.json({ record: data ?? null });
   } catch (err) {

@@ -333,6 +333,8 @@ export default function Enrollment() {
           email: normalizedEmail,
           companyName: form.company,
           selectedPackage: selectedPlan,
+          paymentType,
+          source: localStorage.getItem("as_source") || "Direct",
         }),
       });
 

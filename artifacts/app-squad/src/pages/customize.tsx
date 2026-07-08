@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { ArrowRight, CheckCircle2, Palette, Shield, Sparkles } from "lucide-react";
 import { sendCustomizationToCRM } from "@/lib/crm";
 import { updateOnboarding } from "@/services/auth";
-import { getOnboardingEmail, markCustomizationCompleted } from "@/services/enrollment";
+import { getOnboardingEmail, markCustomizationCompleted, updateEnrollmentFields } from "@/services/enrollment";
 import { useQueryClient } from "@tanstack/react-query";
 
 const STEPS = ["Game Selected", "Customization", "Dashboard"];
@@ -215,6 +215,7 @@ export default function Customize() {
       await Promise.all([
         updateOnboarding(userEmail, { customization_form_completed: true }).catch(() => {}),
         markCustomizationCompleted(userEmail).catch(() => {}),
+        updateEnrollmentFields(userEmail, { app_name: appName, tagline, monetization }).catch(() => {}),
       ]);
       queryClient.invalidateQueries({ queryKey: ["onboardingProgress", userEmail] });
     }
