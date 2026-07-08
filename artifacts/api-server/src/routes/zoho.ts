@@ -1079,6 +1079,21 @@ router.get("/zoho/templates", async (req: Request, res: Response) => {
         return [pkg, { expectedName, found: !!match, templateId: match?.template_id || null }];
       })
     );
+
+    const fieldsForPkg = String(req.query.fields || "");
+    if (fieldsForPkg && PACKAGE_TEMPLATE_NAMES[fieldsForPkg]) {
+      const { templateId, templateName } = await resolveTemplateId(fieldsForPkg);
+      const detail = await fetchZohoTemplateDetail(templateId);
+      res.json({
+        package: fieldsForPkg,
+        templateId,
+        templateName,
+        actions: detail.actions,
+        fields: detail.fields,
+      });
+      return;
+    }
+
     res.json({
       totalTemplates: templates.length,
       allTemplateNames: templates.map(t => t.template_name),
