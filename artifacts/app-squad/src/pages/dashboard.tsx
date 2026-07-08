@@ -456,19 +456,58 @@ export default function Dashboard() {
     const savedRevision = localStorage.getItem("as_revision_data");
     const savedPublishing = localStorage.getItem("as_publishing_data");
 
-    const name = application.name || lead.name || "";
-    const em = application.email || lead.email || "";
-    const ph = application.phone || lead.phone || "";
+    // The authenticated session email (set at login) is the source of truth for
+    // "who is looking at this dashboard". The as_lead/as_application/as_game_selection/
+    // as_customization blobs are written during the anonymous funnel and are NOT scoped
+    // per-user — on a shared browser they can still hold a *previous* client's data after
+    // a different client logs in. Only trust them when they actually belong to the
+    // currently authenticated user.
+    const authEmail = (
+      localStorage.getItem("appSquadUserEmail") ||
+      localStorage.getItem("appSquadEnrollmentEmail") ||
+      ""
+    ).trim().toLowerCase();
+    const localEmail = (application.email || lead.email || "").trim().toLowerCase();
+    const localDataBelongsToAuthUser = !authEmail || !localEmail || authEmail === localEmail;
+
+    const name = localDataBelongsToAuthUser ? (application.name || lead.name || "") : "";
+    const em = authEmail || localEmail;
+    const ph = localDataBelongsToAuthUser ? (application.phone || lead.phone || "") : "";
 
     setClientName(name);
     setEmail(em);
     setPhone(ph);
     setSource(src);
-    setGameSelection(game);
-    setCustomization(custom);
+    setGameSelection(localDataBelongsToAuthUser ? game : null);
+    setCustomization(localDataBelongsToAuthUser ? custom : null);
 
+    // Always refetch the authoritative record from the database for the logged-in email.
+    // This overrides any stale/foreign funnel data left in localStorage from a previous
+    // client session on this browser (name, phone, and which package/agreement to show).
     if (em) {
-      fetch(`/api/enrollment/agreement-status?email=${encodeURIComponent(em.toLowerCase())}`)
+      fetch(`/api/enrollment/progress?email=${encodeURIComponent(em)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then((data: { record?: { full_name?: string; phone?: string } | null } | null) => {
+          if (data?.record) {
+            if (data.record.full_name) setClientName(data.record.full_name);
+            if (data.record.phone) setPhone(data.record.phone);
+          }
+        })
+        .catch(() => { /* non-fatal — keep local/funnel fallback */ });
+
+      if (!localDataBelongsToAuthUser) {
+        fetch(`/api/auth/onboarding-status?email=${encodeURIComponent(em)}`)
+          .then(r => r.ok ? r.json() : null)
+          .then((data: { status?: { selected_game?: string } | null } | null) => {
+            const selectedGame = data?.status?.selected_game;
+            if (selectedGame) {
+              setGameSelection({ selectedGameType: selectedGame, gameCategory: "", templateName: selectedGame });
+            }
+          })
+          .catch(() => { /* non-fatal */ });
+      }
+
+      fetch(`/api/enrollment/agreement-status?email=${encodeURIComponent(em)}`)
         .then(r => r.ok ? r.json() : null)
         .then((data: { signed?: boolean; pdfUrl?: string; signedAt?: string } | null) => {
           if (data?.signed && data.pdfUrl) {
@@ -476,6 +515,9 @@ export default function Dashboard() {
             if (data.signedAt) {
               setAgreementSignedAt(new Date(data.signedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
             }
+          } else {
+            setAgreementPdfUrl("");
+            setAgreementSignedAt("");
           }
         })
         .catch(console.error);

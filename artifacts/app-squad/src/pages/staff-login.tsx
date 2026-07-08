@@ -8,6 +8,27 @@ const ADMIN_EMAIL    = "princekhimani186@gmail.com";
 const ADMIN_PASSWORD = "Prince@123";
 const STORAGE_KEY    = "as_admin_auth";
 
+const STALE_SESSION_KEYS = [
+  "as_lead", "as_application", "as_game_selection", "as_customization",
+  "as_project_stage", "as_revision_data", "as_publishing_data", "as_source",
+  "appSquadCustomizationCompleted", "selectedGameTemplate", "selectedGameCategory", "selectedGameTitle",
+];
+
+// Funnel data (name/phone/game/customization) is cached in generic, non-email-scoped
+// localStorage keys. On a shared browser, a different client logging in must not inherit
+// the previous client's cached funnel data — clear it so the dashboard falls back to
+// fetching this user's own record from the database instead.
+function clearStaleSessionDataIfDifferentUser(newEmail: string) {
+  const prevEmail = (
+    localStorage.getItem("appSquadUserEmail") ||
+    localStorage.getItem("appSquadEnrollmentEmail") ||
+    ""
+  ).trim().toLowerCase();
+  if (prevEmail && prevEmail !== newEmail) {
+    STALE_SESSION_KEYS.forEach(key => localStorage.removeItem(key));
+  }
+}
+
 async function resolveOnboardingRedirect(email: string): Promise<string> {
   try {
     const { record } = await getEnrollmentProgress(email);
@@ -55,6 +76,7 @@ export default function StaffLogin() {
 
     // Step 0 — Client-side hardcoded admin bypass
     if (normalizedEmail === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
+      clearStaleSessionDataIfDifferentUser(normalizedEmail);
       localStorage.setItem(STORAGE_KEY, "true");
       localStorage.setItem("appSquadLoggedIn", "true");
       localStorage.setItem("appSquadUserEmail", normalizedEmail);
@@ -80,6 +102,7 @@ export default function StaffLogin() {
         };
         if (supabaseData.ok) {
           // Supabase confirmed credentials — grant access
+          clearStaleSessionDataIfDifferentUser(normalizedEmail);
           localStorage.setItem("appSquadLoggedIn", "true");
           localStorage.setItem("appSquadUserEmail", normalizedEmail);
           localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
@@ -110,6 +133,7 @@ export default function StaffLogin() {
             demo.email?.toLowerCase() === normalizedEmail &&
             demo.password === password
           ) {
+            clearStaleSessionDataIfDifferentUser(normalizedEmail);
             localStorage.setItem("appSquadLoggedIn", "true");
             localStorage.setItem("appSquadUserEmail", normalizedEmail);
             localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
@@ -145,6 +169,7 @@ export default function StaffLogin() {
       }
 
       // Grant admin access
+      clearStaleSessionDataIfDifferentUser(normalizedEmail);
       localStorage.setItem(STORAGE_KEY, "true");
       localStorage.setItem("appSquadLoggedIn", "true");
       localStorage.setItem("appSquadUserEmail", normalizedEmail);
