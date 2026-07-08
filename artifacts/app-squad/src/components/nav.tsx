@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Zap } from "lucide-react";
+import { LogIn, Zap } from "lucide-react";
 
 export function Nav() {
   return (
@@ -16,12 +16,20 @@ export function Nav() {
           </span>
         </Link>
 
-        <Link href="/start">
-          <span className="btn-gold h-9 px-5 text-[13px] font-semibold rounded-xl flex items-center gap-2 text-white cursor-pointer">
-            Watch Presentation
-            <Zap className="w-3.5 h-3.5" />
-          </span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/login">
+            <span className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer">
+              <LogIn className="w-3.5 h-3.5" />
+              Login
+            </span>
+          </Link>
+          <Link href="/start">
+            <span className="btn-gold h-9 px-5 text-[13px] font-semibold rounded-xl flex items-center gap-2 text-white cursor-pointer">
+              Watch Presentation
+              <Zap className="w-3.5 h-3.5" />
+            </span>
+          </Link>
+        </div>
       </div>
     </header>
   );
