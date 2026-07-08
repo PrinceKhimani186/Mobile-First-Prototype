@@ -7,9 +7,8 @@ import {
 import { useLocation } from "wouter";
 import { sendCallBookedToCRM } from "@/lib/crm";
 
-// ─── Replace with your Calendly scheduling URL ────────────────────────────────
-// e.g. "https://calendly.com/yourname/strategy-call"
-const CALENDLY_URL = "https://calendly.com/appguyofficial/30min";
+// ─── GoHighLevel (LeadConnector) booking widget ───────────────────────────────
+const GHL_BOOKING_URL = "https://api.leadconnectorhq.com/widget/booking/QCC3rSHvpUHttODye2wR";
 // ─────────────────────────────────────────────────────────────────────────────
 
 function FadeUp({
@@ -49,10 +48,13 @@ export default function BookCall() {
   const [, navigate] = useLocation();
   const [booked, setBooked] = useState(false);
 
-  // ── Listen for Calendly "event_scheduled" and update GHL ────────────────────
+  // ── Listen for GHL booking widget completion and update CRM ─────────────────
   useEffect(() => {
-    function onCalendlyEvent(e: MessageEvent) {
-      if (e.data?.event !== "calendly.event_scheduled") return;
+    function onGhlEvent(e: MessageEvent) {
+      const raw = e.data;
+      const text = typeof raw === "string" ? raw : JSON.stringify(raw ?? "");
+      const looksLikeBooking = /appointment|booking|calendar/i.test(text) && /(book|schedul|confirm|complet|success)/i.test(text);
+      if (!looksLikeBooking) return;
 
       setBooked(true);
 
@@ -69,27 +71,27 @@ export default function BookCall() {
       const phone  = app?.phone  || lead?.phone  || "";
       const source = app?.source || lead?.source || localStorage.getItem("as_source") || "Direct";
 
-      // Calendly passes scheduled start time inside payload
       const scheduledTime: string | undefined =
-        e.data?.payload?.event?.start_time ?? undefined;
+        raw?.payload?.appointment?.startTime ?? raw?.appointment?.startTime ?? undefined;
 
       sendCallBookedToCRM({ name, email, phone, source, scheduledTime });
     }
 
-    window.addEventListener("message", onCalendlyEvent);
-    return () => window.removeEventListener("message", onCalendlyEvent);
+    window.addEventListener("message", onGhlEvent);
+    return () => window.removeEventListener("message", onGhlEvent);
   }, []);
 
-  // ── Inject Calendly widget script once ──────────────────────────────────────
+  // ── Inject GHL form/booking embed script once ────────────────────────────────
   useEffect(() => {
-    if (!CALENDLY_URL) return;
-    const id = "calendly-widget-script";
+    if (!GHL_BOOKING_URL) return;
+    const id = "ghl-form-embed-script";
     if (document.getElementById(id)) return;
     const script = document.createElement("script");
     script.id = id;
-    script.src = "https://assets.calendly.com/assets/external/widget.js";
+    script.src = "https://link.msgsndr.com/js/form_embed.js";
+    script.type = "text/javascript";
     script.async = true;
-    document.head.appendChild(script);
+    document.body.appendChild(script);
   }, []);
 
   return (
@@ -283,8 +285,8 @@ export default function BookCall() {
                         </p>
                       </div>
                     </div>
-                  ) : CALENDLY_URL ? (
-                    /* ── Live Calendly embed ── */
+                  ) : GHL_BOOKING_URL ? (
+                    /* ── Live GHL booking widget embed ── */
                     <div className="flex flex-col items-center gap-4">
                       <div className="flex items-center gap-4 w-full justify-center"
                         style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 40%)" }}>
@@ -298,15 +300,18 @@ export default function BookCall() {
                           Phone or video
                         </span>
                       </div>
-                      {/* Calendly inline widget */}
-                      <div
-                        className="calendly-inline-widget w-full rounded-xl overflow-hidden"
-                        data-url={`${CALENDLY_URL}?hide_gdpr_banner=1&background_color=0b0f14&text_color=f0f4ff&primary_color=f5a623`}
-                        style={{ minWidth: 280, height: 630 }}
+                      {/* GHL (LeadConnector) inline booking widget */}
+                      <iframe
+                        src={GHL_BOOKING_URL}
+                        className="w-full rounded-xl overflow-hidden"
+                        style={{ minWidth: 280, height: 630, border: "none" }}
+                        scrolling="no"
+                        id="QCC3rSHvpUHttODye2wR_book-call"
+                        title="Book Your App Launch Strategy Call"
                       />
                     </div>
                   ) : (
-                    /* ── Placeholder (no Calendly URL set yet) ── */
+                    /* ── Placeholder (no booking widget URL set yet) ── */
                     <div className="flex flex-col items-center text-center gap-5">
                       <div
                         className="w-14 h-14 rounded-2xl flex items-center justify-center"
@@ -322,7 +327,7 @@ export default function BookCall() {
                             color: "hsl(35 90% 55%)", marginBottom: 6,
                           }}
                         >
-                          Calendly
+                          Scheduling
                         </p>
                         <h3
                           style={{
@@ -338,7 +343,7 @@ export default function BookCall() {
                             color: "hsl(218 16% 44%)", fontWeight: 300,
                           }}
                         >
-                          Your booking widget will appear here once Calendly is connected.
+                          Your booking widget will appear here once scheduling is connected.
                         </p>
                       </div>
 
@@ -347,7 +352,7 @@ export default function BookCall() {
                         style={{ background: "hsl(226 28% 6%)", border: "1px dashed hsl(224 22% 18%)" }}
                       >
                         <p style={{ fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 28%)" }}>
-                          Calendly embed goes here
+                          Booking embed goes here
                         </p>
                       </div>
 

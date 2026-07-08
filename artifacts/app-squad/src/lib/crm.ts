@@ -159,8 +159,9 @@ export function sendApplicationToCRM(payload: {
   });
 }
 
-// ─── Call booked (Calendly event_scheduled) ──────────────────────────────────
-// Called by book-call.tsx when Calendly fires the booking confirmation event.
+// ─── Call booked (GHL booking widget confirmation) ────────────────────────────
+// Called by book-call.tsx when the GHL (LeadConnector) booking widget fires a
+// booking confirmation postMessage event.
 export function sendCallBookedToCRM(payload: {
   name: string;
   email: string;
