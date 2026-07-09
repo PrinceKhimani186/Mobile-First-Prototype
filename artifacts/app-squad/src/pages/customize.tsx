@@ -172,12 +172,11 @@ export default function Customize() {
     e.preventDefault();
     if (!canSubmit) return;
 
-    const lead = JSON.parse(localStorage.getItem("as_lead") || "{}");
-    const application = JSON.parse(localStorage.getItem("as_application") || "{}");
     const source = localStorage.getItem("as_source") || "Direct";
-    const clientName = application.name || lead.name || "";
-    const email = application.email || lead.email || "";
-    const phone = application.phone || lead.phone || "";
+
+    // Use ONLY the authenticated email for all DB and CRM operations — never fall back to
+    // the as_application / as_lead blobs which may contain a different user's data.
+    const userEmail = getOnboardingEmail();
 
     const data = {
       appName,
@@ -194,9 +193,9 @@ export default function Customize() {
     localStorage.setItem("as_customization", JSON.stringify(data));
 
     sendCustomizationToCRM({
-      clientName,
-      email,
-      phone,
+      clientName: "",
+      email: userEmail,
+      phone: "",
       appName,
       tagline,
       appConcept,
@@ -210,7 +209,6 @@ export default function Customize() {
     });
 
     // Persist customization and mark it in customer_enrollment (source of truth for route guards)
-    const userEmail = getOnboardingEmail() || email;
     if (userEmail) {
       await Promise.all([
         updateOnboarding(userEmail, { customization_form_completed: true }).catch(() => {}),

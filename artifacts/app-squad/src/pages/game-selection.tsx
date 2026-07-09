@@ -741,12 +741,11 @@ export default function GameSelection() {
   const handleContinue = async () => {
     if (!selectedGame) return;
 
-    const lead = JSON.parse(localStorage.getItem("as_lead") || "{}");
-    const application = JSON.parse(localStorage.getItem("as_application") || "{}");
     const source = localStorage.getItem("as_source") || "Direct";
-    const clientName = application.name || lead.name || "";
-    const email = application.email || lead.email || "";
-    const phone = application.phone || lead.phone || "";
+
+    // Use ONLY the authenticated email for all DB and CRM operations — never fall back to
+    // the as_application / as_lead blobs which may contain a different user's data.
+    const userEmail = getOnboardingEmail();
 
     localStorage.setItem("selectedGameTemplate", selectedGame.id);
     localStorage.setItem("selectedGameCategory", selectedGame.category);
@@ -758,9 +757,9 @@ export default function GameSelection() {
     }));
 
     sendGameSelectionToCRM({
-      clientName,
-      email,
-      phone,
+      clientName: "",
+      email: userEmail,
+      phone: "",
       selectedGameType: selectedGame.name,
       gameCategory: selectedGame.categoryLabel,
       templateName: selectedGame.name,
@@ -768,7 +767,6 @@ export default function GameSelection() {
     });
 
     // Persist game selection and mark it in customer_enrollment (source of truth for route guards)
-    const userEmail = getOnboardingEmail() || email;
     if (userEmail) {
       await Promise.all([
         updateOnboarding(userEmail, {

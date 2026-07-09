@@ -473,35 +473,33 @@ export default function Dashboard() {
     const savedRevision = localStorage.getItem("as_revision_data");
     const savedPublishing = localStorage.getItem("as_publishing_data");
 
-    // The authenticated session email (set at login) is the source of truth for
-    // "who is looking at this dashboard". The as_lead/as_application/as_game_selection/
-    // as_customization blobs are written during the anonymous funnel and are NOT scoped
-    // per-user — on a shared browser they can still hold a *previous* client's data after
-    // a different client logs in. Only trust them when they actually belong to the
-    // currently authenticated user.
+    // The authenticated session email (set at login / enrollment) is the ONLY source of
+    // truth for "who is looking at this dashboard". The as_lead / as_application blobs
+    // are written during the anonymous funnel and are NOT scoped per-user — on a shared
+    // browser they can still hold a previous client's data. Never fall back to them for
+    // the email used in DB queries. If there is no authenticated session, redirect to login.
     const authEmail = (
       localStorage.getItem("appSquadUserEmail") ||
       localStorage.getItem("appSquadEnrollmentEmail") ||
       ""
     ).trim().toLowerCase();
-    const localEmail = (application.email || lead.email || "").trim().toLowerCase();
-    const localDataBelongsToAuthUser = !authEmail || !localEmail || authEmail === localEmail;
 
-    const name = localDataBelongsToAuthUser ? (application.name || lead.name || "") : "";
-    const em = authEmail || localEmail;
-    const ph = localDataBelongsToAuthUser ? (application.phone || lead.phone || "") : "";
+    if (!authEmail) {
+      window.location.replace("/login");
+      return;
+    }
 
-    setClientName(name);
+    const em = authEmail;
+
+    // Don't pre-populate name/phone/game/customization from funnel blobs — the enrollment
+    // record fetch below will populate everything from the database (the authoritative source).
     setEmail(em);
-    setPhone(ph);
     setSource(src);
-    setGameSelection(localDataBelongsToAuthUser ? game : null);
-    setCustomization(localDataBelongsToAuthUser ? custom : null);
 
     // Always refetch the authoritative record from the database for the logged-in email.
     // This overrides any stale/foreign funnel data left in localStorage from a previous
     // client session on this browser (name, phone, package, game/app/customization, etc).
-    if (em) {
+    {
       console.log("[Dashboard] Loading data for logged-in email:", em);
       fetch(`/api/enrollment/progress?email=${encodeURIComponent(em)}`)
         .then(r => r.ok ? r.json() : null)
@@ -520,9 +518,10 @@ export default function Dashboard() {
         } | null) => {
           const record = data?.record ?? null;
           console.log("[Dashboard] Enrollment record found:", !!record, record);
+          setEnrollmentRecord(record ?? null);
           if (!record) return;
 
-          setEnrollmentRecord(record);
+          // Populate display fields exclusively from the DB record — never from funnel blobs.
           if (record.full_name) setClientName(record.full_name);
           if (record.phone) setPhone(record.phone);
           if (record.source) setSource(record.source);
@@ -537,19 +536,18 @@ export default function Dashboard() {
             });
           }
         })
-        .catch(() => { /* non-fatal — keep local/funnel fallback */ });
+        .catch(() => { /* non-fatal */ });
 
-      if (!localDataBelongsToAuthUser) {
-        fetch(`/api/auth/onboarding-status?email=${encodeURIComponent(em)}`)
-          .then(r => r.ok ? r.json() : null)
-          .then((data: { status?: { selected_game?: string } | null } | null) => {
-            const selectedGame = data?.status?.selected_game;
-            if (selectedGame) {
-              setGameSelection({ selectedGameType: selectedGame, gameCategory: "", templateName: selectedGame });
-            }
-          })
-          .catch(() => { /* non-fatal */ });
-      }
+      // Always fetch onboarding status to pick up game selection persisted to the DB
+      fetch(`/api/auth/onboarding-status?email=${encodeURIComponent(em)}`)
+        .then(r => r.ok ? r.json() : null)
+        .then((data: { status?: { selected_game?: string } | null } | null) => {
+          const selectedGame = data?.status?.selected_game;
+          if (selectedGame) {
+            setGameSelection(prev => prev ?? { selectedGameType: selectedGame, gameCategory: "", templateName: selectedGame });
+          }
+        })
+        .catch(() => { /* non-fatal */ });
 
       fetch(`/api/enrollment/agreement-status?email=${encodeURIComponent(em)}`)
         .then(r => r.ok ? r.json() : null)
@@ -577,13 +575,8 @@ export default function Dashboard() {
     } else if (savedStage && STAGE_ORDER.includes(savedStage)) {
       setProjectStage(savedStage);
     } else {
-      // Derive default stage from onboarding progress
-      const derived: ProjectStage = custom
-        ? "Development"
-        : game
-        ? "Customization Review"
-        : "Brand Review";
-      setProjectStage(derived);
+      // Default to Brand Review; server-side stage fetch below will override when available.
+      setProjectStage("Brand Review");
     }
 
     // Fetch server-side stage (admin DB) — overrides localStorage.
@@ -670,9 +663,9 @@ export default function Dashboard() {
     }
 
     updateProjectStatusInCRM({
-      clientName: name,
+      clientName: "",
       email: em,
-      stage: custom ? "customization_submitted" : game ? "game_selected" : "intake_received",
+      stage: "intake_received",
       status: "dashboard_viewed",
       source: src,
     });
