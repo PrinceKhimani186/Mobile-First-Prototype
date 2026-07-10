@@ -146,20 +146,12 @@ export default function ScheduleCall() {
               <p className="text-xs text-muted-foreground leading-relaxed">
                 After booking or if you're ready to proceed, continue to checkout to secure your build slot.
               </p>
-              <a
-                href="https://checkout.example.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                data-testid="link-continue-checkout"
-              >
+              <Link href="/enrollment" data-testid="link-continue-checkout">
                 <button className="btn-primary w-full h-12 text-sm font-semibold rounded-xl text-white flex items-center justify-center gap-2">
                   Continue To Checkout
                   <ArrowRight className="w-4 h-4" />
                 </button>
-              </a>
-              <p className="text-[11px] text-muted-foreground/50 text-center">
-                Checkout URL will be replaced with your payment provider.
-              </p>
+              </Link>
             </div>
           </motion.div>
         </div>

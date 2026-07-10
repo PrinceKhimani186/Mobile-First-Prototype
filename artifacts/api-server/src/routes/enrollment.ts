@@ -52,6 +52,13 @@ function getSetupFeePrice(planName: string): string | undefined {
   return getCheckoutPrice(planName, "monthly");
 }
 
+function stripeKeyMode(): "test" | "live" | "unknown" {
+  const key = process.env.STRIPE_SECRET_KEY ?? "";
+  if (key.startsWith("sk_test_") || key.startsWith("rk_test_")) return "test";
+  if (key.startsWith("sk_live_") || key.startsWith("rk_live_")) return "live";
+  return "unknown";
+}
+
 function stripeConfigError(): string | null {
   const key = process.env.STRIPE_SECRET_KEY ?? "";
   if (!key) return "STRIPE_SECRET_KEY is not set";
@@ -59,6 +66,41 @@ function stripeConfigError(): string | null {
   if (!key.startsWith("sk_")) return `STRIPE_SECRET_KEY has an unexpected format: ${key.slice(0, 6)}…`;
   return null;
 }
+
+// ── GET /api/stripe-mode ──────────────────────────────────────────────────────
+// Diagnostic: returns which Stripe mode is active and which price IDs are in use.
+// Visit /api/stripe-mode in your browser to quickly diagnose test/live mismatches.
+router.get("/stripe-mode", (_req, res) => {
+  const key = process.env.STRIPE_SECRET_KEY ?? "";
+  const mode = stripeKeyMode();
+  const configured = !!key;
+
+  const priceIds = {
+    essentials_full:        process.env.STRIPE_PRICE_ESSENTIALS        ?? "(hardcoded fallback: price_1TnzBEJJdy0crHI8d1FLz9Et)",
+    accelerator_full:       process.env.STRIPE_PRICE_ACCELERATOR       ?? "(hardcoded fallback: price_1TnzBFJJdy0crHI8yCluGftj)",
+    empire_full:            process.env.STRIPE_PRICE_EMPIRE            ?? "(hardcoded fallback: price_1TnzBGJJdy0crHI8zTHTCEUV)",
+    essentials_setup:       process.env.STRIPE_PRICE_ESSENTIALS_SETUP  ?? "(hardcoded fallback: price_1TnzBLJJdy0crHI8FHNhiOtw)",
+    accelerator_setup:      process.env.STRIPE_PRICE_ACCELERATOR_SETUP ?? "(hardcoded fallback: price_1TnzBMJJdy0crHI8LawdE6HC)",
+    empire_setup:           process.env.STRIPE_PRICE_EMPIRE_SETUP      ?? "(hardcoded fallback: price_1Tq7OgJJdy0crHI8Pnq5oyrv)",
+  };
+
+  const usingFallbackIds = !process.env.STRIPE_PRICE_ESSENTIALS;
+
+  res.json({
+    stripeKeyConfigured: configured,
+    stripeMode: mode,
+    usingHardcodedFallbackPriceIds: usingFallbackIds,
+    warning: mode === "live" && usingFallbackIds
+      ? "MISMATCH: STRIPE_SECRET_KEY is a LIVE key but price IDs are hardcoded TEST fallbacks. " +
+        "Set STRIPE_PRICE_ESSENTIALS, STRIPE_PRICE_ACCELERATOR, STRIPE_PRICE_EMPIRE, " +
+        "STRIPE_PRICE_ESSENTIALS_SETUP, STRIPE_PRICE_ACCELERATOR_SETUP, STRIPE_PRICE_EMPIRE_SETUP " +
+        "to your LIVE Stripe price IDs in environment secrets."
+      : mode === "test" && usingFallbackIds
+      ? "Using hardcoded TEST price IDs. Fine for development. Set STRIPE_PRICE_* env vars for explicit control."
+      : null,
+    priceIds,
+  });
+});
 
 function priceIdError(planName: string): string | null {
   const id = getSetupFeePrice(planName) ?? "";
@@ -103,7 +145,24 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
   const ghlApiKey = process.env.GHL_API_KEY;
   const ghlLocationId = process.env.GHL_LOCATION_ID;
 
-  // 2 — Resolve the one-time Stripe price for this plan + payment type.
+  // 2 — Warn early if the Stripe key is live but we're using hardcoded test price IDs.
+  //     This is the most common production misconfiguration: sk_live_... key + test price IDs.
+  const keyMode = stripeKeyMode();
+  const usingFallbackIds = !process.env.STRIPE_PRICE_ESSENTIALS;
+  if (keyMode === "live" && usingFallbackIds) {
+    req.log.error({ planName, keyMode }, "Enrollment: LIVE Stripe key but no STRIPE_PRICE_* env vars set — hardcoded test price IDs will be rejected by Stripe");
+    res.status(503).json({
+      error:
+        "Stripe is configured in LIVE mode but the price IDs are hardcoded test fallbacks. " +
+        "Go to your Stripe Dashboard (live mode) → Products and copy the Price IDs for each plan. " +
+        "Then set these environment secrets: STRIPE_PRICE_ESSENTIALS, STRIPE_PRICE_ACCELERATOR, " +
+        "STRIPE_PRICE_EMPIRE, STRIPE_PRICE_ESSENTIALS_SETUP, STRIPE_PRICE_ACCELERATOR_SETUP, " +
+        "STRIPE_PRICE_EMPIRE_SETUP. Redeploy after setting them.",
+    });
+    return;
+  }
+
+  // 3 — Resolve the one-time Stripe price for this plan + payment type.
   //     We ignore whatever price ID the frontend sent and always look up by plan+type.
   const setupFeePrice = getCheckoutPrice(planName, payment_type);
   if (!setupFeePrice) {
