@@ -12,19 +12,66 @@ import { updateProjectStatusInCRM } from "@/lib/crm";
 
 const CALENDLY_URL = "https://calendly.com/appguyofficial/30min";
 
-// ─── CRM placeholder functions ───────────────────────────────────────────────
-// TODO: replace console.log with GoHighLevel webhook endpoint.
-function sendRevisionRequestToCRM(payload: Record<string, unknown>) {
-  console.log("[CRM] sendRevisionRequestToCRM:", payload);
+// ─── CRM integration functions ───────────────────────────────────────────────
+async function sendRevisionRequestToCRM(payload: Record<string, unknown>) {
+  try {
+    await fetch("/api/ghl/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: payload.email,
+        appName: payload.appName,
+        tags: ["revision-requested"],
+      }),
+    });
+  } catch (err) {
+    console.error("sendRevisionRequestToCRM error:", err);
+  }
 }
-function sendDemoApprovalToCRM(payload: Record<string, unknown>) {
-  console.log("[CRM] sendDemoApprovalToCRM:", payload);
+async function sendDemoApprovalToCRM(payload: Record<string, unknown>) {
+  try {
+    await fetch("/api/ghl/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: payload.email,
+        appName: payload.appName,
+        tags: ["demo-approved"],
+      }),
+    });
+  } catch (err) {
+    console.error("sendDemoApprovalToCRM error:", err);
+  }
 }
-function sendFinalApprovalToCRM(payload: Record<string, unknown>) {
-  console.log("[CRM] sendFinalApprovalToCRM:", payload);
+async function sendFinalApprovalToCRM(payload: Record<string, unknown>) {
+  try {
+    await fetch("/api/ghl/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: payload.email,
+        appName: payload.appName,
+        tags: ["final-approved"],
+      }),
+    });
+  } catch (err) {
+    console.error("sendFinalApprovalToCRM error:", err);
+  }
 }
-function sendPublishingRequirementsToCRM(payload: Record<string, unknown>) {
-  console.log("[CRM] sendPublishingRequirementsToCRM:", payload);
+async function sendPublishingRequirementsToCRM(payload: Record<string, unknown>) {
+  try {
+    await fetch("/api/ghl/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: payload.publishContactEmail || payload.email,
+        appName: payload.appName,
+        tags: ["publishing-requirements-submitted"],
+      }),
+    });
+  } catch (err) {
+    console.error("sendPublishingRequirementsToCRM error:", err);
+  }
 }
 
 // ─── Stage order ──────────────────────────────────────────────────────────────
@@ -424,6 +471,9 @@ export default function Dashboard() {
       const data = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(data.error ?? "Approval failed");
 
+      // Send to GHL CRM
+      sendDemoApprovalToCRM({ email, appName: customization?.appName ?? "" });
+
       toast({
         title: "Demo approved successfully.",
         description: "Your demo has been approved. Revision Window is now active.",
@@ -436,7 +486,7 @@ export default function Dashboard() {
     } finally {
       setApprovingDemo(false);
     }
-  }, [email, toast, refreshClickupData]);
+  }, [email, toast, refreshClickupData, customization]);
 
   // Modals
   const [showDemoModal, setShowDemoModal] = useState(false);
@@ -502,7 +552,13 @@ export default function Dashboard() {
     {
       console.log("[Dashboard] Loading data for logged-in email:", em);
       fetch(`/api/enrollment/progress?email=${encodeURIComponent(em)}`)
-        .then(r => r.ok ? r.json() : null)
+        .then(r => {
+          if (r.status === 403) {
+            window.location.replace("/login");
+            return null;
+          }
+          return r.ok ? r.json() : null;
+        })
         .then((data: {
           record?: {
             full_name?: string;
@@ -540,7 +596,13 @@ export default function Dashboard() {
 
       // Always fetch onboarding status to pick up game selection persisted to the DB
       fetch(`/api/auth/onboarding-status?email=${encodeURIComponent(em)}`)
-        .then(r => r.ok ? r.json() : null)
+        .then(r => {
+          if (r.status === 403) {
+            window.location.replace("/login");
+            return null;
+          }
+          return r.ok ? r.json() : null;
+        })
         .then((data: { status?: { selected_game?: string } | null } | null) => {
           const selectedGame = data?.status?.selected_game;
           if (selectedGame) {
@@ -550,7 +612,13 @@ export default function Dashboard() {
         .catch(() => { /* non-fatal */ });
 
       fetch(`/api/enrollment/agreement-status?email=${encodeURIComponent(em)}`)
-        .then(r => r.ok ? r.json() : null)
+        .then(r => {
+          if (r.status === 403) {
+            window.location.replace("/login");
+            return null;
+          }
+          return r.ok ? r.json() : null;
+        })
         .then((data: { signed?: boolean; pdfUrl?: string; signedAt?: string } | null) => {
           if (data?.signed && data.pdfUrl) {
             setAgreementPdfUrl(data.pdfUrl);
@@ -582,7 +650,13 @@ export default function Dashboard() {
     // Fetch server-side stage (admin DB) — overrides localStorage.
     if (em) {
       fetch(`/api/projects/stage?email=${encodeURIComponent(em.toLowerCase())}`)
-        .then(r => r.ok ? r.json() : null)
+        .then(r => {
+          if (r.status === 403) {
+            window.location.replace("/login");
+            return null;
+          }
+          return r.ok ? r.json() : null;
+        })
         .then((data: { projectId?: string; currentStage?: string } | null) => {
           if (data?.projectId) {
             setProjectId(data.projectId);
@@ -681,9 +755,7 @@ export default function Dashboard() {
   // ── Approve Demo ──────────────────────────────────────────────────────────
   function confirmApproveDemo() {
     setShowDemoModal(false);
-    const payload = { clientName, email, appName: customization?.appName ?? "", approvedAt: new Date().toISOString() };
-    sendDemoApprovalToCRM(payload);
-    advanceTo("Final Approval");
+    approveDemo();
   }
 
   // ── Submit Revision Request ───────────────────────────────────────────────
@@ -949,32 +1021,47 @@ export default function Dashboard() {
       <div className="container mx-auto px-4 max-w-5xl relative z-10">
 
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-          <div className="flex items-center gap-3 mb-2 flex-wrap">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "hsl(142 76% 55%)" }} />
-              <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(142 76% 55%)" }}>
-                Client Portal — Live
-              </span>
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex justify-between items-start flex-wrap gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "hsl(142 76% 55%)" }} />
+                <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(142 76% 55%)" }}>
+                  Client Portal — Live
+                </span>
+              </div>
+              {clickupLoading && (
+                <span style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(218 16% 38%)", letterSpacing: "0.06em" }}>
+                  Syncing with ClickUp…
+                </span>
+              )}
+              {clickupData && !clickupLoading && (
+                <span style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", color: "hsl(35 90% 55%)", display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "hsl(35 90% 55%)", display: "inline-block" }} />
+                  ClickUp Live
+                </span>
+              )}
             </div>
-            {clickupLoading && (
-              <span style={{ fontFamily: "'Inter'", fontSize: 10, color: "hsl(218 16% 38%)", letterSpacing: "0.06em" }}>
-                Syncing with ClickUp…
-              </span>
-            )}
-            {clickupData && !clickupLoading && (
-              <span style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", color: "hsl(35 90% 55%)", display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "hsl(35 90% 55%)", display: "inline-block" }} />
-                ClickUp Live
-              </span>
-            )}
+            <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 8 }}>
+              {(clickupData?.clientName || clientName) ? `Welcome back, ${(clickupData?.clientName || clientName).split(" ")[0]}.` : "App Launch Dashboard"}
+            </h1>
+            <p style={{ fontFamily: "'Inter'", fontSize: 14, color: "hsl(218 16% 48%)", fontWeight: 300 }}>
+              {completedCount} of {timeline.length} launch stages complete.
+            </p>
           </div>
-          <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1.1, marginBottom: 8 }}>
-            {(clickupData?.clientName || clientName) ? `Welcome back, ${(clickupData?.clientName || clientName).split(" ")[0]}.` : "App Launch Dashboard"}
-          </h1>
-          <p style={{ fontFamily: "'Inter'", fontSize: 14, color: "hsl(218 16% 48%)", fontWeight: 300 }}>
-            {completedCount} of {timeline.length} launch stages complete.
-          </p>
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.removeItem("appSquadLoggedIn");
+              localStorage.removeItem("appSquadUserEmail");
+              localStorage.removeItem("appSquadEnrollmentEmail");
+              localStorage.removeItem("as_admin_auth");
+              window.location.replace("/login");
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 hover:bg-white/5 transition-all cursor-pointer"
+          >
+            Sign Out
+          </button>
         </motion.div>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -1270,7 +1357,7 @@ export default function Dashboard() {
                               ) : (
                                 /* ── Two action buttons ── */
                                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                  <button type="button" onClick={approvingDemo ? undefined : approveDemo}
+                                  <button type="button" onClick={() => setShowDemoModal(true)}
                                     disabled={approvingDemo}
                                     style={{
                                       display: "inline-flex", alignItems: "center", gap: 7,

@@ -356,7 +356,7 @@ export default function Enrollment() {
           selectedPlan,
           planName: plan.name,
           planTag: plan.tag,
-          successUrl: `${origin}${base}/onboarding/agreement?email=${encodeURIComponent(normalizedEmail)}`,
+          successUrl: `${origin}${base}/onboarding/agreement?email=${encodeURIComponent(normalizedEmail)}&session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${origin}${base}/enrollment?payment=cancelled`,
           package_name: plan.name,
           payment_type: paymentType,

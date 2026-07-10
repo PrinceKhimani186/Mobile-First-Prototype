@@ -27,6 +27,30 @@ function getSupabase() {
   }
 }
 
+async function verifyCustomerAccess(req: Request | any, email: string): Promise<boolean> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const sessionEmail = (req.session as any)?.customerEmail;
+  if (sessionEmail) {
+    return sessionEmail === normalizedEmail;
+  }
+
+  const supabase = getSupabase();
+  if (!supabase) return true;
+  try {
+    const { data } = await supabase
+      .from("app_users")
+      .select("password_hash")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+    if (data?.password_hash) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // Password hashing using Node built-in crypto — no extra packages needed
 const SALT_LEN = 16;
 const KEY_LEN  = 64;
@@ -116,6 +140,7 @@ router.post("/auth/save-password", async (req, res) => {
     }
 
     req.log.info({ email: normalizedEmail }, "Auth: password saved to Supabase");
+    (req.session as any).customerEmail = normalizedEmail;
     res.json({ ok: true });
   } catch (err) {
     req.log.error({ err }, "Auth: save-password unexpected error");
@@ -170,6 +195,7 @@ router.post("/auth/verify-login", async (req, res) => {
     }
 
     req.log.info({ email: normalizedEmail }, "Auth: Supabase login verified");
+    (req.session as any).customerEmail = normalizedEmail;
     res.json({ ok: true, role: data.role as string, fullName: data.full_name as string | null });
   } catch (err) {
     req.log.error({ err }, "Auth: verify-login unexpected error");
@@ -182,7 +208,13 @@ router.post("/auth/verify-login", async (req, res) => {
 router.get("/auth/onboarding-status", async (req, res) => {
   const email = (req.query as { email?: string }).email;
   if (!email) {
-    res.status(400).json({ error: "email required" });
+    res.status(400).json({ error: "email is required" });
+    return;
+  }
+  const normalizedEmail = email.trim().toLowerCase();
+  const hasAccess = await verifyCustomerAccess(req, normalizedEmail);
+  if (!hasAccess) {
+    res.status(403).json({ error: "Access denied. Unauthorized session." });
     return;
   }
   const supabase = getSupabase();
@@ -194,7 +226,7 @@ router.get("/auth/onboarding-status", async (req, res) => {
     const { data, error } = await supabase
       .from("app_users")
       .select("game_selection_completed, customization_form_completed, selected_game")
-      .eq("email", email.trim().toLowerCase())
+      .eq("email", normalizedEmail)
       .maybeSingle();
     if (error) {
       req.log.error({ err: error }, "Auth: onboarding-status query error");
@@ -217,7 +249,13 @@ router.post("/auth/update-onboarding", async (req, res) => {
     fields?: Record<string, unknown>;
   };
   if (!email || !fields) {
-    res.status(400).json({ error: "email and fields required" });
+    res.status(400).json({ error: "email and fields are required" });
+    return;
+  }
+  const normalizedEmail = email.trim().toLowerCase();
+  const hasAccess = await verifyCustomerAccess(req, normalizedEmail);
+  if (!hasAccess) {
+    res.status(403).json({ error: "Access denied. Unauthorized session." });
     return;
   }
   const supabase = getSupabase();
@@ -235,13 +273,13 @@ router.post("/auth/update-onboarding", async (req, res) => {
     const { error } = await supabase
       .from("app_users")
       .update(safe)
-      .eq("email", email.trim().toLowerCase());
+      .eq("email", normalizedEmail);
     if (error) {
       req.log.error({ err: error }, "Auth: update-onboarding error");
       res.status(500).json({ ok: false, error: error.message });
       return;
     }
-    req.log.info({ email: email.trim().toLowerCase(), fields: Object.keys(safe) }, "Auth: onboarding updated");
+    req.log.info({ email: normalizedEmail, fields: Object.keys(safe) }, "Auth: onboarding updated");
     res.json({ ok: true });
   } catch (err) {
     req.log.error({ err }, "Auth: update-onboarding unexpected error");

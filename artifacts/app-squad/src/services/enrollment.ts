@@ -330,11 +330,18 @@ export async function createZohoSignRequest(
 // ── Get progress ──────────────────────────────────────────────────────────────
 export async function getEnrollmentProgress(
   email: string,
+  sessionId?: string,
 ): Promise<{ record: EnrollmentRecord | null; error?: string }> {
   try {
-    const res = await fetch(`${BASE}/progress?email=${encodeURIComponent(email)}`, {
+    const url = sessionId
+      ? `${BASE}/progress?email=${encodeURIComponent(email)}&session_id=${encodeURIComponent(sessionId)}`
+      : `${BASE}/progress?email=${encodeURIComponent(email)}`;
+    const res = await fetch(url, {
       cache: "no-store",
     });
+    if (res.status === 403) {
+      return { record: null, error: "unauthorized" };
+    }
     const json = (await res.json()) as { record?: EnrollmentRecord; error?: string };
     return { record: json.record ?? null, error: json.error };
   } catch {
@@ -350,8 +357,8 @@ export function getOnboardingEmail(): string {
 
   return (
     emailFromUrl ||
-    localStorage.getItem("appSquadEnrollmentEmail") ||
     localStorage.getItem("appSquadUserEmail") ||
+    localStorage.getItem("appSquadEnrollmentEmail") ||
     ""
   ).trim().toLowerCase();
 }

@@ -162,19 +162,68 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
   // 3 — Create / update GHL contact (non-fatal)
   if (ghlApiKey && ghlLocationId) {
     try {
-      await fetch(`${GHL_BASE}/contacts/`, {
-        method: "POST",
-        headers: ghlHeaders(ghlApiKey),
-        body: JSON.stringify({
-          locationId: ghlLocationId,
-          firstName,
-          lastName,
-          email,
-          phone: phoneVal,
-          tags: ["enrollment-started"],
-        }),
-      });
-      req.log.info({ email }, "Enrollment: GHL contact created/updated");
+      const emailStr = email.trim().toLowerCase();
+      // Search first to avoid duplicate contacts
+      const searchUrl = `${GHL_BASE}/contacts/search/duplicate?locationId=${encodeURIComponent(ghlLocationId)}&email=${encodeURIComponent(emailStr)}`;
+      const searchRes = await fetch(searchUrl, { headers: ghlHeaders(ghlApiKey) });
+      let contactId: string | null = null;
+      if (searchRes.ok) {
+        const searchData = await searchRes.json() as { contact?: { id?: string } | null };
+        contactId = searchData?.contact?.id ?? null;
+      }
+
+      let resGhl;
+      const tagToApply = "enrollment-submitted";
+      if (contactId) {
+        // Update contact and add tag
+        req.log.info({ email: emailStr, contactId }, "Enrollment: GHL contact found — updating and adding tag");
+        resGhl = await fetch(`${GHL_BASE}/contacts/${contactId}`, {
+          method: "PUT",
+          headers: ghlHeaders(ghlApiKey),
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            email: emailStr,
+            phone: phoneVal,
+          }),
+        });
+
+        // Add tag specifically
+        await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+          method: "POST",
+          headers: ghlHeaders(ghlApiKey),
+          body: JSON.stringify({ tags: [tagToApply] }),
+        });
+      } else {
+        // Create contact
+        req.log.info({ email: emailStr }, "Enrollment: GHL contact not found — creating new one with tag");
+        resGhl = await fetch(`${GHL_BASE}/contacts/`, {
+          method: "POST",
+          headers: ghlHeaders(ghlApiKey),
+          body: JSON.stringify({
+            locationId: ghlLocationId,
+            firstName,
+            lastName,
+            email: emailStr,
+            phone: phoneVal,
+            tags: [tagToApply],
+          }),
+        });
+        if (resGhl.ok) {
+          const createData = await resGhl.json() as { contact?: { id?: string } };
+          contactId = createData?.contact?.id ?? null;
+        }
+      }
+
+      // Add safe logs only: email, GHL contact ID, tag being applied, success/error response
+      req.log.info({
+        email: emailStr,
+        contactId: contactId ?? "unknown",
+        tagApplied: tagToApply,
+        success: resGhl.ok,
+        status: resGhl.status
+      }, "Enrollment: GHL contact tag processing complete");
+
     } catch (ghlErr) {
       req.log.warn({ ghlErr }, "Enrollment: GHL contact upsert failed (non-fatal)");
     }

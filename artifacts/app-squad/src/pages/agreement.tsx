@@ -49,9 +49,22 @@ export default function Agreement() {
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const redirectedRef = useRef(false);
+  const zohoRequestInitiatedRef = useRef(false);
 
   const emailFromUrl = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("email") : "";
   const email = emailFromUrl || localStorage.getItem("appSquadEnrollmentEmail") || "";
+
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("[Agreement Page] agreement page mounted");
+  }, []);
+
+  useEffect(() => {
+    if (email) {
+      // eslint-disable-next-line no-console
+      console.log("[Agreement Page] email loaded:", email);
+    }
+  }, [email]);
 
   useEffect(() => {
     if (!email) {
@@ -61,16 +74,41 @@ export default function Agreement() {
     loadProgress();
   }, [email]);
 
-  function redirectToSetPassword(reason: string) {
+  function updateSignedState(val: boolean) {
+    // eslint-disable-next-line no-console
+    console.log("[Agreement Page] state updated - signed:", val);
+    setSigned(val);
+  }
+
+  async function handleOnboardingTransition(reason: string) {
     if (redirectedRef.current) return;
     redirectedRef.current = true;
+    // eslint-disable-next-line no-console
+    console.log(`[Agreement Page] redirect triggered (reason: ${reason})`);
     stopPolling();
     setRedirecting(true);
-    const target = `/set-password?email=${encodeURIComponent(email)}`;
-    // eslint-disable-next-line no-console
-    console.log(`[Zoho Sign] redirect target: ${target} (reason: ${reason})`);
-    localStorage.setItem("appSquadAgreementSigned", "true");
-    navigate(target);
+
+    try {
+      const { record } = await getEnrollmentProgress(email);
+      let target = `/onboarding/dashboard`;
+      if (record) {
+        if (!record.password_created) {
+          target = `/set-password?email=${encodeURIComponent(email)}`;
+        } else if (!record.game_selected) {
+          target = `/onboarding/game-selection`;
+        } else if (!record.customization_completed) {
+          target = `/onboarding/customization`;
+        }
+      }
+      // eslint-disable-next-line no-console
+      console.log(`[Agreement Page] transition target: ${target} (reason: ${reason})`);
+      localStorage.setItem("appSquadAgreementSigned", "true");
+      navigate(target);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[Agreement Page] failed to resolve transition target, using fallback:", err);
+      navigate(`/onboarding/game-selection`);
+    }
   }
 
   function stopPolling() {
@@ -81,6 +119,8 @@ export default function Agreement() {
   async function checkSignatureStatus(trigger: string) {
     if (redirectedRef.current) return;
     // eslint-disable-next-line no-console
+    console.log(`[Agreement Page] status checked for trigger: ${trigger}`);
+    // eslint-disable-next-line no-console
     console.log(`[Zoho Sign] agreement status polled (trigger: ${trigger})`, {
       email, requestId: requestIdRef.current,
     });
@@ -88,9 +128,9 @@ export default function Agreement() {
     if (result.signed) {
       // eslint-disable-next-line no-console
       console.log("[Zoho Sign] signing completion confirmed via poll — marking agreement_signed and redirecting");
-      setSigned(true);
+      updateSignedState(true);
       await queryClient.invalidateQueries({ queryKey: ["onboardingProgress", email] });
-      redirectToSetPassword("poll-confirmed");
+      handleOnboardingTransition("poll-confirmed");
     }
   }
 
@@ -168,7 +208,7 @@ export default function Agreement() {
 
       // Check if user is already signed in the DB
       if (record.agreement_signed) {
-        setSigned(true);
+        updateSignedState(true);
         localStorage.setItem("appSquadAgreementSigned", "true");
         if (record.document_url) {
           localStorage.setItem("appSquadAgreementPdfUrl", record.document_url);
@@ -177,7 +217,7 @@ export default function Agreement() {
         // is still relevant to the "stuck after signing" flow; other onboarding
         // steps route independently of the Zoho redirect fix.
         if (!record.password_created) {
-          setTimeout(() => redirectToSetPassword("already-signed-on-load"), 1200);
+          setTimeout(() => handleOnboardingTransition("already-signed-on-load"), 1200);
           return;
         }
         setTimeout(() => {
@@ -197,6 +237,15 @@ export default function Agreement() {
 
       fullNameRef.current = record.full_name || "";
 
+      if (zohoRequestInitiatedRef.current) {
+        // eslint-disable-next-line no-console
+        console.log("[Agreement Page] Zoho request already initiated, skipping duplicate creation");
+        return;
+      }
+      zohoRequestInitiatedRef.current = true;
+      // eslint-disable-next-line no-console
+      console.log("[Agreement Page] Zoho request creation initiated for:", email);
+
       // Create Zoho Sign Embedded signature session (template-based, auto-filled)
       const zohoRes = await createZohoSignRequest(
         email,
@@ -213,6 +262,8 @@ export default function Agreement() {
           requestIdRef.current = zohoRes.requestId;
           setRequestId(zohoRes.requestId);
         }
+        // eslint-disable-next-line no-console
+        console.log("[Agreement Page] Zoho request created. Request ID:", zohoRes.requestId);
         setEmbedUrl(zohoRes.embedUrl);
       } else {
         setError(zohoRes.error || "Failed to initialize secure signature session. Please reload or try again.");
@@ -364,11 +415,7 @@ export default function Agreement() {
                   </p>
                 </div>
 
-                {(error.toLowerCase().includes("limit") || 
-                  error.toLowerCase().includes("reached") || 
-                  error.includes("8111") ||
-                  error.toLowerCase().includes("maximum")) && 
-                 (window.location.hostname === "localhost" || 
+                {(window.location.hostname === "localhost" || 
                   window.location.hostname === "127.0.0.1" || 
                   import.meta.env.DEV || 
                   localStorage.getItem("appSquadDevMode") === "true" || 

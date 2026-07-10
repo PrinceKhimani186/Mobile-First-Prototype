@@ -38,18 +38,21 @@ router.get("/enrollment/agreement-status", async (req: Request, res: Response) =
     const normalizedEmail = email.trim().toLowerCase();
     
     // Check user_agreements table for latest version (1.0)
-    const { data: agreement, error: selectErr } = await supabase
+    const { data: agreements, error: selectErr } = await supabase
       .from("user_agreements")
       .select("pdf_url, signed_at")
       .eq("email", normalizedEmail)
       .eq("agreement_version", "1.0")
-      .maybeSingle();
+      .order("signed_at", { ascending: false })
+      .limit(1);
 
     if (selectErr) {
       logger.error({ selectErr, email }, "Agreement Status: Failed to query agreements");
       res.status(502).json({ error: "Database read failed" });
       return;
     }
+
+    const agreement = agreements?.[0] ?? null;
 
     if (agreement) {
       // Resolve storage path — handle both legacy full URLs and new path-only values

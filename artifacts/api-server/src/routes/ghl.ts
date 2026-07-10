@@ -56,18 +56,18 @@ async function getContactTags(contactId: string, apiKey: string): Promise<string
   }
 }
 
-async function deleteTagsFromContact(contactId: string, tags: string[], apiKey: string): Promise<void> {
-  if (!tags.length) return;
-  await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+async function deleteTagsFromContact(contactId: string, tags: string[], apiKey: string): Promise<Response | null> {
+  if (!tags.length) return null;
+  return await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
     method: "DELETE",
     headers: ghlHeaders(apiKey),
     body: JSON.stringify({ tags }),
   });
 }
 
-async function addTagsToContact(contactId: string, tags: string[], apiKey: string): Promise<void> {
-  if (!tags.length) return;
-  await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
+async function addTagsToContact(contactId: string, tags: string[], apiKey: string): Promise<Response | null> {
+  if (!tags.length) return null;
+  return await fetch(`${GHL_BASE}/contacts/${contactId}/tags`, {
     method: "POST",
     headers: ghlHeaders(apiKey),
     body: JSON.stringify({ tags }),
@@ -76,8 +76,10 @@ async function addTagsToContact(contactId: string, tags: string[], apiKey: strin
 
 async function replaceContactTags(contactId: string, newTags: string[], apiKey: string): Promise<void> {
   const existing = await getContactTags(contactId, apiKey);
-  if (existing.length) await deleteTagsFromContact(contactId, existing, apiKey);
-  if (newTags.length) await addTagsToContact(contactId, newTags, apiKey);
+  const tagsToAdd = newTags.filter(t => !existing.map(e => e.toLowerCase()).includes(t.toLowerCase()));
+  if (tagsToAdd.length) {
+    await addTagsToContact(contactId, tagsToAdd, apiKey);
+  }
 }
 
 async function generateProjectId(): Promise<string> {
@@ -150,7 +152,14 @@ router.post("/ghl/contact", async (req, res) => {
   }
 
   const customFieldsArray = toCustomFieldsArray(customFields);
-  const newTags: string[] = Array.isArray(tags) ? tags : [];
+  // Ensure "Onboarding-submitted" maps to lowercase "onboarding-submitted"
+  const newTags: string[] = (Array.isArray(tags) ? tags : []).map(t => {
+    const lower = String(t).trim().toLowerCase();
+    if (lower === "onboarding-submitted") {
+      return "onboarding-submitted";
+    }
+    return String(t).trim();
+  });
   const emailStr = String(email ?? "").trim().toLowerCase();
   const customerName = [firstName, lastName].filter(Boolean).join(" ");
 
@@ -169,19 +178,18 @@ router.post("/ghl/contact", async (req, res) => {
     ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
   };
 
-  const updatePayload = {
-    firstName: firstName ?? "",
-    lastName: lastName ?? "",
+  // Build update payload dynamically to only include non-empty values, preserving existing ones
+  const updatePayload: Record<string, any> = {
     email: emailStr,
-    phone: phone ?? "",
-    ...(customFieldsArray.length ? { customFields: customFieldsArray } : {}),
   };
+  if (firstName && String(firstName).trim() !== "") updatePayload.firstName = firstName;
+  if (lastName && String(lastName).trim() !== "") updatePayload.lastName = lastName;
+  if (phone && String(phone).trim() !== "") updatePayload.phone = phone;
+  if (customFieldsArray.length) {
+    updatePayload.customFields = customFieldsArray;
+  }
 
   try {
-    // Search first — this is the reliable dedup path. Relying on the create
-    // call to fail with a "duplicate" error was fragile (GHL doesn't always
-    // return meta.contactId on failure), which is what allowed duplicate
-    // contacts to be created for the same email.
     const existingId = await findGHLContactByEmail(emailStr, locationId, apiKey);
     req.log.info({ email: emailStr, found: !!existingId, contactId: existingId }, "GHL: search result for contact by email");
 
@@ -202,12 +210,34 @@ router.post("/ghl/contact", async (req, res) => {
         return;
       }
 
+      let tagSuccess = true;
+      let tagResponseStatus = 200;
+      let tagResponseBody = "No tags to update";
+
       if (newTags.length > 0) {
-        await replaceContactTags(existingId, newTags, apiKey);
-        req.log.info({ contactId: existingId, tags: newTags }, "GHL: tags replaced");
-      } else {
-        req.log.info({ contactId: existingId }, "GHL: no tags provided — existing tags preserved");
+        const existingTags = await getContactTags(existingId, apiKey);
+        const tagsToAdd = newTags.filter(t => !existingTags.map(e => e.toLowerCase()).includes(t.toLowerCase()));
+        if (tagsToAdd.length > 0) {
+          const tagRes = await addTagsToContact(existingId, tagsToAdd, apiKey);
+          if (tagRes) {
+            tagSuccess = tagRes.ok;
+            tagResponseStatus = tagRes.status;
+            tagResponseBody = await tagRes.text();
+          }
+        } else {
+          tagResponseBody = "Tags already present";
+        }
       }
+
+      // Safe logs only: email, GHL contact ID, tag being applied, success/error response
+      req.log.info({
+        email: emailStr,
+        contactId: existingId,
+        tagsApplied: newTags,
+        success: tagSuccess,
+        responseStatus: tagResponseStatus,
+        responseBody: tagResponseBody.slice(0, 200)
+      }, "GHL: contact tag processing complete");
 
       // Upsert project in DB
       await upsertProject({
@@ -241,9 +271,6 @@ router.post("/ghl/contact", async (req, res) => {
     };
 
     if (!createRes.ok) {
-      // GHL can still race us and report a duplicate here (e.g. a concurrent
-      // request created the contact between our search and this create call).
-      // Fall back to the id it reports rather than surfacing an error.
       const raceId = createData?.meta?.contactId;
       if (raceId) {
         req.log.warn({ email: emailStr, contactId: raceId }, "GHL: create raced with an existing contact — updating instead");
@@ -255,9 +282,34 @@ router.post("/ghl/contact", async (req, res) => {
         });
         const updateData = await updateRes.json();
 
+        let tagSuccess = true;
+        let tagResponseStatus = 200;
+        let tagResponseBody = "No tags to update";
+
         if (newTags.length > 0) {
-          await replaceContactTags(raceId, newTags, apiKey);
+          const existingTags = await getContactTags(raceId, apiKey);
+          const tagsToAdd = newTags.filter(t => !existingTags.map(e => e.toLowerCase()).includes(t.toLowerCase()));
+          if (tagsToAdd.length > 0) {
+            const tagRes = await addTagsToContact(raceId, tagsToAdd, apiKey);
+            if (tagRes) {
+              tagSuccess = tagRes.ok;
+              tagResponseStatus = tagRes.status;
+              tagResponseBody = await tagRes.text();
+            }
+          } else {
+            tagResponseBody = "Tags already present";
+          }
         }
+
+        // Safe logs only: email, GHL contact ID, tag being applied, success/error response
+        req.log.info({
+          email: emailStr,
+          contactId: raceId,
+          tagsApplied: newTags,
+          success: tagSuccess,
+          responseStatus: tagResponseStatus,
+          responseBody: tagResponseBody.slice(0, 200)
+        }, "GHL: contact tag processing complete");
 
         await upsertProject({
           email: emailStr,
@@ -281,6 +333,16 @@ router.post("/ghl/contact", async (req, res) => {
 
     const newContactId = createData?.contact?.id ?? createData?.meta?.contactId;
     req.log.info({ email: emailStr, contactId: newContactId }, "GHL: new contact created");
+
+    // Safe logs only: email, GHL contact ID, tag being applied, success/error response
+    req.log.info({
+      email: emailStr,
+      contactId: newContactId ?? "unknown",
+      tagsApplied: newTags,
+      success: true,
+      responseStatus: createRes.status,
+      responseBody: "Created contact with tags successfully"
+    }, "GHL: contact tag processing complete");
 
     // Upsert project in DB
     await upsertProject({

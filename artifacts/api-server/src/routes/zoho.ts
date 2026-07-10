@@ -4,6 +4,9 @@ import { generateAgreementPDF } from "../lib/pdf";
 import { createClient } from "@supabase/supabase-js";
 import * as fs from "fs";
 import * as path from "path";
+import { db, projectsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import crypto from "crypto";
 
 const router: IRouter = Router();
 
@@ -1077,8 +1080,122 @@ async function finalizeSignedAgreement(params: {
   const { error: updateErr } = await supabase.from("customer_enrollment").update({ agreement_signed: true, document_url: storagePath, document_name: "Enrollment Agreement.pdf", onboarding_status: "agreement_signed", updated_at: timestamp }).eq("email", normalizedEmail);
   if (updateErr) { logger.error({ updateErr, source }, `Zoho ${source}: failed to update enrollment progress status`); return { ok: false, error: "Failed to update enrollment progress status" }; }
 
+  // Keep local Postgres in sync
+  try {
+    const [existing] = await db
+      .select()
+      .from(projectsTable)
+      .where(eq(projectsTable.email, normalizedEmail));
+
+    if (!existing) {
+      const projectId = `AS-${String(Date.now()).slice(-3)}`;
+      await db.insert(projectsTable).values({
+        projectId,
+        customerName: fullName || "Client",
+        email: normalizedEmail,
+        package: enrolledPackage || "",
+        currentStage: "Project Received",
+        notes: "",
+      });
+      logger.info({ email: normalizedEmail, source }, `Zoho ${source}: local Postgres project created`);
+    } else {
+      await db
+        .update(projectsTable)
+        .set({
+          updatedAt: new Date(),
+          package: enrolledPackage || existing.package || undefined,
+        })
+        .where(eq(projectsTable.email, normalizedEmail));
+      logger.info({ email: normalizedEmail, source }, `Zoho ${source}: local Postgres project updated`);
+    }
+  } catch (localErr) {
+    logger.error({ localErr, email: normalizedEmail, source }, `Zoho ${source}: failed to update local Postgres`);
+  }
+
   logger.info({ email: normalizedEmail, requestId, package: enrolledPackage, paymentOption: enrolledPaymentOption, source }, `Zoho ${source}: Supabase updated — agreement_signed=true, onboarding_status=agreement_signed — customer can now proceed to set password`);
   return { ok: true, storagePath };
+}
+
+// ── Webhook Helpers ──────────────────────────────────────────────────────────
+
+function verifyZohoWebhookSignature(req: Request): boolean {
+  const secret = process.env.ZOHO_SIGN_WEBHOOK_SECRET;
+  if (!secret) {
+    logger.warn("Zoho Webhook verification: ZOHO_SIGN_WEBHOOK_SECRET is not configured. Skipping signature check.");
+    return true;
+  }
+  const signature = req.headers["x-zs-webhook-signature"] || req.headers["X-ZS-Webhook-Signature"];
+  if (!signature) {
+    logger.error("Zoho Webhook verification: Missing signature header");
+    return false;
+  }
+  const rawBody = (req as any).rawBody;
+  if (!rawBody) {
+    logger.error("Zoho Webhook verification: rawBody not captured in express");
+    return false;
+  }
+  try {
+    const hmac = crypto.createHmac("sha256", secret);
+    hmac.update(rawBody);
+    const expected = hmac.digest("base64");
+    if (signature === expected) {
+      return true;
+    }
+    logger.error({ signature, expected }, "Zoho Webhook verification: signature mismatch");
+    return false;
+  } catch (err) {
+    logger.error({ err }, "Zoho Webhook verification: exception during check");
+    return false;
+  }
+}
+
+async function syncAgreementSignedToGHL(email: string) {
+  const apiKey = process.env.GHL_API_KEY;
+  const locationId = process.env.GHL_LOCATION_ID;
+  if (!apiKey || !locationId) {
+    logger.info("GHL sync: credentials not configured, skipping tag sync");
+    return;
+  }
+  try {
+    const emailStr = email.trim().toLowerCase();
+    // 1. Search contact
+    const searchUrl = `https://services.leadconnectorhq.com/contacts/search/duplicate?locationId=${encodeURIComponent(locationId)}&email=${encodeURIComponent(emailStr)}`;
+    const searchRes = await fetch(searchUrl, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Version: "2021-07-28",
+        "Content-Type": "application/json",
+      }
+    });
+    if (!searchRes.ok) {
+      logger.warn({ status: searchRes.status }, "GHL sync: search request failed");
+      return;
+    }
+    const searchData = (await searchRes.json()) as { contact?: { id?: string } | null };
+    const contactId = searchData?.contact?.id;
+    if (!contactId) {
+      logger.info({ email: emailStr }, "GHL sync: contact not found in GHL");
+      return;
+    }
+
+    // 2. Add tag "agreement-signed"
+    const tagRes = await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}/tags`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Version: "2021-07-28",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ tags: ["agreement-signed"] }),
+    });
+    if (tagRes.ok) {
+      logger.info({ email: emailStr, contactId }, "GHL sync: added agreement-signed tag successfully");
+    } else {
+      logger.error({ status: tagRes.status, email: emailStr }, "GHL sync: failed to add tag");
+    }
+  } catch (err) {
+    logger.error({ err, email }, "GHL sync: unexpected error");
+  }
 }
 
 // POST /api/zoho/webhook
@@ -1086,6 +1203,13 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
   logger.info({ method: req.method, url: req.originalUrl, headers: req.headers, body: req.body, query: req.query }, "Zoho Webhook received (POST)");
 
   try {
+    // 1. Verify the webhook signature
+    const isVerified = verifyZohoWebhookSignature(req);
+    if (!isVerified) {
+      res.status(401).json({ error: "Signature verification failed" });
+      return;
+    }
+
     const requests = req.body?.requests;
     const notifications = req.body?.notifications;
 
@@ -1105,15 +1229,38 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
 
     const requestId = requests.request_id;
     const signerAction = requests.actions?.find((a: any) => a.action_type === "SIGN");
-    const email = signerAction?.recipient_email;
-    const fullName = signerAction?.recipient_name || "Client";
+    let email = signerAction?.recipient_email;
+    let fullName = signerAction?.recipient_name || "Client";
 
-    if (!email || !requestId) {
-      logger.error({ requests }, "Zoho Webhook: missing signer email or request ID");
-      res.status(400).json({ error: "Missing email or request ID" });
+    if (!requestId) {
+      logger.error({ requests }, "Zoho Webhook: missing request ID");
+      res.status(400).json({ error: "Missing request ID" });
       return;
     }
 
+    // 2. Find the client using request_id or signer email
+    if (!email) {
+      const supabase = getSupabase();
+      if (supabase) {
+        const { data } = await supabase
+          .from("customer_enrollment")
+          .select("email, full_name")
+          .eq("agreement_contract_id", requestId.toString())
+          .maybeSingle();
+        if (data?.email) {
+          email = data.email;
+          fullName = data.full_name || fullName;
+        }
+      }
+    }
+
+    if (!email) {
+      logger.error({ requestId }, "Zoho Webhook: could not resolve client email from signer action or agreement_contract_id");
+      res.status(400).json({ error: "Could not resolve client email" });
+      return;
+    }
+
+    // 3. Process completion (Update database, mark agreementSigned = true, etc.)
     const result = await finalizeSignedAgreement({
       requestId: requestId.toString(),
       email,
@@ -1123,10 +1270,17 @@ router.post("/zoho/webhook", async (req: Request, res: Response) => {
     });
 
     if (!result.ok) {
+      logger.error({ result, email, requestId }, "Zoho Webhook: failed to finalize signed agreement");
       res.status(502).json({ error: result.error || "Failed to process webhook" });
       return;
     }
 
+    // 4. Trigger GHL sync asynchronously (non-blocking)
+    syncAgreementSignedToGHL(email).catch(ghlErr => {
+      logger.error({ ghlErr, email }, "Zoho Webhook: GHL sync failed");
+    });
+
+    // 5. Return HTTP 200 immediately after processing
     res.status(200).json({ success: true, message: "Agreement updated successfully" });
 
   } catch (err) {
@@ -1422,6 +1576,25 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
     }
 
     logger.info({ email: normalizedEmail, requestId, templateId, packageId, paymentType }, "Zoho Sign: embedded signing link generated");
+
+    // Save generated requestId as agreement_contract_id in Supabase
+    try {
+      const supabase = getSupabase();
+      if (supabase && normalizedEmail && requestId) {
+        const { error: saveErr } = await supabase
+          .from("customer_enrollment")
+          .update({ agreement_contract_id: requestId.toString() })
+          .eq("email", normalizedEmail);
+        if (saveErr) {
+          logger.error({ saveErr, email: normalizedEmail, requestId }, "Zoho Sign: failed to save agreement_contract_id to Supabase");
+        } else {
+          logger.info({ email: normalizedEmail, requestId }, "Zoho Sign: saved agreement_contract_id to Supabase");
+        }
+      }
+    } catch (saveErr) {
+      logger.warn({ saveErr }, "Zoho Sign: failed to save agreement_contract_id to database (non-fatal)");
+    }
+
     res.json({ success: true, embedUrl: signUrl, requestId });
 
   } catch (err) {

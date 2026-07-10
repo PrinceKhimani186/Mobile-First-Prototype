@@ -53,8 +53,12 @@ export default function SetPassword() {
 
   // Prefill email — prefer URL param, then localStorage, then stored pending
   useEffect(() => {
-    const stored = getOnboardingEmail();
-    if (stored) setEmail(stored);
+    if (emailFromUrl) {
+      setEmail(emailFromUrl);
+    } else {
+      const stored = getOnboardingEmail();
+      if (stored) setEmail(stored);
+    }
   }, [emailFromUrl]);
 
   function validate(): boolean {
@@ -74,7 +78,16 @@ export default function SetPassword() {
 
     setLoading(true);
     try {
-      const normalizedEmail = email.trim().toLowerCase();
+      const targetEmail = emailFromUrl || email;
+      const normalizedEmail = targetEmail.trim().toLowerCase();
+
+      // Log identifiers
+      console.log("[SetPassword] Submitting password set. Email from URL:", emailFromUrl, "Target email:", normalizedEmail);
+
+      // Force-logout any existing stale session so guards do not auto-redirect incorrectly
+      localStorage.removeItem("appSquadLoggedIn");
+      localStorage.removeItem("appSquadUserEmail");
+      localStorage.removeItem("as_admin_auth");
 
       // Save credentials to Supabase (primary store)
       try {
@@ -91,6 +104,7 @@ export default function SetPassword() {
           const err = await saveRes.json().catch(() => ({})) as { error?: string };
           throw new Error(err.error ?? "Failed to save password");
         }
+        console.log("[SetPassword] Credentials saved to app_users for:", normalizedEmail);
       } catch (err) {
         // If Supabase is unreachable fall back to localStorage only
         console.warn("[Auth] save-password API failed, using localStorage fallback:", err);
@@ -98,6 +112,11 @@ export default function SetPassword() {
 
       // Mark password_created = true in customer_enrollment (source of truth for route guards)
       await markPasswordCreated(normalizedEmail).catch(() => {});
+      console.log("[SetPassword] password_created marked as true in customer_enrollment");
+
+      // Get enrollment progress to log onboarding_status
+      const progress = await getEnrollmentProgress(normalizedEmail).catch(() => null);
+      console.log("[SetPassword] Onboarding status after password creation:", progress?.record?.onboarding_status || "unknown");
 
       // Keep localStorage as offline/fallback credential store
       localStorage.setItem(
@@ -115,11 +134,17 @@ export default function SetPassword() {
 
       setDone(true);
 
-      // Save email for pre-filling the login form
-      localStorage.setItem("appSquadPrefillEmail", normalizedEmail);
+      // Auto login the user on the frontend
+      localStorage.setItem("appSquadLoggedIn", "true");
+      localStorage.setItem("appSquadUserEmail", normalizedEmail);
+      localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
+      localStorage.removeItem("appSquadPrefillEmail");
+
+      const redirectTarget = `/onboarding/agreement?email=${encodeURIComponent(normalizedEmail)}`;
+      console.log("[SetPassword] Auto-logged in! Redirecting to next route:", redirectTarget);
 
       setTimeout(() => {
-        navigate(`/login?email=${encodeURIComponent(normalizedEmail)}`);
+        navigate(redirectTarget);
       }, 2200);
     } catch (err) {
       setErrors({ password: (err as Error).message || "Something went wrong. Please try again." });

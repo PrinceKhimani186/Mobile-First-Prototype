@@ -77,7 +77,7 @@ const resolveEnrollmentUrl = (route: string) => {
                   window.location.hostname === "127.0.0.1" || 
                   window.location.hostname.startsWith("192.168.");
   if (isLocal) {
-    return `http://${window.location.hostname}:22474${route}`;
+    return `http://${window.location.hostname}:5173${route}`;
   }
   return route;
 };

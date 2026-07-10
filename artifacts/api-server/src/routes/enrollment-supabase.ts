@@ -1,5 +1,8 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { createClient, type SupabaseClient, type PostgrestError } from "@supabase/supabase-js";
+import { db, projectsTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
+import Stripe from "stripe";
 
 const router: IRouter = Router();
 
@@ -43,6 +46,235 @@ function getSupabase(): SupabaseClient | null {
   }
 }
 
+async function syncToLocalPostgres(email: string, fields: Record<string, any>) {
+  try {
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // Check if project exists in local Postgres
+    const [existing] = await db
+      .select()
+      .from(projectsTable)
+      .where(eq(projectsTable.email, normalizedEmail));
+
+    const customerName = fields.full_name || fields.fullName || existing?.customerName || "";
+    const phone = fields.phone || existing?.phone || "";
+    const source = fields.source || existing?.source || "Direct";
+    const appName = fields.app_name || fields.appName || existing?.appName || "";
+    const gameTemplate = fields.game_type || fields.gameType || fields.gameTemplate || existing?.gameTemplate || "";
+    const selectedPackage = fields.selected_package || fields.selectedPackage || fields.package || existing?.package || "";
+
+    if (!existing) {
+      // Create new local project
+      const projectId = `AS-${String(Date.now()).slice(-3)}`;
+      await db.insert(projectsTable).values({
+        projectId,
+        customerName,
+        email: normalizedEmail,
+        phone,
+        source,
+        appName,
+        gameTemplate,
+        package: selectedPackage,
+        currentStage: "Project Received",
+        notes: "",
+      });
+    } else {
+      // Update existing local project
+      await db
+        .update(projectsTable)
+        .set({
+          customerName,
+          phone,
+          source,
+          appName: appName || undefined,
+          gameTemplate: gameTemplate || undefined,
+          package: selectedPackage || undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(projectsTable.email, normalizedEmail));
+    }
+  } catch (err) {
+    console.error("Failed to sync project to local Postgres:", err);
+  }
+}
+
+interface GHLCustomField {
+  id: string;
+  value: any;
+}
+
+async function syncWithGHL(
+  email: string,
+  supabaseRecord: any,
+  supabaseClient: SupabaseClient,
+  log: any
+): Promise<any> {
+  const apiKey = process.env.GHL_API_KEY;
+  const locationId = process.env.GHL_LOCATION_ID;
+  if (!apiKey || !locationId) {
+    log.info("syncWithGHL: GHL credentials not configured — skipping direct sync");
+    return supabaseRecord;
+  }
+
+  try {
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // 1. Search for contact by email
+    const searchUrl = `https://services.leadconnectorhq.com/contacts/search/duplicate?locationId=${encodeURIComponent(locationId)}&email=${encodeURIComponent(normalizedEmail)}`;
+    const searchRes = await fetch(searchUrl, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Version: "2021-07-28",
+        "Content-Type": "application/json",
+      }
+    });
+
+    if (!searchRes.ok) {
+      log.warn({ status: searchRes.status }, "syncWithGHL: GHL search request failed");
+      return supabaseRecord;
+    }
+
+    const searchData = (await searchRes.json()) as { contact?: { id?: string } | null };
+    const contactId = searchData?.contact?.id;
+    if (!contactId) {
+      log.info({ email: normalizedEmail }, "syncWithGHL: No contact found in GHL");
+      return supabaseRecord;
+    }
+
+    // 2. Fetch full contact details
+    const detailUrl = `https://services.leadconnectorhq.com/contacts/${contactId}`;
+    const detailRes = await fetch(detailUrl, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        Version: "2021-07-28",
+        "Content-Type": "application/json",
+      }
+    });
+
+    if (!detailRes.ok) {
+      log.warn({ status: detailRes.status }, "syncWithGHL: GHL details request failed");
+      return supabaseRecord;
+    }
+
+    const detailData = (await detailRes.json()) as {
+      contact?: {
+        phone?: string;
+        customFields?: GHLCustomField[];
+      };
+    };
+    const contact = detailData?.contact;
+    if (!contact) return supabaseRecord;
+
+    const ghlPhone = contact.phone ? contact.phone.trim() : null;
+    const ghlAppName = getGHLFieldValue(contact.customFields, "FZBa9ADCLKQWPhmEIk6j");
+    const ghlTagline = getGHLFieldValue(contact.customFields, "rhBCPC8RdX09mtNGl8r6");
+    const ghlMonetization = getGHLFieldValue(contact.customFields, "HHedLCiTwIT3U9r0Azs6");
+    const ghlGameType = getGHLFieldValue(contact.customFields, "R6LEvxoM1oh7RuIi7059");
+
+    // 3. Compare and compute updates for Supabase
+    const updates: Record<string, any> = {};
+    if (ghlPhone && !supabaseRecord.phone) updates.phone = ghlPhone;
+    if (ghlAppName && !supabaseRecord.app_name) updates.app_name = ghlAppName;
+    if (ghlTagline && !supabaseRecord.tagline) updates.tagline = ghlTagline;
+    if (ghlMonetization && !supabaseRecord.monetization) updates.monetization = ghlMonetization;
+    if (ghlGameType && !supabaseRecord.game_type) updates.game_type = ghlGameType;
+
+    if (Object.keys(updates).length > 0) {
+      log.info({ email: normalizedEmail, updates }, "syncWithGHL: Syncing GHL custom fields to Supabase");
+      
+      const { data: updatedRecord, error } = await supabaseClient
+        .from("customer_enrollment")
+        .update(updates)
+        .eq("email", normalizedEmail)
+        .select()
+        .maybeSingle();
+
+      if (error) {
+        log.error({ err: error }, "syncWithGHL: Failed to update Supabase record");
+      } else if (updatedRecord) {
+        // Keep local Postgres in sync
+        await syncToLocalPostgres(normalizedEmail, updates);
+        return updatedRecord;
+      }
+    }
+  } catch (err) {
+    log.error({ err }, "syncWithGHL: Unexpected error during synchronization");
+  }
+
+  return supabaseRecord;
+}
+
+function getGHLFieldValue(customFields: GHLCustomField[] | undefined, fieldId: string): string | null {
+  if (!customFields || !Array.isArray(customFields)) return null;
+  const found = customFields.find(f => f.id === fieldId);
+  return found?.value ? String(found.value).trim() : null;
+}
+
+async function verifyCustomerAccess(req: Request | any, email: string): Promise<boolean> {
+  const normalizedEmail = email.trim().toLowerCase();
+  const sessionEmail = (req.session as any)?.customerEmail;
+  
+  req.log.info({
+    email: normalizedEmail,
+    sessionEmail,
+    query: req.query,
+    body: req.body,
+  }, "verifyCustomerAccess: entry");
+
+  if (sessionEmail) {
+    const matched = sessionEmail === normalizedEmail;
+    req.log.info({ email: normalizedEmail, sessionEmail, matched }, "verifyCustomerAccess: sessionEmail check completed");
+    return matched;
+  }
+
+  // Check if request is returning from Stripe success with valid session_id
+  const sessionId = req.query.session_id || req.body.session_id;
+  req.log.info({ email: normalizedEmail, sessionId }, "verifyCustomerAccess: checking sessionId parameter");
+  if (sessionId && typeof sessionId === "string" && sessionId.startsWith("cs_")) {
+    try {
+      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      if (stripeKey) {
+        const stripe = new Stripe(stripeKey);
+        const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
+        const stripeEmail = stripeSession.customer_details?.email || stripeSession.metadata?.email || stripeSession.customer_email;
+        req.log.info({
+          email: normalizedEmail,
+          stripeEmail,
+          paymentStatus: stripeSession.payment_status,
+        }, "verifyCustomerAccess: Stripe checkout session retrieved");
+        if (stripeSession.payment_status === "paid" && stripeEmail?.trim().toLowerCase() === normalizedEmail) {
+          req.log.info({ email: normalizedEmail, sessionId }, "verifyCustomerAccess: Stripe checkout session verified, establishing backend session");
+          (req.session as any).customerEmail = normalizedEmail;
+          return true;
+        }
+      }
+    } catch (err) {
+      req.log.error({ err, sessionId }, "verifyCustomerAccess: failed to verify Stripe checkout session");
+    }
+  }
+
+  const supabase = getSupabase();
+  req.log.info({ email: normalizedEmail, hasSupabase: !!supabase }, "verifyCustomerAccess: checking Supabase client");
+  if (!supabase) return true;
+  try {
+    const { data, error } = await supabase
+      .from("app_users")
+      .select("password_hash")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+    req.log.info({ email: normalizedEmail, data, error }, "verifyCustomerAccess: app_users query finished");
+    if (data?.password_hash) {
+      req.log.info({ email: normalizedEmail }, "verifyCustomerAccess: access denied because user has a password and is not authenticated");
+      return false;
+    }
+    req.log.info({ email: normalizedEmail }, "verifyCustomerAccess: access granted (no password created yet)");
+    return true;
+  } catch (err) {
+    req.log.error({ err, email: normalizedEmail }, "verifyCustomerAccess: Supabase query exception");
+    return false;
+  }
+}
+
 // ── POST /api/enrollment/upload-document ──────────────────────────────────────
 // Accepts base64-encoded file content and uploads it to Supabase Storage.
 router.post("/enrollment/upload-document", async (req: Request, res: Response) => {
@@ -67,10 +299,17 @@ router.post("/enrollment/upload-document", async (req: Request, res: Response) =
     return;
   }
 
+  const normalizedEmail = email.trim().toLowerCase();
+  const hasAccess = await verifyCustomerAccess(req, normalizedEmail);
+  if (!hasAccess) {
+    res.status(403).json({ error: "Access denied. Unauthorized session." });
+    return;
+  }
+
   try {
     const buffer = Buffer.from(base64, "base64");
     const safeName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-    const storagePath = `${email.trim().toLowerCase()}/${safeName}`;
+    const storagePath = `${normalizedEmail}/${safeName}`;
 
     const { error } = await supabase.storage
       .from("customer-documents")
@@ -171,6 +410,7 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
 
       if (!error) {
         req.log.info({ email: normalizedEmail }, "enrollment/init: record upserted");
+        await syncToLocalPostgres(normalizedEmail, payload);
         res.json({ ok: true });
         return;
       }
@@ -218,6 +458,13 @@ router.post("/enrollment/update", async (req: Request, res: Response) => {
     return;
   }
 
+  const normalizedEmail = email.trim().toLowerCase();
+  const hasAccess = await verifyCustomerAccess(req, normalizedEmail);
+  if (!hasAccess) {
+    res.status(403).json({ error: "Access denied. Unauthorized session." });
+    return;
+  }
+
   const ALLOWED = new Set([
     "selected_package",
     "payment_status",
@@ -251,7 +498,6 @@ router.post("/enrollment/update", async (req: Request, res: Response) => {
     return;
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
   req.log.info({ email: normalizedEmail, safeFields }, "enrollment/update: request received");
 
   const updateFields: Record<string, unknown> = { ...safeFields };
@@ -274,6 +520,7 @@ router.post("/enrollment/update", async (req: Request, res: Response) => {
 
       if (!error) {
         req.log.info({ email: normalizedEmail, safeFields: updateFields }, "enrollment/update: fields updated");
+        await syncToLocalPostgres(normalizedEmail, updateFields);
         res.json({ ok: true });
         return;
       }
@@ -311,13 +558,19 @@ router.get("/enrollment/progress", async (req: Request, res: Response) => {
     return;
   }
 
-  const email = req.query["email"] as string | undefined;
+  const { email } = req.query as { email?: string };
   if (!email) {
-    res.status(400).json({ error: "email query param is required" });
+    res.status(400).json({ error: "email is required" });
     return;
   }
 
   const normalizedEmail = email.trim().toLowerCase();
+  const hasAccess = await verifyCustomerAccess(req, normalizedEmail);
+  if (!hasAccess) {
+    res.status(403).json({ error: "Access denied. Unauthorized session." });
+    return;
+  }
+
   req.log.info({ email: normalizedEmail }, "enrollment/progress: looking up record for logged-in email");
 
   try {
@@ -333,19 +586,24 @@ router.get("/enrollment/progress", async (req: Request, res: Response) => {
       return;
     }
 
+    let record = data ?? null;
+    if (record) {
+      record = await syncWithGHL(normalizedEmail, record, supabase, req.log);
+    }
+
     req.log.info(
       {
         email: normalizedEmail,
-        found: !!data,
-        fullName: data?.full_name ?? null,
-        gameType: data?.game_type ?? null,
-        appName: data?.app_name ?? null,
-        selectedPackage: data?.selected_package ?? null,
+        found: !!record,
+        fullName: record?.full_name ?? null,
+        gameType: record?.game_type ?? null,
+        appName: record?.app_name ?? null,
+        selectedPackage: record?.selected_package ?? null,
       },
-      data ? "enrollment/progress: dashboard data returned" : "enrollment/progress: no enrollment record found for this email"
+      record ? "enrollment/progress: dashboard data returned" : "enrollment/progress: no enrollment record found for this email"
     );
 
-    res.json({ record: data ?? null });
+    res.json({ record });
   } catch (err) {
     req.log.error({ err }, "enrollment/progress: unexpected error");
     res.status(500).json({ error: "Unable to connect to the database." });
