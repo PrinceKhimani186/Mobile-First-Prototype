@@ -73,13 +73,17 @@ function ScaleIn({ children, delay = 0, style = {} }: { children: React.ReactNod
 }
 
 const resolveEnrollmentUrl = (route: string) => {
-  const isLocal = window.location.hostname === "localhost" || 
-                  window.location.hostname === "127.0.0.1" || 
-                  window.location.hostname.startsWith("192.168.");
-  if (isLocal) {
-    return `http://${window.location.hostname}:5173${route}`;
-  }
-  return route;
+  return `${window.location.origin}${route}`;
+};
+
+const openEnrollmentUrl = (url: string) => {
+  const a = document.createElement("a");
+  a.href = url;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 };
 
 /* Label pill — no section numbers */
@@ -1002,11 +1006,12 @@ export default function Presentation() {
 
                   {/* CTA */}
                   <button
+                    type="button"
                     onClick={() => {
                       const enrollType = paymentType === "paid_in_full" ? "subscription" : "monthly";
                       localStorage.setItem("appSquadEnrollmentPaymentType", enrollType);
                       localStorage.setItem("appSquadSelectedPackage", pkg.id);
-                      window.open(resolveEnrollmentUrl(`${pkg.route}&type=${enrollType}`), "_blank");
+                      openEnrollmentUrl(resolveEnrollmentUrl(`${pkg.route}&type=${enrollType}`));
                     }}
                     style={{
                       marginTop: 44,
@@ -1203,7 +1208,8 @@ export default function Presentation() {
           {/* Main CTA */}
           <FadeUp delay={0.25}>
             <button
-              onClick={() => window.open(resolveEnrollmentUrl("/enrollment"), "_blank")}
+              type="button"
+              onClick={() => openEnrollmentUrl(resolveEnrollmentUrl("/enrollment"))}
               style={{ ...goldBtn, fontSize: 20, padding: "28px 72px" }}
               onMouseEnter={e => { e.currentTarget.style.opacity = "0.9"; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "translateY(0)"; }}>
