@@ -423,7 +423,7 @@ const PACKAGES = [
   },
 ];
 
-const packagePricing = {e
+const packagePricing = {
   paid_in_full: {
     essentials: { priceText: "$2,497", subtext: "Paid In Full" },
     accelerator: { priceText: "$4,997", subtext: "Paid In Full" },

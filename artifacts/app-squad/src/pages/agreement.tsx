@@ -111,6 +111,12 @@ export default function Agreement() {
     }
   }
 
+  function redirectToSetPassword(reason: string) {
+    // eslint-disable-next-line no-console
+    console.log(`[Agreement Page] manual redirect to set-password (reason: ${reason})`);
+    navigate(`/set-password?email=${encodeURIComponent(email)}`);
+  }
+
   function stopPolling() {
     if (pollIntervalRef.current) { clearInterval(pollIntervalRef.current); pollIntervalRef.current = null; }
     if (pollTimeoutRef.current) { clearTimeout(pollTimeoutRef.current); pollTimeoutRef.current = null; }

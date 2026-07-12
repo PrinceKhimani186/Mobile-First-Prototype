@@ -198,7 +198,7 @@ export default function AdminProjects() {
       {showNew && <NewProjectModal onClose={() => setShowNew(false)} onCreated={loadProjects} />}
 
       {/* Header */}
-      <div style={{ borderBottom: "1px solid hsl(224 22% 11%)", padding: "16px 28px", display: "flex", alignItems: "center", justifyBetween: "space-between", justifyContent: "space-between", background: "hsl(226 32% 6%)" }}>
+      <div style={{ borderBottom: "1px solid hsl(224 22% 11%)", padding: "16px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "hsl(226 32% 6%)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "hsl(142 76% 55%)" }} />
           <div>

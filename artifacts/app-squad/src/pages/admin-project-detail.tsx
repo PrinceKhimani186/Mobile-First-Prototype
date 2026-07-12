@@ -426,7 +426,7 @@ export default function AdminProjectDetail({ id }: { id: string }) {
                 <Field label="Customer Name" value={customerName} onChange={setCustomerName} />
                 <Field label="Email" value={project.email} onChange={() => {}} type="email" />
                 <Field label="Phone" value={phone} onChange={setPhone} />
-                <Field label="Source" value={project.source} onChange={() => {}} />
+                <Field label="Source" value={String(project.source ?? "")} onChange={() => {}} />
                 <Field label="Package" value={pkg} onChange={setPkg} />
                 <Field label="Game Template" value={gameTemplate} onChange={setGameTemplate} />
                 <div style={{ gridColumn: "span 2" }}>
@@ -453,13 +453,13 @@ export default function AdminProjectDetail({ id }: { id: string }) {
             </motion.div>
 
             {/* Submitted data (revision / publishing) */}
-            {(project.revisionData || project.publishingData) && (
+            {(!!project.revisionData || !!project.publishingData) && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                 style={{ borderRadius: 16, padding: 24, background: "hsl(226 32% 8%)", border: "1px solid hsl(224 22% 13%)" }}>
                 <p style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "hsl(218 16% 36%)", marginBottom: 14 }}>
                   Submitted Data
                 </p>
-                {project.revisionData && (
+                {!!project.revisionData && (
                   <div style={{ marginBottom: 12 }}>
                     <p style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, color: "hsl(217 85% 60%)", marginBottom: 6 }}>Revision Request</p>
                     <pre style={{ fontFamily: "'Inter'", fontSize: 11, color: "hsl(218 16% 48%)", lineHeight: 1.6, whiteSpace: "pre-wrap", background: "rgba(255,255,255,0.02)", padding: 12, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
@@ -467,7 +467,7 @@ export default function AdminProjectDetail({ id }: { id: string }) {
                     </pre>
                   </div>
                 )}
-                {project.publishingData && (
+                {!!project.publishingData && (
                   <div>
                     <p style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, color: "hsl(142 76% 55%)", marginBottom: 6 }}>Publishing Requirements</p>
                     <pre style={{ fontFamily: "'Inter'", fontSize: 11, color: "hsl(218 16% 48%)", lineHeight: 1.6, whiteSpace: "pre-wrap", background: "rgba(255,255,255,0.02)", padding: 12, borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>

@@ -452,12 +452,12 @@ function AppShell() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ email, fields: { agreement_signed: true, onboarding_status: "agreement_signed" } })
                   }).then(() => {
-                    window.top.location.href = `/set-password?email=${encodeURIComponent(email)}`;
+                    (window.top ?? window).location.href = `/set-password?email=${encodeURIComponent(email)}`;
                   }).catch(() => {
-                    window.top.location.href = `/set-password?email=${encodeURIComponent(email)}`;
+                    (window.top ?? window).location.href = `/set-password?email=${encodeURIComponent(email)}`;
                   });
                 } else {
-                  window.top.location.href = "/set-password";
+                  (window.top ?? window).location.href = "/set-password";
                 }
               }
               return <div>Redirecting...</div>;

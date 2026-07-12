@@ -99,7 +99,7 @@ function UserModal({
       onClick={onClose}>
       <div style={{ background: "hsl(226 32% 9%)", border: "1px solid hsl(224 22% 16%)", borderRadius: 18, padding: 28, width: "100%", maxWidth: 420, position: "relative" }}
         onClick={e => e.stopPropagation()}>
-        <div style={{ display: "flex", alignItems: "center", justifyBetween: "space-between", justifyContent: "space-between", marginBottom: 22 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
           <p style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "hsl(220 20% 90%)" }}>
             {isEdit ? "Edit Admin User" : "Add Admin User"}
           </p>
@@ -313,7 +313,7 @@ export default function AdminUsers() {
       )}
 
       {/* Header */}
-      <div style={{ borderBottom: "1px solid hsl(224 22% 11%)", padding: "16px 28px", display: "flex", alignItems: "center", justifyBetween: "space-between", justifyContent: "space-between", background: "hsl(226 32% 6%)" }}>
+      <div style={{ borderBottom: "1px solid hsl(224 22% 11%)", padding: "16px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "hsl(226 32% 6%)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "hsl(142 76% 55%)" }} />
           <div>

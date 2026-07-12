@@ -83,7 +83,7 @@ function mapStatus(raw: string): "Complete" | "In Progress" | "Client Review Req
 
 // 1. GET /api/projects/:projectId/approvals - Fetch approval history for project
 router.get("/projects/:projectId/approvals", async (req: Request, res: Response) => {
-  const { projectId } = req.params;
+  const projectId = String(req.params.projectId ?? "");
 
   if (!projectId) {
     res.status(400).json({ error: "projectId is required" });
@@ -106,7 +106,7 @@ router.get("/projects/:projectId/approvals", async (req: Request, res: Response)
 
 // 2. POST /api/projects/:projectId/approvals - Client approvals and revisions
 router.post("/projects/:projectId/approvals", async (req: Request, res: Response) => {
-  const { projectId } = req.params;
+  const projectId = String(req.params.projectId ?? "");
   const { milestoneName, action, comment, clientName } = req.body as {
     milestoneName: string;
     action: "approve" | "revision";

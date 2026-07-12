@@ -244,7 +244,7 @@ router.get("/admin/projects", requireAdmin, async (req: Request, res: Response) 
 // ─── Get project ──────────────────────────────────────────────────────────────
 router.get("/admin/projects/:id", requireAdmin, async (req: Request, res: Response) => {
   const session = (req.session as any).adminUser;
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
 
   if (Number.isNaN(id)) {
     res.status(400).json({ error: "Invalid project ID" });
@@ -294,7 +294,7 @@ router.get("/admin/projects/:id", requireAdmin, async (req: Request, res: Respon
 // ─── Update project stage ──────────────────────────────────────────────────────
 router.put("/admin/projects/:id/stage", requireAdmin, async (req: Request, res: Response) => {
   const session = (req.session as any).adminUser;
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
   const { stage } = req.body as { stage?: string };
 
   if (Number.isNaN(id)) {
@@ -340,7 +340,7 @@ router.put("/admin/projects/:id/stage", requireAdmin, async (req: Request, res: 
 // ─── Update project details ────────────────────────────────────────────────────
 router.put("/admin/projects/:id", requireAdmin, async (req: Request, res: Response) => {
   const session = (req.session as any).adminUser;
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
   const { customerName, phone, package: pkg, gameTemplate, appName, notes } =
     req.body as Record<string, string>;
 
@@ -436,7 +436,7 @@ router.post("/admin/projects", requireSuperAdmin, async (req: Request, res: Resp
 
 // ─── Delete project ────────────────────────────────────────────────────────────
 router.delete("/admin/projects/:id", requireSuperAdmin, async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
 
   if (Number.isNaN(id)) {
     res.status(400).json({ error: "Invalid project ID" });
@@ -534,7 +534,7 @@ router.post("/admin/users", requireSuperAdmin, async (req: Request, res: Respons
 });
 
 router.put("/admin/users/:id", requireSuperAdmin, async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
   const { name, email, password, role, status } = req.body as {
     name?: string;
     email?: string;
@@ -614,7 +614,7 @@ router.get("/admin/stats", requireSuperAdmin, async (req: Request, res: Response
 // ─── Delete Admin User (Super Admin only) ────────────────────────────────────
 router.delete("/admin/users/:id", requireSuperAdmin, async (req: Request, res: Response) => {
   const session = (req.session as any).adminUser;
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
 
   if (Number.isNaN(id)) {
     res.status(400).json({ error: "Invalid user ID" });
@@ -655,7 +655,7 @@ router.delete("/admin/users/:id", requireSuperAdmin, async (req: Request, res: R
 
 // ─── Project Assignments (Super Admin only) ──────────────────────────────────
 router.post("/admin/projects/:id/assignments", requireSuperAdmin, async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
   const { adminUserIds } = req.body as { adminUserIds?: number[] };
 
   if (Number.isNaN(id)) {
@@ -704,7 +704,7 @@ router.post("/admin/projects/:id/assignments", requireSuperAdmin, async (req: Re
 });
 
 router.get("/admin/projects/:id/assignments", requireAdmin, async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
+  const id = parseInt(String(req.params.id), 10);
 
   if (Number.isNaN(id)) {
     res.status(400).json({ error: "Invalid project ID" });
