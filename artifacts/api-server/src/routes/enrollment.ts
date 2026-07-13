@@ -25,23 +25,23 @@ function getCheckoutPrice(planName: string, paymentType?: string): string | unde
   // Setup fee (one-time) prices for monthly plans
   // essentials: $497 setup | accelerator: $997 setup | empire: $4,997 setup
   const setup: Record<string, string | undefined> = {
-    "App Launch Essentials":     e.STRIPE_PRICE_ESSENTIALS_SETUP  || e.VITE_STRIPE_PRICE_ESSENTIALS_SETUP  || "price_1TnzBLJJdy0crHI8FHNhiOtw",
-    "App Ownership Accelerator": e.STRIPE_PRICE_ACCELERATOR_SETUP || e.VITE_STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
-    "App Empire Package":        e.STRIPE_PRICE_EMPIRE_SETUP      || e.VITE_STRIPE_PRICE_EMPIRE_SETUP      || "price_1Tq7OgJJdy0crHI8Pnq5oyrv",
-    "essentials":  e.STRIPE_PRICE_ESSENTIALS_SETUP  || e.VITE_STRIPE_PRICE_ESSENTIALS_SETUP  || "price_1TnzBLJJdy0crHI8FHNhiOtw",
-    "accelerator": e.STRIPE_PRICE_ACCELERATOR_SETUP || e.VITE_STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
-    "empire":      e.STRIPE_PRICE_EMPIRE_SETUP      || e.VITE_STRIPE_PRICE_EMPIRE_SETUP      || "price_1Tq7OgJJdy0crHI8Pnq5oyrv",
+    "App Launch Essentials":     e.VITE_STRIPE_PRICE_ESSENTIALS_SETUP  || e.STRIPE_PRICE_ESSENTIALS_SETUP  || "price_1TnzBLJJdy0crHI8FHNhiOtw",
+    "App Ownership Accelerator": e.VITE_STRIPE_PRICE_ACCELERATOR_SETUP || e.STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
+    "App Empire Package":        e.VITE_STRIPE_PRICE_EMPIRE_SETUP      || e.STRIPE_PRICE_EMPIRE_SETUP      || "price_1Tq7OgJJdy0crHI8Pnq5oyrv",
+    "essentials":  e.VITE_STRIPE_PRICE_ESSENTIALS_SETUP  || e.STRIPE_PRICE_ESSENTIALS_SETUP  || "price_1TnzBLJJdy0crHI8FHNhiOtw",
+    "accelerator": e.VITE_STRIPE_PRICE_ACCELERATOR_SETUP || e.STRIPE_PRICE_ACCELERATOR_SETUP || "price_1TnzBMJJdy0crHI8LawdE6HC",
+    "empire":      e.VITE_STRIPE_PRICE_EMPIRE_SETUP      || e.STRIPE_PRICE_EMPIRE_SETUP      || "price_1Tq7OgJJdy0crHI8Pnq5oyrv",
   };
 
   // Paid-in-full (one-time) prices
   // essentials: $2,497 | accelerator: $4,997 | empire: $9,997
   const full: Record<string, string | undefined> = {
-    "App Launch Essentials":     e.STRIPE_PRICE_ESSENTIALS  || e.VITE_STRIPE_PRICE_ESSENTIALS  || "price_1TnzBEJJdy0crHI8d1FLz9Et",
-    "App Ownership Accelerator": e.STRIPE_PRICE_ACCELERATOR || e.VITE_STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
-    "App Empire Package":        e.STRIPE_PRICE_EMPIRE      || e.VITE_STRIPE_PRICE_EMPIRE      || "price_1TnzBGJJdy0crHI8zTHTCEUV",
-    "essentials":  e.STRIPE_PRICE_ESSENTIALS  || e.VITE_STRIPE_PRICE_ESSENTIALS  || "price_1TnzBEJJdy0crHI8d1FLz9Et",
-    "accelerator": e.STRIPE_PRICE_ACCELERATOR || e.VITE_STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
-    "empire":      e.STRIPE_PRICE_EMPIRE      || e.VITE_STRIPE_PRICE_EMPIRE      || "price_1TnzBGJJdy0crHI8zTHTCEUV",
+    "App Launch Essentials":     e.VITE_STRIPE_PRICE_ESSENTIALS  || e.STRIPE_PRICE_ESSENTIALS  || "price_1TnzBEJJdy0crHI8d1FLz9Et",
+    "App Ownership Accelerator": e.VITE_STRIPE_PRICE_ACCELERATOR || e.STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
+    "App Empire Package":        e.VITE_STRIPE_PRICE_EMPIRE      || e.STRIPE_PRICE_EMPIRE      || "price_1TnzBGJJdy0crHI8zTHTCEUV",
+    "essentials":  e.VITE_STRIPE_PRICE_ESSENTIALS  || e.STRIPE_PRICE_ESSENTIALS  || "price_1TnzBEJJdy0crHI8d1FLz9Et",
+    "accelerator": e.VITE_STRIPE_PRICE_ACCELERATOR || e.STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
+    "empire":      e.VITE_STRIPE_PRICE_EMPIRE      || e.STRIPE_PRICE_EMPIRE      || "price_1TnzBGJJdy0crHI8zTHTCEUV",
   };
 
   if (isMonthly) return setup[planName];
