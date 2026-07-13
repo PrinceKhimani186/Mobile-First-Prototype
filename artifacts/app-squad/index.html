@@ -4,7 +4,8 @@
     <script>
       (function() {
         var h = window.location.hostname;
-        if (h === 'ownyourgameapp.com' || h === 'www.ownyourgameapp.com') {
+        var p = window.location.pathname;
+        if ((h === 'ownyourgameapp.com' || h === 'www.ownyourgameapp.com') && (p === '/' || p === '')) {
           window.location.replace('/closer-presentation/');
         }
       })();
