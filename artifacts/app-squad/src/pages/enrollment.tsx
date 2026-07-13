@@ -74,25 +74,25 @@ const PLANS = [
 type PlanId = typeof PLANS[number]["id"];
 
 const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, {
-  priceText: string; subtext: string; stripePriceId: string; setupPriceId: string | undefined
+  priceText: string; subtext: string; stripePriceId: string | undefined; setupPriceId: string | undefined
 }>> = {
   subscription: {
     essentials: {
       priceText: "$2,497",
       subtext: "paid in full",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS || "price_1TnzBEJJdy0crHI8d1FLz9Et",
+      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS,
       setupPriceId: undefined,
     },
     accelerator: {
       priceText: "$4,997",
       subtext: "paid in full",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR || "price_1TnzBFJJdy0crHI8yCluGftj",
+      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR,
       setupPriceId: undefined,
     },
     empire: {
       priceText: "$9,997",
       subtext: "paid in full",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE || "price_1TnzBGJJdy0crHI8zTHTCEUV",
+      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE,
       setupPriceId: undefined,
     },
   },
@@ -100,20 +100,20 @@ const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, {
     essentials: {
       priceText: "$497 today",
       subtext: "then $197/month for 12 months",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_MONTHLY || "price_1TnzBIJJdy0crHI86gETElWE",
-      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_SETUP   || "price_1TnzBLJJdy0crHI8FHNhiOtw",
+      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_MONTHLY,
+      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ESSENTIALS_SETUP,
     },
     accelerator: {
       priceText: "$997 today",
       subtext: "then $397/month for 12 months",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_MONTHLY || "price_1TnzBJJJdy0crHI8ZCbKcKSd",
-      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_SETUP   || "price_1TnzBMJJdy0crHI8LawdE6HC",
+      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_MONTHLY,
+      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_ACCELERATOR_SETUP,
     },
     empire: {
       priceText: "$4,997 today",
       subtext: "then $497/month for 12 months",
-      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_MONTHLY || "price_1TnzBKJJdy0crHI8csCQAO2H",
-      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_SETUP   || "price_1Tq7OgJJdy0crHI8Pnq5oyrv",
+      stripePriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_MONTHLY,
+      setupPriceId: import.meta.env.VITE_STRIPE_PRICE_EMPIRE_SETUP,
     },
   },
 };
@@ -346,6 +346,11 @@ export default function Enrollment() {
       }
 
       // 2 — Create the Stripe checkout session (passing package details, price, payment type, setup price)
+      if (!pricing.stripePriceId) {
+        setCheckoutError(`Stripe price ID for ${plan.name} (${paymentType}) is not configured. Contact support.`);
+        setLoading(false);
+        return;
+      }
       const res = await fetch("/api/enrollment/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
