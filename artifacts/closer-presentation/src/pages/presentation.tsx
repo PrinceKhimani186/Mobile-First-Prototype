@@ -374,7 +374,7 @@ const PACKAGES = [
       "30-day post-launch support",
     ],
     cta: "START ESSENTIALS ENROLLMENT",
-    route: "https://appsquadinc.com/enrollment?plan=essentials",
+    route: "/enrollment?plan=essentials",
   },
   {
     id: "accelerator",
@@ -396,7 +396,7 @@ const PACKAGES = [
       "Priority email support",
     ],
     cta: "START ACCELERATOR ENROLLMENT",
-    route: "https://appsquadinc.com/enrollment?plan=accelerator",
+    route: "/enrollment?plan=accelerator",
   },
   {
     id: "empire",
@@ -419,7 +419,7 @@ const PACKAGES = [
       "VIP email support",
     ],
     cta: "START EMPIRE ENROLLMENT",
-    route: "https://appsquadinc.com/enrollment?plan=empire",
+    route: "/enrollment?plan=empire",
   },
 ];
 
