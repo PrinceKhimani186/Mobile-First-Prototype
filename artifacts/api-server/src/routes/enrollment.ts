@@ -175,49 +175,15 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
     return;
   }
 
-  // 3 — Verify the setup fee price is actually one-time (not recurring) by querying Stripe.
   const stripe = new Stripe(stripeKey);
-  let verifiedPriceId = setupFeePrice;
-  let priceType = "unknown";
 
-  try {
-    const priceObj = await stripe.prices.retrieve(setupFeePrice);
-    priceType = priceObj.type; // "one_time" or "recurring"
-
-    req.log.info({
-      selectedPlan: planName,
-      resolvedPriceId: setupFeePrice,
-      priceType,
-      checkoutMode: "payment",
-      frontendSentPriceId: stripe_price_id ?? "(none)",
-      planTag,
-      payment_type: payment_type ?? "(not sent)",
-    }, "Enrollment: pre-checkout price verification");
-
-    if (priceType === "recurring") {
-      // The setup fee price in env/fallback is itself recurring — this is a misconfiguration.
-      // Log a clear error and refuse to proceed with mode=payment.
-      req.log.error({
-        planName,
-        priceId: setupFeePrice,
-        priceType,
-      }, "Enrollment: SETUP FEE PRICE IS RECURRING — checkout aborted");
-
-      res.status(400).json({
-        error: `Configuration error: the price ID "${setupFeePrice}" for "${planName} Setup Fee" is a recurring price. ` +
-               `mode="payment" requires a one-time price. ` +
-               `Go to Stripe Dashboard → Products → find the one-time Setup Fee for ${planName} → copy its Price ID and set it in STRIPE_PRICE_${planName.toUpperCase().replace(/\s+/g, "_")}_SETUP.`,
-        priceId: setupFeePrice,
-        priceType,
-      });
-      return;
-    }
-  } catch (priceErr: unknown) {
-    const msg = priceErr instanceof Error ? priceErr.message : String(priceErr);
-    req.log.error({ err: priceErr, setupFeePrice, planName }, "Enrollment: failed to retrieve price from Stripe for verification");
-    res.status(502).json({ error: `Could not verify price ID "${setupFeePrice}" with Stripe: ${msg}` });
-    return;
-  }
+  req.log.info({
+    selectedPlan: planName,
+    resolvedPriceId: setupFeePrice,
+    frontendSentPriceId: stripe_price_id ?? "(none)",
+    planTag,
+    payment_type: payment_type ?? "(not sent)",
+  }, "Enrollment: checkout price resolved");
 
   // 3 — Create / update GHL contact (non-fatal)
   if (ghlApiKey && ghlLocationId) {
@@ -294,14 +260,13 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
     req.log.info({
       email,
       planName,
-      priceId: verifiedPriceId,
-      priceType,
+      priceId: setupFeePrice,
       mode: "payment",
     }, "Enrollment: creating Stripe checkout session");
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      line_items: [{ price: verifiedPriceId, quantity: 1 }],
+      line_items: [{ price: setupFeePrice, quantity: 1 }],
       mode: "payment",
       customer_email: email,
       metadata: {
@@ -313,13 +278,13 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
         planName,
         planTag,
         payment_type: payment_type || "one_time",
-        price_id_used: verifiedPriceId,
+        price_id_used: setupFeePrice,
       },
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
 
-    req.log.info({ email, planName, sessionId: session.id, mode: "payment", priceId: verifiedPriceId }, "Enrollment: Stripe session created successfully");
+    req.log.info({ email, planName, sessionId: session.id, mode: "payment", priceId: setupFeePrice }, "Enrollment: Stripe session created successfully");
     res.json({ url: session.url });
 
   } catch (err: unknown) {
@@ -335,7 +300,7 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
       if (typeof e["type"] === "string") stripeType = e["type"] as string;
     }
 
-    req.log.error({ err, planName, priceId: verifiedPriceId, stripeCode, stripeType }, "Enrollment: Stripe session creation failed");
+    req.log.error({ err, planName, priceId: setupFeePrice, stripeCode, stripeType }, "Enrollment: Stripe session creation failed");
 
     res.status(502).json({
       error: message,
