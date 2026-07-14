@@ -12,3 +12,9 @@ id = "Yk7G1oLY9LsKnbV7z2jO9"
 uri = "file://app-squad-export.tar.gz"
 type = "unspecified"
 title = "App Squad — Full Project Export (63 MB)"
+
+[[outputs]]
+id = "R_mo7r_exSXLvOe-FeKUC"
+uri = "file://APP_SQUAD_ONE_PAGER.md"
+type = "text"
+title = "App Squad Inc. — Project One-Pager"
