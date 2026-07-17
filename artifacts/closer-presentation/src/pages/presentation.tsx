@@ -409,11 +409,11 @@ const PACKAGES = [
     isAccelerator: false,
     isEmpire: true,
     features: [
-      "Up to 2 game templates",
+      "One 2D or 3D premium game template",
       "Premium branding & customization",
       "Full monetization suite",
       "ASO guidance + launch checklist",
-      "AI promotional creative kit",
+      "3 months of AI marketing promotions",
       "3 revision rounds",
       "6-month strategy check-ins",
       "VIP email support",
@@ -1993,7 +1993,7 @@ export default function Presentation() {
 
       <Divider />
 
-      {/* ═══════════════════════════════════════════l��══════════════════
+      {/* ════════════════════════════════════  �══════l��══════════════════
           WHY MOST NEVER ENTER → APP SQUAD EXISTS
       ══════════════════════════════════════════════════════════════ */}
       <section
