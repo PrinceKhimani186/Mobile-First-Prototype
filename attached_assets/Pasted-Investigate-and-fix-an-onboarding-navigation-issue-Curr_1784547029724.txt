@@ -1,0 +1,98 @@
+Investigate and fix an onboarding navigation issue.
+
+Current issue:
+
+On the Enrollment page, when I fill:
+
+- First Name
+- Last Name
+- Email
+- Business Name
+
+and click **Continue to Plan Selection**, the application reloads or redirects back to the same enrollment page instead of proceeding to the next step (Plan Selection).
+
+Expected behavior:
+
+Enrollment (Step 1)
+→ Plan Selection (Step 2)
+→ Stripe Checkout
+→ Payment Success
+→ Agreement
+→ Set Password
+→ Login
+→ Game Selection
+→ Dashboard
+
+Tasks:
+
+1. Audit the complete flow starting from the "Continue to Plan Selection" button.
+
+2. Trace:
+   - Button click
+   - Form validation
+   - State updates
+   - Context/provider
+   - Local storage/session storage
+   - URL parameters
+   - React Router navigation
+   - API requests
+   - Supabase calls (if any)
+
+3. Identify exactly why the navigation returns to the Enrollment page instead of moving to Step 2.
+
+4. Check whether:
+   - Form validation is failing silently.
+   - Required fields are not being saved.
+   - React state is resetting.
+   - Navigation is blocked by a route guard.
+   - The enrollment record is not being created.
+   - Authentication middleware is redirecting incorrectly.
+   - The current step is always being reset to Step 1.
+   - URL/query parameters are being overwritten.
+
+5. Add temporary debug logs showing:
+   - Form values
+   - Validation result
+   - Current onboarding step
+   - Navigation destination
+   - Any errors
+   - Route guard decisions
+
+6. Fix only the root cause.
+
+IMPORTANT:
+- Do NOT redesign the UI.
+- Do NOT change the onboarding flow.
+- Do NOT change business logic.
+- Do NOT change styling.
+- Do NOT change component structure unless absolutely necessary.
+- Preserve all existing functionality.
+
+Only fix the navigation so that:
+
+Step 1 (Enrollment)
+↓
+Click "Continue to Plan Selection"
+↓
+Step 2 (Plan Selection)
+
+instead of returning to Step 1.
+
+After fixing, provide:
+
+1. Root cause.
+2. Files modified.
+3. Why it was redirecting back.
+4. How you fixed it.
+5. Confirm that the flow is now:
+
+Enrollment
+→ Plan Selection
+→ Checkout
+→ Agreement
+→ Set Password
+→ Login
+→ Game Selection
+→ Dashboard.
+
+Do not make assumptions. Trace the complete execution path before making any code changes.

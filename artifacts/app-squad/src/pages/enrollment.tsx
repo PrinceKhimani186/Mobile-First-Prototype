@@ -232,7 +232,7 @@ function SelectField({
 }
 
 export default function Enrollment() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -246,6 +246,14 @@ export default function Enrollment() {
   const [paymentType, setPaymentType] = useState<"subscription" | "monthly">("subscription");
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+
+  // Debug: log every time this component mounts or re-mounts (should only happen once).
+  useEffect(() => {
+    console.info("[Enrollment] Component mounted. If you see this more than once, the component is remounting unexpectedly.");
+    return () => {
+      console.warn("[Enrollment] Component UNMOUNTED. step resets to 1 on next mount.");
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -275,10 +283,16 @@ export default function Enrollment() {
       });
     }
 
+    // Use Wouter's navigate (replace mode) instead of raw window.history.replaceState.
+    // Wouter v3 patches history.replaceState and dispatches a navigation event when
+    // called directly, which can cause the router to re-evaluate routes and unmount/
+    // remount the Enrollment component — resetting step back to 1. Using Wouter's own
+    // navigate avoids this because Wouter recognises it's already on the same path and
+    // does not remount the matched route component.
     if (params.has("plan") || params.has("payment") || params.has("type")) {
-      window.history.replaceState({}, "", window.location.pathname);
+      navigate(window.location.pathname, { replace: true });
     }
-  }, [toast]);
+  }, [toast, navigate]);
 
   function validateStep1() {
     if (!form.firstName.trim()) return "First name is required.";
@@ -289,8 +303,13 @@ export default function Enrollment() {
     return "";
   }
 
-  async function handleStep1Submit(e: React.FormEvent<HTMLFormElement>) {
+  // NOTE: This is intentionally NOT async — there are no async operations here.
+  // Keeping it synchronous ensures e.preventDefault() is never ambiguous about
+  // when it runs relative to React's synthetic event system.
+  function handleStep1Submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    console.info("[Enrollment] handleStep1Submit called. Current step:", step);
 
     // Browser autofill can bypass React's controlled onChange, leaving React
     // state empty even though inputs appear filled. Read the actual DOM values
@@ -308,6 +327,15 @@ export default function Enrollment() {
       email:     domEmail     || form.email.trim(),
       company:   domCompany   || form.company.trim(),
     };
+
+    console.info("[Enrollment] Form values (effective):", {
+      firstName: effective.firstName || "(empty)",
+      lastName:  effective.lastName  || "(empty)",
+      email:     effective.email     || "(empty)",
+      company:   effective.company   || "(empty)",
+      domValues: { domFirstName, domLastName, domEmail, domCompany },
+      reactState: { ...form },
+    });
 
     // Sync React state with effective values so downstream uses (handleEnroll)
     // have the correct data even if autofill bypassed onChange.
@@ -330,30 +358,36 @@ export default function Enrollment() {
       return "";
     })();
 
-    if (err) { setFormError(err); return; }
+    console.info("[Enrollment] Validation result:", err ? `FAILED — "${err}"` : "PASSED");
+
+    if (err) {
+      setFormError(err);
+      console.warn("[Enrollment] Staying on step 1 due to validation error:", err);
+      return;
+    }
+
     setFormError("");
     setSubmittingStep1(true);
 
-    try {
-      const normalizedEmail = effective.email.toLowerCase();
+    const normalizedEmail = effective.email.toLowerCase();
 
-      // Save session data for downstream use
-      localStorage.setItem("appSquadEnrollment", JSON.stringify({
-        firstName: effective.firstName,
-        lastName:  effective.lastName,
-        email:     normalizedEmail,
-        company:   effective.company,
-        selectedPlan,
-      }));
-      localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
-      localStorage.setItem("appSquadEnrollmentName", `${effective.firstName} ${effective.lastName}`.trim());
+    // Save session data for downstream use
+    localStorage.setItem("appSquadEnrollment", JSON.stringify({
+      firstName: effective.firstName,
+      lastName:  effective.lastName,
+      email:     normalizedEmail,
+      company:   effective.company,
+      selectedPlan,
+    }));
+    localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
+    localStorage.setItem("appSquadEnrollmentName", `${effective.firstName} ${effective.lastName}`.trim());
 
-      // Advance to plan selection
-      setStep(2);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    } finally {
-      setSubmittingStep1(false);
-    }
+    console.info("[Enrollment] Advancing to step 2 (plan selection). Email saved:", normalizedEmail);
+
+    // Advance to plan selection
+    setStep(2);
+    setSubmittingStep1(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handleEnroll() {
@@ -605,7 +639,7 @@ export default function Enrollment() {
 
               <p style={{ textAlign: "center", fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 30%)", marginTop: 20, lineHeight: 1.65 }}>
                 This page is for clients who have completed a strategy call with the App Squad team.{" "}
-                <button onClick={() => navigate("/apply")}
+                <button type="button" onClick={() => navigate("/apply")}
                   style={{ color: "hsl(35 90% 58%)", cursor: "pointer", textDecoration: "underline", background: "none", border: "none", fontFamily: "'Inter'", fontSize: 12 }}>
                   Apply here
                 </button>{" "}
