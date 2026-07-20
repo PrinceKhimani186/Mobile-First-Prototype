@@ -121,20 +121,17 @@ function RequireAgreement({ component: Component }: { component: React.Component
     return <Redirect to="/enrollment" />;
   }
 
-  // 1. Password must be created first (first-time user onboarding)
-  if (!record.password_created) {
-    logGuardRedirect("RequireAgreement", path, email, record, `/set-password?email=${encodeURIComponent(email)}`, "Password not created yet");
-    return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
-  }
-
-  // 2. Existing customer must log in
-  if (!isLoggedIn()) {
-    logGuardRedirect("RequireAgreement", path, email, record, `/login?email=${encodeURIComponent(email)}`, "Password created but user is not logged in");
-    return <Redirect to={`/login?email=${encodeURIComponent(email)}`} />;
-  }
-
-  // 3. Agreement Signed redirects
+  // Flow order: payment → agreement (Zoho sign) → set password → game selection.
+  // The agreement renders right after payment; password creation happens after signing.
   if (record.agreement_signed) {
+    if (!record.password_created) {
+      logGuardRedirect("RequireAgreement", path, email, record, `/set-password?email=${encodeURIComponent(email)}`, "Agreement signed, password not created yet");
+      return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
+    }
+    if (!isLoggedIn()) {
+      logGuardRedirect("RequireAgreement", path, email, record, `/login?email=${encodeURIComponent(email)}`, "Password created but user is not logged in");
+      return <Redirect to={`/login?email=${encodeURIComponent(email)}`} />;
+    }
     if (!record.game_selected) {
       logGuardRedirect("RequireAgreement", path, email, record, "/onboarding/game-selection", "Agreement signed, game not selected");
       return <Redirect to="/onboarding/game-selection" />;
@@ -182,15 +179,16 @@ function RequireSetPassword({ component: Component }: { component: React.Compone
     logGuardRedirect("RequireSetPassword", path, email, null, "/enrollment", "Enrollment record not found in database");
     return <Redirect to="/enrollment" />;
   }
+  // Flow order: agreement (Zoho sign) must be completed before creating a password.
+  if (!record.agreement_signed) {
+    logGuardRedirect("RequireSetPassword", path, email, record, "/onboarding/agreement", "Agreement not signed yet — sign before creating password");
+    return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
+  }
   // If password already set, check and route to next incomplete step or login
   if (record.password_created) {
     if (!isLoggedIn()) {
       logGuardRedirect("RequireSetPassword", path, email, record, `/login?email=${encodeURIComponent(email)}`, "Password already created, user not logged in");
       return <Redirect to={`/login?email=${encodeURIComponent(email)}`} />;
-    }
-    if (!record.agreement_signed) {
-      logGuardRedirect("RequireSetPassword", path, email, record, "/onboarding/agreement", "Password created, logged in, agreement not signed");
-      return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
     }
     if (!record.game_selected) {
       logGuardRedirect("RequireSetPassword", path, email, record, "/onboarding/game-selection", "Password created, logged in, game not selected");
@@ -228,13 +226,13 @@ function RequireLogin({ component: Component }: { component: React.ComponentType
   if (isLoggedIn()) {
     if (isLoading) return <div className="min-h-screen bg-[#050507] flex items-center justify-center text-white font-sans text-sm"><Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading progress...</div>;
     if (record) {
-      if (!record.password_created) {
-        logGuardRedirect("RequireLogin", path, email, record, "/set-password", "User is logged in but password not created");
-        return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
-      }
       if (!record.agreement_signed) {
         logGuardRedirect("RequireLogin", path, email, record, "/onboarding/agreement", "User is logged in but agreement not signed");
         return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
+      }
+      if (!record.password_created) {
+        logGuardRedirect("RequireLogin", path, email, record, "/set-password", "User is logged in but password not created");
+        return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
       }
       if (!record.game_selected) {
         logGuardRedirect("RequireLogin", path, email, record, "/onboarding/game-selection", "User is logged in but game not selected");
@@ -284,13 +282,13 @@ function RequireGameSelection({ component: Component }: { component: React.Compo
     logGuardRedirect("RequireGameSelection", path, email, null, "/enrollment", "Enrollment record not found in database");
     return <Redirect to="/enrollment" />;
   }
-  if (!record.password_created) {
-    logGuardRedirect("RequireGameSelection", path, email, record, "/set-password", "Password not created");
-    return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
-  }
   if (!record.agreement_signed) {
     logGuardRedirect("RequireGameSelection", path, email, record, "/onboarding/agreement", "Agreement not signed");
     return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
+  }
+  if (!record.password_created) {
+    logGuardRedirect("RequireGameSelection", path, email, record, "/set-password", "Password not created");
+    return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
   }
   
   if (record.game_selected) {
@@ -337,13 +335,13 @@ function RequireCustomization({ component: Component }: { component: React.Compo
     logGuardRedirect("RequireCustomization", path, email, null, "/enrollment", "Enrollment record not found in database");
     return <Redirect to="/enrollment" />;
   }
-  if (!record.password_created) {
-    logGuardRedirect("RequireCustomization", path, email, record, "/set-password", "Password not created");
-    return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
-  }
   if (!record.agreement_signed) {
     logGuardRedirect("RequireCustomization", path, email, record, "/onboarding/agreement", "Agreement not signed");
     return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
+  }
+  if (!record.password_created) {
+    logGuardRedirect("RequireCustomization", path, email, record, "/set-password", "Password not created");
+    return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
   }
   if (!record.game_selected) {
     logGuardRedirect("RequireCustomization", path, email, record, "/onboarding/game-selection", "Game not selected");
@@ -390,13 +388,13 @@ function RequireDashboard({ component: Component }: { component: React.Component
     logGuardRedirect("RequireDashboard", path, email, null, "/enrollment", "Enrollment record not found in database");
     return <Redirect to="/enrollment" />;
   }
-  if (!record.password_created) {
-    logGuardRedirect("RequireDashboard", path, email, record, "/set-password", "Password not created");
-    return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
-  }
   if (!record.agreement_signed) {
     logGuardRedirect("RequireDashboard", path, email, record, "/onboarding/agreement", "Agreement not signed");
     return <Redirect to={`/onboarding/agreement?email=${encodeURIComponent(email)}`} />;
+  }
+  if (!record.password_created) {
+    logGuardRedirect("RequireDashboard", path, email, record, "/set-password", "Password not created");
+    return <Redirect to={`/set-password?email=${encodeURIComponent(email)}`} />;
   }
   if (!record.game_selected) {
     logGuardRedirect("RequireDashboard", path, email, record, "/onboarding/game-selection", "Game not selected");

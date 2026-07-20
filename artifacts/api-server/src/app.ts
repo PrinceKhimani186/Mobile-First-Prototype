@@ -3,10 +3,13 @@ import path from "path";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { pool } from "@workspace/db";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { normalizePlan, planFromStripePriceId, type Plan } from "./lib/plan-games";
 
 const GHL_BASE = "https://services.leadconnectorhq.com";
 
@@ -266,6 +269,32 @@ app.post(
 
     await handleGHLPostPayment(email, firstName, lastName, phone, selectedPlan);
 
+    // Resolve the VERIFIED purchased plan. Primary source: the Stripe price ID
+    // actually paid (from the session's line items). Fallback: session metadata,
+    // which our own server wrote when creating the checkout session.
+    let purchasedPlan: Plan | null = null;
+    try {
+      const stripe = new Stripe(stripeKey);
+      const fullSession = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ["line_items"],
+      });
+      const paidPriceId = fullSession.line_items?.data?.[0]?.price?.id ?? null;
+      purchasedPlan = planFromStripePriceId(paidPriceId);
+      logger.info({ sessionId, paidPriceId, planFromPrice: purchasedPlan }, "WEBHOOK: plan resolution from price ID");
+    } catch (err) {
+      logger.error({ err, sessionId }, "WEBHOOK: failed to retrieve line items for plan resolution");
+    }
+    if (!purchasedPlan) {
+      purchasedPlan =
+        normalizePlan(session.metadata?.plan) ??
+        normalizePlan(selectedPlan) ??
+        normalizePlan(session.metadata?.planName);
+      logger.info({ sessionId, planFromMetadata: purchasedPlan }, "WEBHOOK: plan resolution fell back to session metadata");
+    }
+    if (!purchasedPlan) {
+      logger.error({ sessionId, selectedPlan, metadata: session.metadata }, "WEBHOOK: could not resolve purchased plan — purchased_plan will not be set");
+    }
+
     // Supabase enrollment status update
     try {
       const supabase = getSupabase();
@@ -275,6 +304,7 @@ app.post(
           full_name: `${firstName} ${lastName}`.trim(),
           phone: phone || null,
           selected_package: selectedPlan,
+          ...(purchasedPlan ? { purchased_plan: purchasedPlan } : {}),
           payment_status: "paid",
           onboarding_status: "payment_completed",
           agreement_signed: false,
@@ -324,8 +354,28 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+// A customer's onboarding session (agreement → set-password → game selection)
+// spans several minutes and multiple page loads. The default MemoryStore is
+// wiped on every process restart/redeploy, which silently drops that session:
+// verifyCustomerAccess() then denies the now-password-protected record and the
+// route guards bounce the user back to earlier steps (including re-signing the
+// agreement). Backing sessions with Postgres — the same DB already in use —
+// makes them survive restarts and work across multiple server instances.
+const PgSession = connectPgSimple(session);
+const pgSessionStore = new PgSession({
+  pool,
+  tableName: "user_sessions",
+  // Table is created via Drizzle (lib/db/src/schema/session.ts + `pnpm --filter
+  // @workspace/db run push`), not this library's own createTableIfMissing —
+  // that feature reads a table.sql asset by relative path, which breaks once
+  // the API server is compiled into a single esbuild bundle (ENOENT at runtime).
+  createTableIfMissing: false,
+});
+pgSessionStore.on("connect", () => logger.info("Session store: Postgres table ready"));
+pgSessionStore.on("error", (err: Error) => logger.error({ err }, "Session store: Postgres error"));
 app.use(
   session({
+    store: pgSessionStore,
     secret: process.env.SESSION_SECRET || "fallback-dev-secret",
     resave: false,
     saveUninitialized: false,

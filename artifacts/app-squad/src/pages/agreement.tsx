@@ -263,13 +263,22 @@ export default function Agreement() {
         record.phone,
       );
 
-      if (zohoRes.success && zohoRes.embedUrl) {
+      if (zohoRes.success && zohoRes.alreadySigned) {
+        // The server found this customer already has a completed Zoho
+        // request (from an earlier visit) and finalized it — no new
+        // document was created, just move them on to the next step.
+        // eslint-disable-next-line no-console
+        console.log("[Agreement Page] Server resolved an already-completed prior request — no new document created");
+        updateSignedState(true);
+        await queryClient.invalidateQueries({ queryKey: ["onboardingProgress", email] });
+        handleOnboardingTransition("resolved-already-signed");
+      } else if (zohoRes.success && zohoRes.embedUrl) {
         if (zohoRes.requestId) {
           requestIdRef.current = zohoRes.requestId;
           setRequestId(zohoRes.requestId);
         }
         // eslint-disable-next-line no-console
-        console.log("[Agreement Page] Zoho request created. Request ID:", zohoRes.requestId);
+        console.log("[Agreement Page] Zoho request ready. Request ID:", zohoRes.requestId);
         setEmbedUrl(zohoRes.embedUrl);
       } else {
         setError(zohoRes.error || "Failed to initialize secure signature session. Please reload or try again.");

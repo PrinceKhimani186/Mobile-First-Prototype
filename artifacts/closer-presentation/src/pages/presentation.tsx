@@ -134,7 +134,14 @@ function ScaleIn({
 }
 
 const resolveEnrollmentUrl = (route: string) => {
-  return `${window.location.origin}${route}`;
+  // In local dev the enrollment flow is served by the app-squad dev server on
+  // its own port — over https, which Zoho Sign's embedded signing requires.
+  // In production both apps share one origin.
+  const origin = import.meta.env.DEV
+    ? "https://localhost:5173"
+    : window.location.origin;
+  console.info("[Pricing] Starting enrollment:", `${origin}${route}`);
+  return `${origin}${route}`;
 };
 
 const openEnrollmentUrl = (url: string) => {

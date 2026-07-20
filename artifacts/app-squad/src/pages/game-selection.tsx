@@ -1,15 +1,15 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
   Search, Star, ArrowRight, CheckCircle2,
-  Gamepad2, Shield, X, Sparkles,
+  Gamepad2, Shield, X, Sparkles, Loader2, AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { sendGameSelectionToCRM } from "@/lib/crm";
 import { updateOnboarding } from "@/services/auth";
-import { getOnboardingEmail, markGameSelected, updateEnrollmentFields } from "@/services/enrollment";
-import { useQueryClient } from "@tanstack/react-query";
+import { getOnboardingEmail, markGameSelected, updateEnrollmentFields, fetchAllowedGames } from "@/services/enrollment";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Game {
   id: string;
@@ -711,13 +711,48 @@ export default function GameSelection() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // The server resolves the customer's verified purchased plan and returns the
+  // permitted game IDs — the page never decides plan access on its own.
+  const userEmail = getOnboardingEmail();
+  const { data: allowed, isLoading: allowedLoading } = useQuery({
+    queryKey: ["allowedGames", userEmail],
+    queryFn: () => fetchAllowedGames(userEmail),
+    enabled: !!userEmail,
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    if (!allowed) return;
+    console.info("[GameSelection] Purchased plan loaded from server:", {
+      status: allowed.status,
+      plan: allowed.plan ?? null,
+      allowedGameCount: allowed.gameIds?.length ?? 0,
+      allowedGameIds: allowed.gameIds ?? [],
+      error: allowed.error ?? null,
+    });
+    // No enrollment record → restart enrollment; payment incomplete → back to checkout.
+    if (allowed.status === 404 || allowed.status === 402) {
+      navigate("/enrollment");
+    }
+  }, [allowed, navigate]);
+
+  const allowedIds = useMemo(() => new Set(allowed?.gameIds ?? []), [allowed]);
+
+  // Only the games unlocked by the purchased plan — higher tiers are not rendered at all.
+  const planGames = useMemo(() => GAMES.filter(g => allowedIds.has(g.id)), [allowedIds]);
+
   const featuredGames = useMemo(() =>
-    FEATURED_IDS.map(id => GAMES.find(g => g.id === id)!).filter(Boolean),
-    []
+    FEATURED_IDS.map(id => planGames.find(g => g.id === id)!).filter(Boolean),
+    [planGames]
+  );
+
+  const visibleCategories = useMemo(() =>
+    CATEGORIES.filter(c => c.key === "all" || planGames.some(g => g.category === c.key)),
+    [planGames]
   );
 
   const filteredGames = useMemo(() => {
-    let result = GAMES;
+    let result = planGames;
     if (activeCategory !== "all") {
       result = result.filter(g => g.category === activeCategory);
     }
@@ -730,7 +765,7 @@ export default function GameSelection() {
       );
     }
     return result;
-  }, [activeCategory, searchQuery]);
+  }, [planGames, activeCategory, searchQuery]);
 
   const hasCasinoVisible = filteredGames.some(g => g.isCasino);
 
@@ -740,6 +775,13 @@ export default function GameSelection() {
 
   const handleContinue = async () => {
     if (!selectedGame) return;
+
+    console.info("[GameSelection] Game selected:", {
+      gameId: selectedGame.id,
+      gameName: selectedGame.name,
+      plan: allowed?.plan ?? null,
+      inAllowedList: allowedIds.has(selectedGame.id),
+    });
 
     const source = localStorage.getItem("as_source") || "Direct";
 
@@ -783,6 +825,44 @@ export default function GameSelection() {
     navigate("/onboarding/customization");
     window.scrollTo({ top: 0 });
   };
+
+  // Plan lookup in progress (route guards ensure email/auth before this page renders)
+  if (allowedLoading || !allowed) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#050507", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "rgba(255,255,255,0.6)", fontFamily: "'Inter'", fontSize: 14 }}>
+        <Loader2 style={{ width: 18, height: 18 }} className="animate-spin" /> Loading your plan…
+      </div>
+    );
+  }
+
+  // Redirecting states (no enrollment / payment incomplete) — handled in the effect above
+  if (allowed.status === 404 || allowed.status === 402) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#050507", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "rgba(255,255,255,0.6)", fontFamily: "'Inter'", fontSize: 14 }}>
+        <Loader2 style={{ width: 18, height: 18 }} className="animate-spin" /> Redirecting…
+      </div>
+    );
+  }
+
+  // Configuration / access errors: missing or invalid plan, no games mapped, server errors
+  if (allowed.status !== 200 || !allowed.gameIds || allowed.gameIds.length === 0) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#050507", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div style={{
+          maxWidth: 480, textAlign: "center", padding: "40px 32px", borderRadius: 18,
+          background: "hsl(226 32% 7%)", border: "1px solid rgba(245,158,11,0.25)",
+        }}>
+          <AlertTriangle style={{ width: 32, height: 32, color: "hsl(38 90% 55%)", margin: "0 auto 16px" }} />
+          <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.92)", marginBottom: 10 }}>
+            We can't load your game templates
+          </h2>
+          <p style={{ fontFamily: "'Inter'", fontSize: 13.5, lineHeight: 1.65, color: "rgba(255,255,255,0.5)" }}>
+            {allowed.message || "Your purchased plan could not be verified. Please contact support and we'll get this fixed right away."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", paddingBottom: selectedGame ? 140 : 60, position: "relative", background: "#050507" }}>
@@ -840,6 +920,7 @@ export default function GameSelection() {
         </div>
 
         {/* ── Featured Section ── */}
+        {featuredGames.length > 0 && (
         <div style={{ marginBottom: 56 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
             <Sparkles style={{ width: 16, height: 16, color: "#00D4FF" }} />
@@ -858,6 +939,7 @@ export default function GameSelection() {
             ))}
           </div>
         </div>
+        )}
 
         {/* ── Search + Filters ── */}
         <div style={{ marginBottom: 28 }}>
@@ -893,7 +975,7 @@ export default function GameSelection() {
 
           {/* Category pills */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {CATEGORIES.map(cat => (
+            {visibleCategories.map(cat => (
               <button
                 key={cat.key}
                 onClick={() => setActiveCategory(cat.key)}

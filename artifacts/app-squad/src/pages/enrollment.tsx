@@ -62,7 +62,7 @@ const PLANS = [
       "Premium branding & customization",
       "Full monetization suite",
       "ASO guidance + launch checklist",
-      "AI promotional creative kit",
+      "3 months of AI marketing promotions",
       "3 revision rounds",
       "6-month strategy check-ins",
       "VIP email support",
@@ -253,6 +253,7 @@ export default function Enrollment() {
         empire:      "empire",
       };
       const matched = planMap[planParam.toLowerCase()];
+      console.info("[Enrollment] Plan from pricing URL:", planParam, "→", matched ?? "(unrecognized)");
       if (matched) setSelectedPlan(matched);
     }
 
@@ -351,6 +352,12 @@ export default function Enrollment() {
         setLoading(false);
         return;
       }
+      console.info("[Enrollment] Sending to Stripe checkout:", {
+        selectedPlan,
+        planName: plan.name,
+        paymentType,
+        stripePriceId: pricing.stripePriceId,
+      });
       const res = await fetch("/api/enrollment/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

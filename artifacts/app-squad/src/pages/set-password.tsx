@@ -140,7 +140,8 @@ export default function SetPassword() {
       localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
       localStorage.removeItem("appSquadPrefillEmail");
 
-      const redirectTarget = `/onboarding/agreement?email=${encodeURIComponent(normalizedEmail)}`;
+      // Flow order: agreement is signed before this page, so continue to game selection.
+      const redirectTarget = "/onboarding/game-selection";
       console.log("[SetPassword] Auto-logged in! Redirecting to next route:", redirectTarget);
 
       setTimeout(() => {

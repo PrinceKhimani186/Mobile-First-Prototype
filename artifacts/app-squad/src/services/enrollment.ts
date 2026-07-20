@@ -310,18 +310,18 @@ export async function createZohoSignRequest(
   packageId?: string,
   phone?: string,
   address?: string,
-): Promise<{ success: boolean; embedUrl?: string; requestId?: string; error?: string }> {
+): Promise<{ success: boolean; embedUrl?: string; requestId?: string; alreadySigned?: boolean; error?: string }> {
   try {
     const res = await fetch(`/api/zoho/create-signature-request`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, fullName, packageName, price, paymentOption, packageId, phone, address }),
     });
-    const json = (await res.json()) as { success?: boolean; embedUrl?: string; requestId?: string; error?: string; action?: string };
+    const json = (await res.json()) as { success?: boolean; embedUrl?: string; requestId?: string; alreadySigned?: boolean; error?: string; action?: string };
     const errorMsg = json.error
       ? (json.action ? `${json.error} — ${json.action}` : json.error)
       : undefined;
-    return { success: !!json.success, embedUrl: json.embedUrl, requestId: json.requestId, error: errorMsg };
+    return { success: !!json.success, embedUrl: json.embedUrl, requestId: json.requestId, alreadySigned: json.alreadySigned, error: errorMsg };
   } catch {
     return { success: false, error: "Unable to connect to the Zoho Sign service." };
   }
@@ -361,4 +361,30 @@ export function getOnboardingEmail(): string {
     localStorage.getItem("appSquadEnrollmentEmail") ||
     ""
   ).trim().toLowerCase();
+}
+
+// ── Allowed games for the purchased plan ──────────────────────────────────────
+// The server resolves the customer's VERIFIED purchased plan and returns only
+// the permitted game template IDs. The frontend holds no plan logic.
+export interface AllowedGamesResult {
+  status: number;
+  plan?: string;
+  gameIds?: string[];
+  error?: string;
+  message?: string;
+}
+
+export async function fetchAllowedGames(email: string): Promise<AllowedGamesResult> {
+  try {
+    const params = new URLSearchParams({ email });
+    if (typeof window !== "undefined") {
+      const sid = new URLSearchParams(window.location.search).get("session_id");
+      if (sid) params.set("session_id", sid);
+    }
+    const res = await fetch(`${BASE}/allowed-games?${params.toString()}`, { cache: "no-store" });
+    const json = (await res.json().catch(() => ({}))) as Omit<AllowedGamesResult, "status">;
+    return { status: res.status, ...json };
+  } catch {
+    return { status: 0, error: "network_error", message: "Network error. Please check your connection." };
+  }
 }

@@ -3,6 +3,13 @@ import { createClient, type SupabaseClient, type PostgrestError } from "@supabas
 import { db, projectsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
+import {
+  PLAN_GAMES,
+  allowedGameNamesForPlan,
+  normalizePlan,
+  planFromStripePriceId,
+  type Plan,
+} from "../lib/plan-games";
 
 const router: IRouter = Router();
 
@@ -228,14 +235,27 @@ async function verifyCustomerAccess(req: Request | any, email: string): Promise<
   }
 
   // Check if request is returning from Stripe success with valid session_id
-  const sessionId = req.query.session_id || req.body.session_id;
+  const sessionId = req.query?.session_id || req.body?.session_id;
   req.log.info({ email: normalizedEmail, sessionId }, "verifyCustomerAccess: checking sessionId parameter");
   if (sessionId && typeof sessionId === "string" && sessionId.startsWith("cs_")) {
+    // Dev-only: the checkout mock issues "cs_dev_mock" when no Stripe key is
+    // configured outside production — accept it so the flow can be tested.
+    if (
+      sessionId === "cs_dev_mock" &&
+      !process.env.STRIPE_SECRET_KEY &&
+      process.env.NODE_ENV !== "production"
+    ) {
+      req.log.warn({ email: normalizedEmail }, "verifyCustomerAccess: accepting dev mock checkout session");
+      (req.session as any).customerEmail = normalizedEmail;
+      return true;
+    }
     try {
       const stripeKey = process.env.STRIPE_SECRET_KEY;
       if (stripeKey) {
         const stripe = new Stripe(stripeKey);
-        const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
+        const stripeSession = await stripe.checkout.sessions.retrieve(sessionId, {
+          expand: ["line_items"],
+        });
         const stripeEmail = stripeSession.customer_details?.email || stripeSession.metadata?.email || stripeSession.customer_email;
         req.log.info({
           email: normalizedEmail,
@@ -245,6 +265,32 @@ async function verifyCustomerAccess(req: Request | any, email: string): Promise<
         if (stripeSession.payment_status === "paid" && stripeEmail?.trim().toLowerCase() === normalizedEmail) {
           req.log.info({ email: normalizedEmail, sessionId }, "verifyCustomerAccess: Stripe checkout session verified, establishing backend session");
           (req.session as any).customerEmail = normalizedEmail;
+
+          // Persist the VERIFIED purchased plan (covers local dev where the
+          // Stripe webhook can't reach the machine). Trusted sources only:
+          // the paid price ID, then the server-written session metadata.
+          const paidPriceId = stripeSession.line_items?.data?.[0]?.price?.id ?? null;
+          const verifiedPlan =
+            planFromStripePriceId(paidPriceId) ??
+            normalizePlan(stripeSession.metadata?.plan) ??
+            normalizePlan(stripeSession.metadata?.selectedPlan) ??
+            normalizePlan(stripeSession.metadata?.planName);
+          if (verifiedPlan) {
+            const supa = getSupabase();
+            if (supa) {
+              const { error: planErr } = await supa
+                .from("customer_enrollment")
+                .update({ purchased_plan: verifiedPlan, payment_status: "paid" })
+                .eq("email", normalizedEmail);
+              if (planErr) {
+                req.log.error({ err: planErr, email: normalizedEmail }, "verifyCustomerAccess: failed to save purchased_plan");
+              } else {
+                req.log.info({ email: normalizedEmail, plan: verifiedPlan, paidPriceId }, "verifyCustomerAccess: purchased_plan saved from verified Stripe session");
+              }
+            }
+          } else {
+            req.log.warn({ email: normalizedEmail, sessionId, paidPriceId }, "verifyCustomerAccess: could not resolve plan from verified session");
+          }
           return true;
         }
       }
@@ -498,6 +544,48 @@ router.post("/enrollment/update", async (req: Request, res: Response) => {
     return;
   }
 
+  // Server-side plan enforcement: a game may only be saved if it belongs to
+  // the customer's verified purchased plan — regardless of what the frontend
+  // sends. (purchased_plan itself is deliberately NOT client-writable.)
+  if (typeof safeFields["game_type"] === "string" && safeFields["game_type"]) {
+    try {
+      let rec: { purchased_plan?: string | null; selected_package?: string | null } | null = null;
+      const sel = await supabase
+        .from("customer_enrollment")
+        .select("purchased_plan, selected_package, payment_status")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+      if (sel.error && isMissingColumnError(sel.error)) {
+        const retry = await supabase
+          .from("customer_enrollment")
+          .select("selected_package, payment_status")
+          .eq("email", normalizedEmail)
+          .maybeSingle();
+        rec = retry.data;
+      } else {
+        rec = sel.data;
+      }
+
+      const plan: Plan | null =
+        normalizePlan(rec?.purchased_plan) ?? normalizePlan(rec?.selected_package);
+      if (!plan) {
+        req.log.error({ email: normalizedEmail, purchased_plan: rec?.purchased_plan }, "enrollment/update: game_type write without a resolvable purchased plan — denied");
+        res.status(403).json({ error: "Your purchased plan is not configured. Please contact support." });
+        return;
+      }
+      const allowedNames = allowedGameNamesForPlan(plan);
+      if (!allowedNames.has(safeFields["game_type"] as string)) {
+        req.log.warn({ email: normalizedEmail, plan, attemptedGame: safeFields["game_type"] }, "enrollment/update: attempted to select a game outside the purchased plan — denied");
+        res.status(403).json({ error: "The selected game is not included in your purchased plan." });
+        return;
+      }
+    } catch (err) {
+      req.log.error({ err, email: normalizedEmail }, "enrollment/update: plan check for game_type failed");
+      res.status(500).json({ error: "Unable to validate your plan. Please try again." });
+      return;
+    }
+  }
+
   req.log.info({ email: normalizedEmail, safeFields }, "enrollment/update: request received");
 
   const updateFields: Record<string, unknown> = { ...safeFields };
@@ -607,6 +695,123 @@ router.get("/enrollment/progress", async (req: Request, res: Response) => {
   } catch (err) {
     req.log.error({ err }, "enrollment/progress: unexpected error");
     res.status(500).json({ error: "Unable to connect to the database." });
+  }
+});
+
+// ── GET /api/enrollment/allowed-games ─────────────────────────────────────────
+// Returns the game template IDs unlocked by the customer's VERIFIED purchased
+// plan. This is the only source the game-selection page uses — the frontend
+// holds no plan logic, so URL/state manipulation cannot unlock other tiers.
+router.get("/enrollment/allowed-games", async (req: Request, res: Response) => {
+  noCache(res);
+
+  const supabase = getSupabase();
+  if (!supabase) {
+    res.status(503).json({ error: "supabase_not_configured", message: "Supabase is not configured on the server." });
+    return;
+  }
+
+  const { email } = req.query as { email?: string };
+  if (!email) {
+    res.status(400).json({ error: "email_required", message: "email is required" });
+    return;
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const hasAccess = await verifyCustomerAccess(req, normalizedEmail);
+  if (!hasAccess) {
+    res.status(403).json({ error: "unauthorized", message: "Access denied. Unauthorized session." });
+    return;
+  }
+
+  try {
+    // Tolerate a not-yet-applied migration 006: retry the select without the
+    // purchased_plan column and fall back to the legacy selected_package.
+    let planColumnExists = true;
+    let record: { email: string; payment_status: string; purchased_plan?: string | null; selected_package?: string | null } | null = null;
+
+    const first = await supabase
+      .from("customer_enrollment")
+      .select("email, payment_status, purchased_plan, selected_package")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (first.error && isMissingColumnError(first.error)) {
+      planColumnExists = false;
+      req.log.warn({ email: normalizedEmail }, "allowed-games: purchased_plan column missing — run migration 006; falling back to selected_package");
+      const retry = await supabase
+        .from("customer_enrollment")
+        .select("email, payment_status, selected_package")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+      if (retry.error) {
+        req.log.error({ err: retry.error, email: normalizedEmail }, "allowed-games: supabase select failed");
+        res.status(502).json({ error: "db_error", message: "Unable to connect to the database." });
+        return;
+      }
+      record = retry.data;
+    } else if (first.error) {
+      req.log.error({ err: first.error, email: normalizedEmail }, "allowed-games: supabase select failed");
+      res.status(502).json({ error: "db_error", message: "Unable to connect to the database." });
+      return;
+    } else {
+      record = first.data;
+    }
+
+    if (!record) {
+      res.status(404).json({ error: "no_enrollment", message: "No enrollment record found." });
+      return;
+    }
+
+    if (record.payment_status !== "paid") {
+      res.status(402).json({ error: "payment_incomplete", message: "Payment has not been completed." });
+      return;
+    }
+
+    let plan: Plan | null = null;
+    if (record.purchased_plan) {
+      plan = normalizePlan(record.purchased_plan);
+      if (!plan) {
+        req.log.error({ email: normalizedEmail, purchased_plan: record.purchased_plan }, "allowed-games: invalid purchased_plan value — denying access");
+        res.status(403).json({ error: "invalid_plan", message: "Your purchased plan is invalid. Please contact support." });
+        return;
+      }
+    } else {
+      // Legacy records (paid before purchased_plan existed): backfill from
+      // selected_package, which the verified webhook path has always written.
+      const legacy = normalizePlan(record.selected_package);
+      if (legacy) {
+        plan = legacy;
+        if (planColumnExists) {
+          const { error: backfillErr } = await supabase
+            .from("customer_enrollment")
+            .update({ purchased_plan: legacy })
+            .eq("email", normalizedEmail);
+          if (backfillErr) {
+            req.log.warn({ err: backfillErr, email: normalizedEmail }, "allowed-games: purchased_plan backfill failed (continuing)");
+          } else {
+            req.log.info({ email: normalizedEmail, plan: legacy }, "allowed-games: backfilled purchased_plan from selected_package");
+          }
+        }
+      } else {
+        req.log.error({ email: normalizedEmail, selected_package: record.selected_package }, "allowed-games: no purchased plan on paid record");
+        res.status(409).json({ error: "plan_not_configured", message: "Your purchased plan is not configured. Please contact support." });
+        return;
+      }
+    }
+
+    const gameIds = PLAN_GAMES[plan];
+    if (!gameIds || gameIds.length === 0) {
+      req.log.error({ email: normalizedEmail, plan }, "allowed-games: no games mapped to plan");
+      res.status(500).json({ error: "no_games_for_plan", message: "No game templates are configured for your plan. Please contact support." });
+      return;
+    }
+
+    req.log.info({ email: normalizedEmail, plan, gameCount: gameIds.length }, "allowed-games: returning permitted games");
+    res.json({ plan, gameIds });
+  } catch (err) {
+    req.log.error({ err, email: normalizedEmail }, "allowed-games: unexpected error");
+    res.status(500).json({ error: "server_error", message: "Unexpected server error." });
   }
 });
 

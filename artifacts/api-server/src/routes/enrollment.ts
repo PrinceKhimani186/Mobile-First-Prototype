@@ -1,5 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import Stripe from "stripe";
+import { createClient } from "@supabase/supabase-js";
+import { normalizePlan } from "../lib/plan-games";
 
 const router: IRouter = Router();
 
@@ -113,6 +115,41 @@ function priceIdError(planName: string): string | null {
 
 // ── POST /api/enrollment/checkout ────────────────────────────────────────────
 router.post("/enrollment/checkout", async (req: Request, res: Response) => {
+  // Dev-only mock: when no STRIPE_SECRET_KEY is configured outside production,
+  // skip Stripe entirely and send the client straight to the success URL so the
+  // onboarding flow can be exercised locally end-to-end.
+  if (!process.env.STRIPE_SECRET_KEY && process.env.NODE_ENV !== "production") {
+    const { successUrl, email: mockEmail, selectedPlan: mockSelectedPlan, planName: mockPlanName } =
+      req.body as { successUrl?: string; email?: string; selectedPlan?: string; planName?: string };
+    if (!successUrl) {
+      res.status(400).json({ error: "Missing successUrl" });
+      return;
+    }
+    req.log.warn("Enrollment: STRIPE_SECRET_KEY not set — mocking checkout in dev, redirecting to success URL");
+
+    // Dev equivalent of the webhook: persist the purchased plan since the mock
+    // redirect goes straight to the success URL with no Stripe event.
+    const mockPlan = normalizePlan(mockSelectedPlan) ?? normalizePlan(mockPlanName);
+    const supaUrl = process.env.SUPABASE_URL;
+    const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+    if (mockPlan && mockEmail && supaUrl && supaKey) {
+      try {
+        const supabase = createClient(supaUrl.trim(), supaKey.trim(), {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        await supabase
+          .from("customer_enrollment")
+          .update({ purchased_plan: mockPlan, payment_status: "paid" })
+          .eq("email", mockEmail.trim().toLowerCase());
+        req.log.info({ email: mockEmail, plan: mockPlan }, "Enrollment: dev mock — purchased_plan saved");
+      } catch (err) {
+        req.log.error({ err }, "Enrollment: dev mock — failed to save purchased_plan");
+      }
+    }
+    res.json({ url: successUrl.replace("{CHECKOUT_SESSION_ID}", "cs_dev_mock") });
+    return;
+  }
+
   // 1 — Validate Stripe key format
   const keyErr = stripeConfigError();
   if (keyErr) {
@@ -175,15 +212,25 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
     return;
   }
 
+  // Canonical plan key for this checkout — resolved server-side from the plan
+  // name/ID, never trusted as-is from arbitrary frontend strings.
+  const planKey = normalizePlan(selectedPlan) ?? normalizePlan(planName);
+  if (!planKey) {
+    req.log.error({ selectedPlan, planName }, "Enrollment: unknown plan in checkout request");
+    res.status(400).json({ error: `Unknown plan "${planName || selectedPlan}".` });
+    return;
+  }
+
   const stripe = new Stripe(stripeKey);
 
   req.log.info({
+    plan: planKey,
     selectedPlan: planName,
     resolvedPriceId: setupFeePrice,
     frontendSentPriceId: stripe_price_id ?? "(none)",
     planTag,
     payment_type: payment_type ?? "(not sent)",
-  }, "Enrollment: checkout price resolved");
+  }, "Enrollment: checkout price resolved — plan will be carried in Stripe metadata");
 
   // 3 — Create / update GHL contact (non-fatal)
   if (ghlApiKey && ghlLocationId) {
@@ -273,7 +320,9 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
         firstName,
         lastName,
         email,
+        customer_email: email,
         phone: phoneVal,
+        plan: planKey,
         selectedPlan,
         planName,
         planTag,

@@ -4,8 +4,10 @@ import { motion } from "framer-motion";
 import { Zap, Eye, EyeOff, ShieldCheck, AlertCircle } from "lucide-react";
 import { getEnrollmentProgress } from "@/services/enrollment";
 
-const ADMIN_EMAIL    = "princekhimani186@gmail.com";
-const ADMIN_PASSWORD = "Prince@123";
+// Configure via VITE_ADMIN_EMAIL / VITE_ADMIN_PASSWORD env vars; the fallbacks
+// keep existing deployments working until those are set in Replit Secrets.
+const ADMIN_EMAIL    = import.meta.env.VITE_ADMIN_EMAIL    || "princekhimani186@gmail.com";
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "Prince@123";
 const STORAGE_KEY    = "as_admin_auth";
 
 const STALE_SESSION_KEYS = [

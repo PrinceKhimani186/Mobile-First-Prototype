@@ -42,7 +42,22 @@ Write-Host "Checking/Creating database 'app_squad_dev'..." -ForegroundColor Cyan
 # Clear PGPASSWORD so it doesn't leak unnecessarily
 $env:PGPASSWORD = $null
 
-# 3. Load other API server environment variables
+# 3. Load ALL environment variables from root .env (single source of truth).
+#    Empty values are skipped so they don't unset anything.
+if (Test-Path ".env") {
+    Write-Host "Loading environment variables from root .env..." -ForegroundColor Cyan
+    Get-Content ".env" | ForEach-Object {
+        if ($_ -match "^([^#=]+)=(.+)$") {
+            $name = $Matches[1].Trim()
+            $value = $Matches[2].Trim()
+            if ($value) {
+                [System.Environment]::SetEnvironmentVariable($name, $value, [System.EnvironmentVariableTarget]::Process)
+            }
+        }
+    }
+}
+
+# 3b. Optional per-app overrides for the API server
 if (Test-Path "artifacts/api-server/.env") {
     Write-Host "Loading environment variables from artifacts/api-server/.env..." -ForegroundColor Cyan
     Get-Content "artifacts/api-server/.env" | ForEach-Object {

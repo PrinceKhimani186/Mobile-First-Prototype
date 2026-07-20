@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { logger } from "../lib/logger";
 import { generateAgreementPDF } from "../lib/pdf";
+import { normalizePlan } from "../lib/plan-games";
 import { createClient } from "@supabase/supabase-js";
 import * as fs from "fs";
 import * as path from "path";
@@ -115,11 +116,16 @@ async function getZohoAccessToken(): Promise<string> {
   return data.access_token;
 }
 
-// ── Package → Zoho Template mapping (3-package structure) ─────────────────────
-const PACKAGE_TEMPLATE_NAMES: Record<string, string> = {
-  essentials:  "App Squad Essentials Agreement",
-  accelerator: "App Squad Ownership Accelerator Agreement",
-  empire:      "App Squad Empire Agreement",
+// ── Package → Zoho Template mapping (configuration-driven) ────────────────────
+// Resolution order per plan:
+//   1. ZOHO_TEMPLATE_<PLAN>_ID   — Zoho template ID (preferred: survives renames)
+//   2. ZOHO_TEMPLATE_<PLAN>_NAME — template name, matched leniently
+//   3. Built-in default name     — legacy fallback only
+// Fixing a mismatch never requires a code change: set the env var and restart.
+const PLAN_TEMPLATE_CONFIG: Record<string, { idVar: string; nameVar: string; defaultName: string }> = {
+  essentials:  { idVar: "ZOHO_TEMPLATE_ESSENTIALS_ID",  nameVar: "ZOHO_TEMPLATE_ESSENTIALS_NAME",  defaultName: "App Squad Essentials Agreement" },
+  accelerator: { idVar: "ZOHO_TEMPLATE_ACCELERATOR_ID", nameVar: "ZOHO_TEMPLATE_ACCELERATOR_NAME", defaultName: "App Squad Ownership Accelerator Agreement" },
+  empire:      { idVar: "ZOHO_TEMPLATE_EMPIRE_ID",      nameVar: "ZOHO_TEMPLATE_EMPIRE_NAME",      defaultName: "App Squad Empire Agreement" },
 };
 
 const PACKAGE_PRICING: Record<string, { name: string; setup: string; monthly: string; pif: string }> = {
@@ -134,56 +140,165 @@ function normalizePaymentType(pt?: string): "monthly" | "paid_in_full" {
   return "paid_in_full"; // covers "subscription" (legacy label), "paid_in_full", "pif", and default
 }
 
-// ── Zoho Templates (cached list lookup by name) ────────────────────────────────
-let templateListCache: { fetchedAt: number; templates: Array<{ template_id: string; template_name: string }> } | null = null;
+// ── Zoho Templates (live fetch with short in-memory cache) ────────────────────
+interface ZohoTemplateInfo {
+  template_id: string;
+  template_name: string;
+  modified_time?: number;
+  created_time?: number;
+  owner_email?: string;
+}
 
-async function fetchZohoTemplateList(): Promise<Array<{ template_id: string; template_name: string }>> {
-  if (templateListCache && Date.now() - templateListCache.fetchedAt < 5 * 60 * 1000) {
+const TEMPLATE_CACHE_TTL_MS = 5 * 60 * 1000;
+let templateListCache: { fetchedAt: number; templates: ZohoTemplateInfo[] } | null = null;
+
+async function fetchZohoTemplateList(forceFresh = false): Promise<ZohoTemplateInfo[]> {
+  if (!forceFresh && templateListCache && Date.now() - templateListCache.fetchedAt < TEMPLATE_CACHE_TTL_MS) {
+    logger.info(
+      { source: "cache", cacheAgeSeconds: Math.round((Date.now() - templateListCache.fetchedAt) / 1000), count: templateListCache.templates.length },
+      "Zoho: template list served from in-memory cache (TTL 5 min — pass ?refresh=1 to /api/zoho/templates to bypass)"
+    );
     return templateListCache.templates;
   }
   const token = await getZohoAccessToken();
-  const res = await fetch(`${getZohoSignBase()}/api/v1/templates`, {
+  const endpoint = `${getZohoSignBase()}/api/v1/templates`;
+  const res = await fetch(endpoint, {
     headers: { Authorization: `Zoho-oauthtoken ${token}` },
   });
   if (!res.ok) {
     const errText = await res.text();
     throw new Error(`Failed to list Zoho templates: HTTP ${res.status} ${errText}`);
   }
-  const data = (await res.json()) as { templates?: Array<{ template_id: string; template_name: string }> };
-  const templates = data.templates || [];
+  const data = (await res.json()) as { templates?: Array<Record<string, unknown>> };
+  const templates: ZohoTemplateInfo[] = (data.templates || []).map(t => ({
+    template_id: String(t.template_id ?? ""),
+    template_name: String(t.template_name ?? ""),
+    modified_time: typeof t.modified_time === "number" ? t.modified_time : undefined,
+    created_time: typeof t.created_time === "number" ? t.created_time : undefined,
+    owner_email: typeof t.owner_email === "string" ? t.owner_email : undefined,
+  }));
+  logger.info(
+    {
+      source: "live",
+      endpoint,
+      region: getZohoRegion(),
+      configuredOrgId: process.env.ZOHO_SIGN_ORGANIZATION_ID || process.env.ZOHO_SIGN_ORG_ID || null,
+      count: templates.length,
+      templates: templates.map(t => ({
+        id: t.template_id,
+        name: t.template_name,
+        modified: t.modified_time ? new Date(t.modified_time).toISOString() : null,
+        owner: t.owner_email ?? null,
+      })),
+    },
+    "Zoho: template list fetched LIVE from Zoho Sign API"
+  );
   templateListCache = { fetchedAt: Date.now(), templates };
   return templates;
 }
 
-// Normalize a template name for lenient comparison: lowercase, underscores→spaces,
-// strip trailing "(n)" duplicate-suffixes and collapse whitespace.
+// Normalize a template name for lenient comparison: lowercase, underscores and
+// hyphens → spaces, collapse duplicate whitespace.
 function normalizeTemplateName(name: string): string {
   return name
     .toLowerCase()
-    .replace(/_/g, " ")
-    .replace(/\s*\(\d+\)\s*$/, "")
+    .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
+// Loosest comparison tier: also strip the duplicate markers Zoho adds when a
+// template is cloned — "(2)" counters and "Copy" suffixes.
+function canonicalTemplateName(name: string): string {
+  return normalizeTemplateName(name)
+    .replace(/\(\d+\)/g, " ")
+    .replace(/\bcopy\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Token-overlap similarity between two template names, for "did you mean" hints.
+function templateSimilarity(a: string, b: string): number {
+  const ta = new Set(canonicalTemplateName(a).split(" ").filter(Boolean));
+  const tb = new Set(canonicalTemplateName(b).split(" ").filter(Boolean));
+  if (ta.size === 0 || tb.size === 0) return 0;
+  let common = 0;
+  for (const t of ta) if (tb.has(t)) common++;
+  return common / Math.max(ta.size, tb.size);
+}
+
 async function resolveTemplateId(packageId: string): Promise<{ templateId: string; templateName: string }> {
-  const wantedName = PACKAGE_TEMPLATE_NAMES[packageId];
-  if (!wantedName) throw new Error(`Unknown package "${packageId}" — no Zoho template mapping configured`);
-  const templates = await fetchZohoTemplateList();
-  const wantedNorm = normalizeTemplateName(wantedName);
-
-  let match = templates.find(t => (t.template_name || "").trim().toLowerCase() === wantedName.toLowerCase());
-  if (!match) {
-    match = templates.find(t => normalizeTemplateName(t.template_name || "") === wantedNorm);
-  }
-
-  if (!match) {
+  const cfg = PLAN_TEMPLATE_CONFIG[packageId];
+  if (!cfg) {
     throw new Error(
-      `Zoho template "${wantedName}" not found in your Zoho Sign account. ` +
-      `Available templates: ${templates.map(t => t.template_name).join(", ") || "none"}`
+      `Unknown package "${packageId}" — no Zoho template mapping configured. ` +
+      `Known plans: ${Object.keys(PLAN_TEMPLATE_CONFIG).join(", ")}`
     );
   }
-  return { templateId: match.template_id, templateName: match.template_name };
+
+  const configuredId = (process.env[cfg.idVar] || "").trim();
+  const configuredName = (process.env[cfg.nameVar] || "").trim() || cfg.defaultName;
+
+  const matchIn = (templates: ZohoTemplateInfo[]): { templateId: string; templateName: string } | null => {
+    // 1 — Template ID (stable; preferred)
+    if (configuredId) {
+      const byId = templates.find(t => t.template_id === configuredId);
+      if (byId) return { templateId: byId.template_id, templateName: byId.template_name };
+      logger.warn(
+        { packageId, configuredId, availableIds: templates.map(t => t.template_id) },
+        `Zoho: configured ${cfg.idVar} not found in the template list — falling back to name matching`
+      );
+    }
+    // 2 — Name matching: exact → normalized (spaces/underscores/hyphens/case) → canonical
+    const exact = templates.find(t => (t.template_name || "").trim().toLowerCase() === configuredName.toLowerCase());
+    if (exact) return { templateId: exact.template_id, templateName: exact.template_name };
+
+    const wantedNorm = normalizeTemplateName(configuredName);
+    const norm = templates.find(t => normalizeTemplateName(t.template_name || "") === wantedNorm);
+    if (norm) return { templateId: norm.template_id, templateName: norm.template_name };
+
+    const wantedCanon = canonicalTemplateName(configuredName);
+    const canon = templates.find(t => canonicalTemplateName(t.template_name || "") === wantedCanon);
+    if (canon) return { templateId: canon.template_id, templateName: canon.template_name };
+    return null;
+  };
+
+  let templates = await fetchZohoTemplateList();
+  let matched = matchIn(templates);
+  if (!matched) {
+    // Never fail on a stale cache: the account may have just been updated,
+    // so re-fetch the list LIVE from Zoho and try once more.
+    logger.warn({ packageId }, "Zoho: no template matched the cached list — re-fetching live before failing");
+    templates = await fetchZohoTemplateList(true);
+    matched = matchIn(templates);
+  }
+  if (matched) return matched;
+
+  // 3 — Nothing matched: full diagnostics + closest-match suggestion
+  const scored = templates
+    .map(t => ({ t, score: templateSimilarity(configuredName, t.template_name || "") }))
+    .sort((a, b) => b.score - a.score);
+  const closest = scored[0] && scored[0].score > 0 ? scored[0].t : null;
+
+  const details = {
+    requestedPlan: packageId,
+    configuredTemplateId: configuredId || null,
+    configuredTemplateName: configuredName,
+    availableTemplates: templates.map(t => ({ id: t.template_id, name: t.template_name })),
+    suggestedClosestMatch: closest ? { id: closest.template_id, name: closest.template_name } : null,
+    fix: `Set ${cfg.idVar} (preferred) or ${cfg.nameVar} in environment secrets to one of the available templates — no code change needed.`,
+  };
+  logger.error(details, "Zoho: template resolution failed");
+
+  const err = new Error(
+    `Zoho template for plan "${packageId}" not found. ` +
+    `Configured: ${configuredId ? `id="${configuredId}", ` : ""}name="${configuredName}". ` +
+    `Available templates: ${templates.map(t => `"${t.template_name}"`).join(", ") || "none"}. ` +
+    (closest ? `Closest match: "${closest.template_name}" (id ${closest.template_id}). ` : "") +
+    `Fix: set ${cfg.idVar} or ${cfg.nameVar} in environment secrets.`
+  );
+  (err as Error & { details?: unknown }).details = details;
+  throw err;
 }
 
 async function fetchZohoTemplateDetail(templateId: string): Promise<{ actions: any[]; fields: any[] }> {
@@ -1375,16 +1490,36 @@ router.get("/zoho/request-status", async (req: Request, res: Response) => {
 // GET /api/zoho/templates - debug/verification: list Zoho templates and confirm package mapping resolves
 router.get("/zoho/templates", async (req: Request, res: Response) => {
   try {
-    const templates = await fetchZohoTemplateList();
-    const mapping = Object.fromEntries(
-      Object.entries(PACKAGE_TEMPLATE_NAMES).map(([pkg, expectedName]) => {
-        const match = templates.find(t => (t.template_name || "").trim().toLowerCase() === expectedName.toLowerCase());
-        return [pkg, { expectedName, found: !!match, templateId: match?.template_id || null }];
-      })
-    );
+    // ?refresh=1 clears the 5-minute in-memory cache and pulls LIVE from Zoho.
+    const forceFresh = req.query.refresh === "1" || req.query.refresh === "true";
+    const cacheAgeSeconds = templateListCache ? Math.round((Date.now() - templateListCache.fetchedAt) / 1000) : null;
+    const servedFromCache = !forceFresh && !!templateListCache && cacheAgeSeconds !== null && cacheAgeSeconds < TEMPLATE_CACHE_TTL_MS / 1000;
+    const templates = await fetchZohoTemplateList(forceFresh);
+    // Run each plan through the real resolver so the diagnostic reflects the
+    // exact resolution (ID → name → lenient matching) used at signing time.
+    const mapping: Record<string, unknown> = {};
+    for (const [pkg, cfg] of Object.entries(PLAN_TEMPLATE_CONFIG)) {
+      const configured = {
+        idVar: cfg.idVar,
+        configuredId: (process.env[cfg.idVar] || "").trim() || null,
+        nameVar: cfg.nameVar,
+        configuredName: (process.env[cfg.nameVar] || "").trim() || cfg.defaultName,
+      };
+      try {
+        const resolved = await resolveTemplateId(pkg);
+        mapping[pkg] = { ...configured, found: true, templateId: resolved.templateId, resolvedTemplateName: resolved.templateName };
+      } catch (err) {
+        mapping[pkg] = {
+          ...configured,
+          found: false,
+          error: (err as Error).message,
+          details: (err as Error & { details?: unknown }).details ?? null,
+        };
+      }
+    }
 
     const fieldsForPkg = String(req.query.fields || "");
-    if (fieldsForPkg && PACKAGE_TEMPLATE_NAMES[fieldsForPkg]) {
+    if (fieldsForPkg && PLAN_TEMPLATE_CONFIG[fieldsForPkg]) {
       const { templateId, templateName } = await resolveTemplateId(fieldsForPkg);
       const detail = await fetchZohoTemplateDetail(templateId);
       res.json({
@@ -1398,7 +1533,30 @@ router.get("/zoho/templates", async (req: Request, res: Response) => {
     }
 
     res.json({
+      connection: {
+        region: getZohoRegion(),
+        apiBase: getZohoSignBase(),
+        configuredOrgId: process.env.ZOHO_SIGN_ORGANIZATION_ID || process.env.ZOHO_SIGN_ORG_ID || null,
+        oauthClientIdPrefix: (getZohoClientId() || "").slice(0, 12) + "…",
+        accessToken: accessTokenCache
+          ? { cached: true, expiresInSeconds: Math.max(0, Math.round((accessTokenCache.expiresAt - Date.now()) / 1000)) }
+          : { cached: false },
+        templateAccountOwners: [...new Set(templates.map(t => t.owner_email).filter(Boolean))],
+      },
+      cache: {
+        servedFromCache,
+        cacheAgeSeconds: servedFromCache ? cacheAgeSeconds : 0,
+        ttlSeconds: TEMPLATE_CACHE_TTL_MS / 1000,
+        hint: "GET /api/zoho/templates?refresh=1 always fetches live from Zoho",
+      },
       totalTemplates: templates.length,
+      templates: templates.map(t => ({
+        id: t.template_id,
+        name: t.template_name,
+        modified: t.modified_time ? new Date(t.modified_time).toISOString() : null,
+        created: t.created_time ? new Date(t.created_time).toISOString() : null,
+        owner: t.owner_email ?? null,
+      })),
       allTemplateNames: templates.map(t => t.template_name),
       mapping,
     });
@@ -1414,16 +1572,145 @@ router.get("/zoho/templates", async (req: Request, res: Response) => {
 // an embedded signing URL for that request.
 router.post("/zoho/create-signature-request", async (req: Request, res: Response) => {
   const {
-    email, fullName, phone, address, packageId,
+    email, fullName, phone, address, packageId: clientPackageId,
     paymentOption, paymentType: rawPaymentType,
   } = req.body as {
     email?: string; fullName?: string; phone?: string; address?: string; packageId?: string;
     paymentOption?: string; paymentType?: string;
   };
 
-  if (!email || !fullName || !packageId) {
+  if (!email || !fullName || !clientPackageId) {
     res.status(400).json({ error: "Missing required fields (email, fullName, packageId)" });
     return;
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Resolve the frame origin once, up front, so both the "resume an existing
+  // request" path and the "create a new one" path can use it.
+  let embedOrigin = req.headers.referer || req.headers.origin || "https://localhost:22474";
+  try {
+    const parsed = new URL(String(embedOrigin));
+    parsed.protocol = "https:";
+    embedOrigin = parsed.origin;
+  } catch { embedOrigin = "https://localhost:22474"; }
+
+  // Prefer the VERIFIED purchased plan on the enrollment record over the
+  // client-sent packageId, so a customer never signs another plan's agreement.
+  // Same lookup also carries agreement_signed / agreement_contract_id so we
+  // can detect "already signed" or "already has a pending document" before
+  // ever creating a new one — see the resume check below.
+  let packageId = normalizePlan(clientPackageId) ?? clientPackageId;
+  let existingRecord: { agreement_signed?: boolean | null; agreement_contract_id?: string | null } | null = null;
+  try {
+    const supaForPlan = getSupabase();
+    if (supaForPlan) {
+      let rec: { purchased_plan?: string | null; selected_package?: string | null; agreement_signed?: boolean | null; agreement_contract_id?: string | null } | null = null;
+      const sel = await supaForPlan
+        .from("customer_enrollment")
+        .select("purchased_plan, selected_package, agreement_signed, agreement_contract_id")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+      if (sel.error) {
+        // purchased_plan column may predate migration 006 — retry without it
+        const retry = await supaForPlan
+          .from("customer_enrollment")
+          .select("selected_package, agreement_signed, agreement_contract_id")
+          .eq("email", normalizedEmail)
+          .maybeSingle();
+        rec = retry.data;
+      } else {
+        rec = sel.data;
+      }
+      existingRecord = rec;
+      const recPlan = normalizePlan(rec?.purchased_plan) ?? normalizePlan(rec?.selected_package);
+      if (recPlan) {
+        if (recPlan !== packageId) {
+          logger.warn({ email: normalizedEmail, clientPackageId, recordPlan: recPlan },
+            "Zoho Sign: client packageId differs from enrollment record — using the record's plan");
+        }
+        packageId = recPlan;
+      }
+    }
+  } catch (err) {
+    logger.warn({ err, email: normalizedEmail }, "Zoho Sign: enrollment record lookup for plan verification failed — using client packageId");
+  }
+
+  // Already signed per our own DB — nothing to do, tell the client to move on.
+  if (existingRecord?.agreement_signed) {
+    logger.info({ email: normalizedEmail }, "Zoho Sign: record already marked agreement_signed — skipping document creation");
+    res.json({ success: true, alreadySigned: true });
+    return;
+  }
+
+  // A prior visit already created a document for this customer. Creating
+  // another one here would (a) waste the account's daily send quota and
+  // (b) orphan a document the customer may have already signed but whose
+  // completion never reached our DB yet — most commonly because Zoho's
+  // webhook can't reach a local dev machine and the browser tab that was
+  // polling for confirmation got closed/reloaded before it caught up.
+  // Resolve the EXISTING request against Zoho itself before creating a new one.
+  const existingRequestId = existingRecord?.agreement_contract_id;
+  if (existingRequestId) {
+    try {
+      const token = await getZohoAccessToken();
+      const statusRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${existingRequestId}`, {
+        headers: { Authorization: `Zoho-oauthtoken ${token}` },
+      });
+      if (statusRes.ok) {
+        const statusData = (await statusRes.json()) as any;
+        const requestObj = statusData.requests || statusData;
+        const requestStatus = String(requestObj?.request_status || "").toLowerCase();
+        logger.info({ email: normalizedEmail, existingRequestId, requestStatus }, "Zoho Sign: found existing request for this customer — checking before creating a new one");
+
+        if (requestStatus === "completed") {
+          const signerAction = requestObj.actions?.find((a: any) => a.action_type === "SIGN");
+          const result = await finalizeSignedAgreement({
+            requestId: existingRequestId,
+            email: normalizedEmail,
+            fullName: signerAction?.recipient_name || fullName,
+            source: "poll",
+          });
+          if (result.ok) {
+            logger.info({ email: normalizedEmail, existingRequestId }, "Zoho Sign: existing request was already completed — finalized without creating a new document");
+            res.json({ success: true, alreadySigned: true });
+            return;
+          }
+          logger.warn({ email: normalizedEmail, existingRequestId, error: result.error }, "Zoho Sign: existing request completed but finalize failed — falling back to a fresh embed link");
+        }
+
+        const resumableStatuses = ["inprogress", "sent", "viewed", "draft"];
+        if (resumableStatuses.includes(requestStatus)) {
+          const signAction = requestObj.actions?.find((a: any) => a.action_type === "SIGN");
+          if (signAction?.action_id) {
+            const token2 = await getZohoAccessToken();
+            const embedRes = await fetch(
+              `${getZohoSignBase()}/api/v1/requests/${existingRequestId}/actions/${signAction.action_id}/embedtoken?host=${embedOrigin}`,
+              { method: "POST", headers: { Authorization: `Zoho-oauthtoken ${token2}` } },
+            );
+            if (embedRes.ok) {
+              const embedData = (await embedRes.json()) as any;
+              const signUrl = embedData.sign_url || embedData.embedurl;
+              if (embedData.status === "success" && signUrl) {
+                logger.info({ email: normalizedEmail, existingRequestId }, "Zoho Sign: resuming existing unsigned document instead of creating a new one");
+                res.json({ success: true, embedUrl: signUrl, requestId: existingRequestId });
+                return;
+              }
+              logger.warn({ email: normalizedEmail, existingRequestId, embedData }, "Zoho Sign: embed token response missing sign_url or non-success status");
+            } else {
+              const errText = await embedRes.text().catch(() => "");
+              logger.warn({ email: normalizedEmail, existingRequestId, status: embedRes.status, errText }, "Zoho Sign: embed token request for existing document failed");
+            }
+          }
+        }
+        // Any other status (expired/declined/recalled/deleted/etc.) — the old
+        // document is unusable, fall through and create a new one below.
+      } else {
+        logger.warn({ email: normalizedEmail, existingRequestId, status: statusRes.status }, "Zoho Sign: failed to look up existing request — falling back to creating a new document");
+      }
+    } catch (err) {
+      logger.warn({ err, email: normalizedEmail, existingRequestId }, "Zoho Sign: error checking existing request — falling back to creating a new document");
+    }
   }
 
   const pkg = PACKAGE_PRICING[packageId];
@@ -1431,8 +1718,6 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
     res.status(400).json({ error: `Unknown packageId "${packageId}". Must be one of: ${Object.keys(PACKAGE_PRICING).join(", ")}` });
     return;
   }
-
-  const normalizedEmail = email.trim().toLowerCase();
   const paymentType = normalizePaymentType(rawPaymentType || paymentOption);
   const agreementDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const paymentTypeLabel = paymentType === "monthly"
@@ -1448,13 +1733,7 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
 
     const detail = await fetchZohoTemplateDetail(templateId);
     const token = await getZohoAccessToken();
-
-    let origin = req.headers.referer || req.headers.origin || "https://localhost:22474";
-    try {
-      const parsed = new URL(origin);
-      parsed.protocol = "https:";
-      origin = parsed.origin;
-    } catch { origin = "https://localhost:22474"; }
+    const origin = embedOrigin;
 
     const fieldValues: Record<string, string> = {
       full_name: fullName,

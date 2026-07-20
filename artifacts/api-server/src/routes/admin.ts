@@ -85,8 +85,9 @@ router.post("/admin/login", async (req: Request, res: Response) => {
     // 1. Seed default accounts if table is empty
     const usersCount = await db.select({ count: sql<number>`cast(count(*) as int)` }).from(adminUsersTable);
     if ((usersCount[0]?.count ?? 0) === 0) {
-      const saHash = await hashPassword("appsquad2024");
-      const pmHash = await hashPassword("appsquad2024");
+      const seedPassword = process.env.ADMIN_PASSWORD || "appsquad2024";
+      const saHash = await hashPassword(seedPassword);
+      const pmHash = await hashPassword(seedPassword);
       const [sa] = await db.insert(adminUsersTable).values({
         name: "Super Admin",
         email: "admin@appsquadinc.com",
