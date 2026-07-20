@@ -167,6 +167,7 @@ async function fetchZohoTemplateList(forceFresh = false): Promise<ZohoTemplateIn
   });
   if (!res.ok) {
     const errText = await res.text();
+    try { const p = JSON.parse(errText); if (p.code === 8026) throw new Error(`ZOHO_LICENSE_8026: ${p.message || "Upgrade your Zoho Sign license."}`); } catch (inner) { if ((inner as Error).message?.startsWith("ZOHO_LICENSE_8026")) throw inner; }
     throw new Error(`Failed to list Zoho templates: HTTP ${res.status} ${errText}`);
   }
   const data = (await res.json()) as { templates?: Array<Record<string, unknown>> };
@@ -308,6 +309,7 @@ async function fetchZohoTemplateDetail(templateId: string): Promise<{ actions: a
   });
   if (!res.ok) {
     const errText = await res.text();
+    try { const p = JSON.parse(errText); if (p.code === 8026) throw new Error(`ZOHO_LICENSE_8026: ${p.message || "Upgrade your Zoho Sign license."}`); } catch (inner) { if ((inner as Error).message?.startsWith("ZOHO_LICENSE_8026")) throw inner; }
     throw new Error(`Failed to fetch Zoho template detail for ${templateId}: HTTP ${res.status} ${errText}`);
   }
   const data = (await res.json()) as any;
@@ -1781,9 +1783,15 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
     if (!createRes.ok) {
       const errText = await createRes.text();
       logger.error({ errText, status: createRes.status, templateId, packageId }, "Zoho Sign: failed to create document from template");
-      let errMsg = "Failed to create signature request from Zoho template";
-      try { const p = JSON.parse(errText); if (p.message) errMsg = p.message; } catch {}
-      res.status(502).json({ error: errMsg });
+      try {
+        const p = JSON.parse(errText);
+        if (p.code === 8026) {
+          res.status(402).json({ error: "Your Zoho Sign account or API token does not have a license that supports this operation. Please upgrade the Zoho Sign plan or use a licensed account.", zohoCode: 8026 });
+          return;
+        }
+        if (p.message) { res.status(502).json({ error: p.message }); return; }
+      } catch {}
+      res.status(502).json({ error: "Failed to create signature request from Zoho template" });
       return;
     }
 
@@ -1819,7 +1827,14 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
       if (!submitRes.ok) {
         const errText = await submitRes.text();
         let errMsg = "Failed to activate signature request";
-        try { const p = JSON.parse(errText); if (p.message) errMsg = p.message; } catch {}
+        try {
+          const p = JSON.parse(errText);
+          if (p.code === 8026) {
+            res.status(402).json({ error: "Your Zoho Sign account or API token does not have a license that supports this operation. Please upgrade the Zoho Sign plan or use a licensed account.", zohoCode: 8026 });
+            return;
+          }
+          if (p.message) errMsg = p.message;
+        } catch {}
         // "Already submitted" is not a real failure — the document is already active, proceed.
         if (!/already submitted/i.test(errMsg)) {
           logger.error({ errText, status: submitRes.status, requestId, templateId, packageId }, "Zoho Sign: failed to submit request");
@@ -1890,6 +1905,11 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
         error: "Zoho Sign refresh token is missing or invalid.",
         action: "Visit /api/zoho/oauth/start to generate a valid refresh token",
         detail: msg,
+      });
+    } else if (msg.startsWith("ZOHO_LICENSE_8026") || msg.includes("8026")) {
+      res.status(402).json({
+        error: "Your Zoho Sign account or API token does not have a license that supports this operation. Please upgrade the Zoho Sign plan or use a licensed account.",
+        zohoCode: 8026,
       });
     } else if (msg.toLowerCase().includes("template")) {
       res.status(503).json({
