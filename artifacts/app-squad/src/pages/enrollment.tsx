@@ -2,8 +2,18 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocation } from "wouter";
 import {
-  Zap, ArrowRight, CheckCircle2, User, Mail,
-  ChevronRight, Loader2, AlertCircle, X, Sparkles, Crown, Rocket,
+  Zap,
+  ArrowRight,
+  CheckCircle2,
+  User,
+  Mail,
+  ChevronRight,
+  Loader2,
+  AlertCircle,
+  X,
+  Sparkles,
+  Crown,
+  Rocket,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,7 +27,8 @@ const PLANS = [
     color: "hsl(218 76% 60%)",
     glow: "hsl(218 76% 60% / 0.18)",
     border: "hsl(218 76% 60% / 0.3)",
-    description: "For first-time app owners seeking one branded mobile game with guided setup.",
+    description:
+      "For first-time app owners seeking one branded mobile game with guided setup.",
     features: [
       "One mobile game template",
       "Basic branding & customization",
@@ -36,7 +47,8 @@ const PLANS = [
     color: "hsl(35 90% 55%)",
     glow: "hsl(35 90% 55% / 0.18)",
     border: "hsl(35 90% 55% / 0.35)",
-    description: "Enhanced branding, monetization prep, App Store Optimization, and priority support.",
+    description:
+      "Enhanced branding, monetization prep, App Store Optimization, and priority support.",
     features: [
       "One premium game template",
       "Enhanced branding & customization",
@@ -56,7 +68,8 @@ const PLANS = [
     color: "hsl(280 70% 65%)",
     glow: "hsl(280 70% 65% / 0.18)",
     border: "hsl(280 70% 65% / 0.3)",
-    description: "Premium done-for-you experience with VIP support and strategic guidance.",
+    description:
+      "Premium done-for-you experience with VIP support and strategic guidance.",
     features: [
       "Up to 2 game templates",
       "Premium branding & customization",
@@ -71,11 +84,20 @@ const PLANS = [
   },
 ] as const;
 
-type PlanId = typeof PLANS[number]["id"];
+type PlanId = (typeof PLANS)[number]["id"];
 
-const pricingDetails: Record<"subscription" | "monthly", Record<PlanId, {
-  priceText: string; subtext: string; stripePriceId: string | undefined; setupPriceId: string | undefined
-}>> = {
+const pricingDetails: Record<
+  "subscription" | "monthly",
+  Record<
+    PlanId,
+    {
+      priceText: string;
+      subtext: string;
+      stripePriceId: string | undefined;
+      setupPriceId: string | undefined;
+    }
+  >
+> = {
   subscription: {
     essentials: {
       priceText: "$2,497",
@@ -151,35 +173,59 @@ const selectBase: React.CSSProperties = {
 };
 
 function InputField({
-  label, type = "text", value, onChange, placeholder, required, name, autoComplete,
+  label,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  required,
+  name,
+  autoComplete,
 }: {
-  label: string; type?: string; value: string;
-  onChange: (v: string) => void; placeholder: string; required?: boolean;
-  name?: string; autoComplete?: string;
+  label: string;
+  type?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  required?: boolean;
+  name?: string;
+  autoComplete?: string;
 }) {
   const [focused, setFocused] = useState(false);
   return (
     <div>
-      <label style={{
-        display: "block", fontFamily: "'Inter'", fontSize: 11, fontWeight: 600,
-        letterSpacing: "0.07em", textTransform: "uppercase",
-        color: "rgba(255,255,255,0.35)", marginBottom: 7,
-      }}>
-        {label}{required && <span style={{ color: "hsl(35 90% 60%)", marginLeft: 3 }}>*</span>}
+      <label
+        style={{
+          display: "block",
+          fontFamily: "'Inter'",
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: "0.07em",
+          textTransform: "uppercase",
+          color: "rgba(255,255,255,0.35)",
+          marginBottom: 7,
+        }}
+      >
+        {label}
+        {required && (
+          <span style={{ color: "hsl(35 90% 60%)", marginLeft: 3 }}>*</span>
+        )}
       </label>
       <input
         type={type}
         name={name}
         autoComplete={autoComplete}
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         // Also sync React state on autofill — browsers fire 'input' on autofill
         // but not always 'change', so we listen to both.
-        onInput={e => onChange((e.target as HTMLInputElement).value)}
+        onInput={(e) => onChange((e.target as HTMLInputElement).value)}
         placeholder={placeholder}
         style={{
           ...inputBase,
-          borderColor: focused ? "hsl(35 90% 55% / 0.5)" : "rgba(255,255,255,0.1)",
+          borderColor: focused
+            ? "hsl(35 90% 55% / 0.5)"
+            : "rgba(255,255,255,0.1)",
         }}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
@@ -189,9 +235,15 @@ function InputField({
 }
 
 function SelectField({
-  label, value, onChange, options, placeholder, required,
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  required,
 }: {
-  label: string; value: string;
+  label: string;
+  value: string;
   onChange: (v: string) => void;
   options: string[];
   placeholder: string;
@@ -200,29 +252,49 @@ function SelectField({
   const [focused, setFocused] = useState(false);
   return (
     <div>
-      <label style={{
-        display: "block", fontFamily: "'Inter'", fontSize: 11, fontWeight: 600,
-        letterSpacing: "0.07em", textTransform: "uppercase",
-        color: "rgba(255,255,255,0.35)", marginBottom: 7,
-      }}>
-        {label}{required && <span style={{ color: "hsl(35 90% 60%)", marginLeft: 3 }}>*</span>}
+      <label
+        style={{
+          display: "block",
+          fontFamily: "'Inter'",
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: "0.07em",
+          textTransform: "uppercase",
+          color: "rgba(255,255,255,0.35)",
+          marginBottom: 7,
+        }}
+      >
+        {label}
+        {required && (
+          <span style={{ color: "hsl(35 90% 60%)", marginLeft: 3 }}>*</span>
+        )}
       </label>
       <select
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         required={required}
         style={{
           ...selectBase,
-          borderColor: focused ? "hsl(35 90% 55% / 0.5)" : "rgba(255,255,255,0.1)",
+          borderColor: focused
+            ? "hsl(35 90% 55% / 0.5)"
+            : "rgba(255,255,255,0.1)",
         }}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
       >
-        <option value="" disabled style={{ background: "#0a0a0f", color: "rgba(255,255,255,0.4)" }}>
+        <option
+          value=""
+          disabled
+          style={{ background: "#0a0a0f", color: "rgba(255,255,255,0.4)" }}
+        >
           {placeholder}
         </option>
-        {options.map(opt => (
-          <option key={opt} value={opt} style={{ background: "#0a0a0f", color: "rgba(255,255,255,0.9)" }}>
+        {options.map((opt) => (
+          <option
+            key={opt}
+            value={opt}
+            style={{ background: "#0a0a0f", color: "rgba(255,255,255,0.9)" }}
+          >
             {opt}
           </option>
         ))}
@@ -232,26 +304,35 @@ function SelectField({
 }
 
 export default function Enrollment() {
-  const [location, navigate] = useLocation();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState<FormData>({
-    firstName: "", lastName: "", email: "", company: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    company: "",
   });
   const [formError, setFormError] = useState("");
   const [submittingStep1, setSubmittingStep1] = useState(false);
 
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
-  const [paymentType, setPaymentType] = useState<"subscription" | "monthly">("subscription");
+  const [paymentType, setPaymentType] = useState<"subscription" | "monthly">(
+    "subscription",
+  );
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
 
   // Debug: log every time this component mounts or re-mounts (should only happen once).
   useEffect(() => {
-    console.info("[Enrollment] Component mounted. If you see this more than once, the component is remounting unexpectedly.");
+    console.info(
+      "[Enrollment] Component mounted. If you see this more than once, the component is remounting unexpectedly.",
+    );
     return () => {
-      console.warn("[Enrollment] Component UNMOUNTED. step resets to 1 on next mount.");
+      console.warn(
+        "[Enrollment] Component UNMOUNTED. step resets to 1 on next mount.",
+      );
     };
   }, []);
 
@@ -261,12 +342,17 @@ export default function Enrollment() {
     const planParam = params.get("plan");
     if (planParam) {
       const planMap: Record<string, PlanId> = {
-        essentials:  "essentials",
+        essentials: "essentials",
         accelerator: "accelerator",
-        empire:      "empire",
+        empire: "empire",
       };
       const matched = planMap[planParam.toLowerCase()];
-      console.info("[Enrollment] Plan from pricing URL:", planParam, "→", matched ?? "(unrecognized)");
+      console.info(
+        "[Enrollment] Plan from pricing URL:",
+        planParam,
+        "→",
+        matched ?? "(unrecognized)",
+      );
       if (matched) setSelectedPlan(matched);
     }
 
@@ -283,16 +369,11 @@ export default function Enrollment() {
       });
     }
 
-    // Use Wouter's navigate (replace mode) instead of raw window.history.replaceState.
-    // Wouter v3 patches history.replaceState and dispatches a navigation event when
-    // called directly, which can cause the router to re-evaluate routes and unmount/
-    // remount the Enrollment component — resetting step back to 1. Using Wouter's own
-    // navigate avoids this because Wouter recognises it's already on the same path and
-    // does not remount the matched route component.
+    // Strip URL params after reading them so they don't persist in the address bar.
     if (params.has("plan") || params.has("payment") || params.has("type")) {
-      navigate(window.location.pathname, { replace: true });
+      window.history.replaceState({}, "", window.location.pathname);
     }
-  }, [toast, navigate]);
+  }, [toast]);
 
   function validateStep1() {
     if (!form.firstName.trim()) return "First name is required.";
@@ -316,23 +397,23 @@ export default function Enrollment() {
     // via FormData as the authoritative source, then fall back to React state.
     const fd = new FormData(e.currentTarget);
     const domFirstName = (fd.get("firstName") as string | null)?.trim() || "";
-    const domLastName  = (fd.get("lastName")  as string | null)?.trim() || "";
-    const domEmail     = (fd.get("email")     as string | null)?.trim() || "";
-    const domCompany   = (fd.get("company")   as string | null)?.trim() || "";
+    const domLastName = (fd.get("lastName") as string | null)?.trim() || "";
+    const domEmail = (fd.get("email") as string | null)?.trim() || "";
+    const domCompany = (fd.get("company") as string | null)?.trim() || "";
 
     // Prefer the DOM value (actual input content) over stale React state.
     const effective = {
       firstName: domFirstName || form.firstName.trim(),
-      lastName:  domLastName  || form.lastName.trim(),
-      email:     domEmail     || form.email.trim(),
-      company:   domCompany   || form.company.trim(),
+      lastName: domLastName || form.lastName.trim(),
+      email: domEmail || form.email.trim(),
+      company: domCompany || form.company.trim(),
     };
 
     console.info("[Enrollment] Form values (effective):", {
       firstName: effective.firstName || "(empty)",
-      lastName:  effective.lastName  || "(empty)",
-      email:     effective.email     || "(empty)",
-      company:   effective.company   || "(empty)",
+      lastName: effective.lastName || "(empty)",
+      email: effective.email || "(empty)",
+      company: effective.company || "(empty)",
       domValues: { domFirstName, domLastName, domEmail, domCompany },
       reactState: { ...form },
     });
@@ -341,9 +422,9 @@ export default function Enrollment() {
     // have the correct data even if autofill bypassed onChange.
     if (
       effective.firstName !== form.firstName ||
-      effective.lastName  !== form.lastName  ||
-      effective.email     !== form.email     ||
-      effective.company   !== form.company
+      effective.lastName !== form.lastName ||
+      effective.email !== form.email ||
+      effective.company !== form.company
     ) {
       setForm(effective);
     }
@@ -351,18 +432,25 @@ export default function Enrollment() {
     // Validate with the effective (DOM-sourced) values.
     const err = (() => {
       if (!effective.firstName) return "First name is required.";
-      if (!effective.lastName)  return "Last name is required.";
+      if (!effective.lastName) return "Last name is required.";
       const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRe.test(effective.email)) return "Please enter a valid email address.";
+      if (!emailRe.test(effective.email))
+        return "Please enter a valid email address.";
       if (!effective.company) return "Business name is required.";
       return "";
     })();
 
-    console.info("[Enrollment] Validation result:", err ? `FAILED — "${err}"` : "PASSED");
+    console.info(
+      "[Enrollment] Validation result:",
+      err ? `FAILED — "${err}"` : "PASSED",
+    );
 
     if (err) {
       setFormError(err);
-      console.warn("[Enrollment] Staying on step 1 due to validation error:", err);
+      console.warn(
+        "[Enrollment] Staying on step 1 due to validation error:",
+        err,
+      );
       return;
     }
 
@@ -372,19 +460,31 @@ export default function Enrollment() {
     const normalizedEmail = effective.email.toLowerCase();
 
     // Save session data for downstream use
-    localStorage.setItem("appSquadEnrollment", JSON.stringify({
-      firstName: effective.firstName,
-      lastName:  effective.lastName,
-      email:     normalizedEmail,
-      company:   effective.company,
-      selectedPlan,
-    }));
+    localStorage.setItem(
+      "appSquadEnrollment",
+      JSON.stringify({
+        firstName: effective.firstName,
+        lastName: effective.lastName,
+        email: normalizedEmail,
+        company: effective.company,
+        selectedPlan,
+      }),
+    );
     localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
-    localStorage.setItem("appSquadEnrollmentName", `${effective.firstName} ${effective.lastName}`.trim());
+    localStorage.setItem(
+      "appSquadEnrollmentName",
+      `${effective.firstName} ${effective.lastName}`.trim(),
+    );
 
-    console.info("[Enrollment] Advancing to step 2 (plan selection). Email saved:", normalizedEmail);
+    console.info(
+      "[Enrollment] Advancing to step 2 (plan selection). Email saved:",
+      normalizedEmail,
+    );
 
-    // Advance to plan selection
+    // Advance to plan selection. Step is React state — the URL does NOT need to
+    // mirror it. Calling navigate() here triggers a Wouter location event that
+    // races with the batched setStep(2) update and can win, leaving the component
+    // re-rendered with step=1 before React commits the step=2 update.
     setStep(2);
     setSubmittingStep1(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -392,7 +492,7 @@ export default function Enrollment() {
 
   async function handleEnroll() {
     if (!selectedPlan) return;
-    const plan = PLANS.find(p => p.id === selectedPlan)!;
+    const plan = PLANS.find((p) => p.id === selectedPlan)!;
     const pricing = pricingDetails[paymentType][selectedPlan];
     setLoading(true);
     setCheckoutError("");
@@ -418,14 +518,19 @@ export default function Enrollment() {
 
       if (!initRes.ok) {
         const initData = (await initRes.json()) as { error?: string };
-        setCheckoutError(initData.error ?? "Unable to initialize enrollment record. Please try again.");
+        setCheckoutError(
+          initData.error ??
+            "Unable to initialize enrollment record. Please try again.",
+        );
         setLoading(false);
         return;
       }
 
       // 2 — Create the Stripe checkout session (passing package details, price, payment type, setup price)
       if (!pricing.stripePriceId) {
-        setCheckoutError(`Stripe price ID for ${plan.name} (${paymentType}) is not configured. Contact support.`);
+        setCheckoutError(
+          `Stripe price ID for ${plan.name} (${paymentType}) is not configured. Contact support.`,
+        );
         setLoading(false);
         return;
       }
@@ -457,7 +562,9 @@ export default function Enrollment() {
       const data = (await res.json()) as { url?: string; error?: string };
 
       if (!res.ok || !data.url) {
-        setCheckoutError(data.error ?? "Unable to start checkout. Please try again.");
+        setCheckoutError(
+          data.error ?? "Unable to start checkout. Please try again.",
+        );
         return;
       }
 
@@ -469,162 +576,340 @@ export default function Enrollment() {
       // 4 — Redirect to Stripe Checkout page
       window.location.href = data.url;
     } catch {
-      setCheckoutError("Network error. Please check your connection and try again.");
+      setCheckoutError(
+        "Network error. Please check your connection and try again.",
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#050507",
-      position: "relative",
-      overflowX: "hidden",
-      paddingBottom: 80,
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#050507",
+        position: "relative",
+        overflowX: "hidden",
+        paddingBottom: 80,
+      }}
+    >
       <div className="absolute inset-0 grid-bg opacity-10" />
-      <div style={{
-        position: "absolute", top: "10%", left: "50%", transform: "translateX(-50%)",
-        width: 800, height: 600,
-        background: "radial-gradient(ellipse, hsl(35 90% 55% / 0.07) 0%, transparent 65%)",
-        filter: "blur(80px)", pointerEvents: "none",
-      }} />
+      <div
+        style={{
+          position: "absolute",
+          top: "10%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 800,
+          height: 600,
+          background:
+            "radial-gradient(ellipse, hsl(35 90% 55% / 0.07) 0%, transparent 65%)",
+          filter: "blur(80px)",
+          pointerEvents: "none",
+        }}
+      />
 
       <div className="relative z-10 max-w-3xl mx-auto px-4 pt-14">
-
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full"
-            style={{ background: "hsl(35 90% 55% / 0.1)", border: "1px solid hsl(35 90% 55% / 0.2)" }}>
-            <Rocket style={{ width: 13, height: 13, color: "hsl(35 90% 62%)" }} />
-            <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "hsl(35 90% 62%)" }}>
+          <div
+            className="inline-flex items-center gap-2 mb-5 px-4 py-1.5 rounded-full"
+            style={{
+              background: "hsl(35 90% 55% / 0.1)",
+              border: "1px solid hsl(35 90% 55% / 0.2)",
+            }}
+          >
+            <Rocket
+              style={{ width: 13, height: 13, color: "hsl(35 90% 62%)" }}
+            />
+            <span
+              style={{
+                fontFamily: "'Inter'",
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "hsl(35 90% 62%)",
+              }}
+            >
               App Launch Enrollment
             </span>
           </div>
-          <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 700, letterSpacing: "-0.025em", lineHeight: 1.1, marginBottom: 14 }}>
+          <h1
+            style={{
+              fontFamily: "'Space Grotesk'",
+              fontSize: "clamp(1.75rem, 4vw, 2.75rem)",
+              fontWeight: 700,
+              letterSpacing: "-0.025em",
+              lineHeight: 1.1,
+              marginBottom: 14,
+            }}
+          >
             Start Your App Ownership Journey
           </h1>
-          <p style={{ fontFamily: "'Inter'", fontSize: 15, color: "hsl(218 16% 48%)", fontWeight: 300, maxWidth: 480, margin: "0 auto" }}>
+          <p
+            style={{
+              fontFamily: "'Inter'",
+              fontSize: 15,
+              color: "hsl(218 16% 48%)",
+              fontWeight: 300,
+              maxWidth: 480,
+              margin: "0 auto",
+            }}
+          >
             Complete your details and secure your place today.
           </p>
         </motion.div>
 
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-3 mb-10">
-          {[1, 2].map(n => (
+          {[1, 2].map((n) => (
             <div key={n} className="flex items-center gap-3">
-              <div style={{
-                width: 32, height: 32, borderRadius: "50%",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "'Space Grotesk'", fontSize: 13, fontWeight: 700,
-                background: step >= n ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))" : "hsl(226 32% 10%)",
-                border: step >= n ? "none" : "1px solid rgba(255,255,255,0.1)",
-                color: step >= n ? "white" : "rgba(255,255,255,0.3)",
-                transition: "all 0.3s",
-              }}>
-                {step > n ? <CheckCircle2 style={{ width: 15, height: 15 }} /> : n}
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "'Space Grotesk'",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  background:
+                    step >= n
+                      ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))"
+                      : "hsl(226 32% 10%)",
+                  border:
+                    step >= n ? "none" : "1px solid rgba(255,255,255,0.1)",
+                  color: step >= n ? "white" : "rgba(255,255,255,0.3)",
+                  transition: "all 0.3s",
+                }}
+              >
+                {step > n ? (
+                  <CheckCircle2 style={{ width: 15, height: 15 }} />
+                ) : (
+                  n
+                )}
               </div>
-              <span style={{
-                fontFamily: "'Inter'", fontSize: 12, fontWeight: 500,
-                color: step >= n ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.3)",
-              }}>
+              <span
+                style={{
+                  fontFamily: "'Inter'",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color:
+                    step >= n
+                      ? "rgba(255,255,255,0.8)"
+                      : "rgba(255,255,255,0.3)",
+                }}
+              >
                 {n === 1 ? "Your Details" : "Choose Plan"}
               </span>
               {n < 2 && (
-                <ChevronRight style={{ width: 14, height: 14, color: "rgba(255,255,255,0.2)" }} />
+                <ChevronRight
+                  style={{
+                    width: 14,
+                    height: 14,
+                    color: "rgba(255,255,255,0.2)",
+                  }}
+                />
               )}
             </div>
           ))}
         </div>
 
         <AnimatePresence mode="wait">
-
           {/* ── Step 1: User info ── */}
           {step === 1 && (
             <motion.div
               key="step1"
-              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25 }}
             >
-              <div style={{
-                background: "hsl(226 32% 7%)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 20,
-                padding: "36px 32px",
-              }}>
+              <div
+                style={{
+                  background: "hsl(226 32% 7%)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 20,
+                  padding: "36px 32px",
+                }}
+              >
                 <div className="flex items-center gap-3 mb-8">
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 12,
-                    background: "hsl(35 90% 55% / 0.12)",
-                    border: "1px solid hsl(35 90% 55% / 0.25)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                  }}>
-                    <User style={{ width: 18, height: 18, color: "hsl(35 90% 62%)" }} />
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      background: "hsl(35 90% 55% / 0.12)",
+                      border: "1px solid hsl(35 90% 55% / 0.25)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <User
+                      style={{
+                        width: 18,
+                        height: 18,
+                        color: "hsl(35 90% 62%)",
+                      }}
+                    />
                   </div>
                   <div>
-                    <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: 18, fontWeight: 700, letterSpacing: "-0.02em" }}>
+                    <h2
+                      style={{
+                        fontFamily: "'Space Grotesk'",
+                        fontSize: 18,
+                        fontWeight: 700,
+                        letterSpacing: "-0.02em",
+                      }}
+                    >
                       Your Information
                     </h2>
-                    <p style={{ fontFamily: "'Inter'", fontSize: 12.5, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                    <p
+                      style={{
+                        fontFamily: "'Inter'",
+                        fontSize: 12.5,
+                        color: "rgba(255,255,255,0.35)",
+                        marginTop: 2,
+                      }}
+                    >
                       We'll use this to set up your account.
                     </p>
                   </div>
                 </div>
 
-                <form onSubmit={handleStep1Submit} noValidate style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <form
+                  onSubmit={handleStep1Submit}
+                  noValidate
+                  style={{ display: "flex", flexDirection: "column", gap: 18 }}
+                >
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <InputField label="First Name" name="firstName" autoComplete="given-name"
+                    <InputField
+                      label="First Name"
+                      name="firstName"
+                      autoComplete="given-name"
                       value={form.firstName}
-                      onChange={v => { setForm(f => ({ ...f, firstName: v })); setFormError(""); }}
-                      placeholder="Prince" required />
-                    <InputField label="Last Name" name="lastName" autoComplete="family-name"
+                      onChange={(v) => {
+                        setForm((f) => ({ ...f, firstName: v }));
+                        setFormError("");
+                      }}
+                      placeholder="Prince"
+                      required
+                    />
+                    <InputField
+                      label="Last Name"
+                      name="lastName"
+                      autoComplete="family-name"
                       value={form.lastName}
-                      onChange={v => { setForm(f => ({ ...f, lastName: v })); setFormError(""); }}
-                      placeholder="Khimani" required />
+                      onChange={(v) => {
+                        setForm((f) => ({ ...f, lastName: v }));
+                        setFormError("");
+                      }}
+                      placeholder="Khimani"
+                      required
+                    />
                   </div>
-                  <InputField label="Email Address" type="email" name="email" autoComplete="email"
+                  <InputField
+                    label="Email Address"
+                    type="email"
+                    name="email"
+                    autoComplete="email"
                     value={form.email}
-                    onChange={v => { setForm(f => ({ ...f, email: v })); setFormError(""); }}
-                    placeholder="you@example.com" required />
-                  <InputField label="Business Name" name="company" autoComplete="organization"
+                    onChange={(v) => {
+                      setForm((f) => ({ ...f, email: v }));
+                      setFormError("");
+                    }}
+                    placeholder="you@example.com"
+                    required
+                  />
+                  <InputField
+                    label="Business Name"
+                    name="company"
+                    autoComplete="organization"
                     value={form.company}
-                    onChange={v => { setForm(f => ({ ...f, company: v })); setFormError(""); }}
-                    placeholder="Your business name" required />
+                    onChange={(v) => {
+                      setForm((f) => ({ ...f, company: v }));
+                      setFormError("");
+                    }}
+                    placeholder="Your business name"
+                    required
+                  />
 
                   {formError && (
-                    <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
                       style={{
-                        display: "flex", alignItems: "center", gap: 8,
-                        padding: "10px 14px", borderRadius: 10,
-                        background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
-                      }}>
-                      <AlertCircle style={{ width: 14, height: 14, color: "#f87171", flexShrink: 0 }} />
-                      <p style={{ fontFamily: "'Inter'", fontSize: 12.5, color: "#f87171", margin: 0 }}>
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                        background: "rgba(239,68,68,0.08)",
+                        border: "1px solid rgba(239,68,68,0.25)",
+                      }}
+                    >
+                      <AlertCircle
+                        style={{
+                          width: 14,
+                          height: 14,
+                          color: "#f87171",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <p
+                        style={{
+                          fontFamily: "'Inter'",
+                          fontSize: 12.5,
+                          color: "#f87171",
+                          margin: 0,
+                        }}
+                      >
                         {formError}
                       </p>
                     </motion.div>
                   )}
 
-                  <button type="submit"
+                  <button
+                    type="submit"
                     disabled={submittingStep1}
                     style={{
-                      width: "100%", height: 50, borderRadius: 14, border: "none",
+                      width: "100%",
+                      height: 50,
+                      borderRadius: 14,
+                      border: "none",
                       background: submittingStep1
                         ? "hsl(35 90% 55% / 0.4)"
                         : "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))",
-                      color: "white", fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 600,
+                      color: "white",
+                      fontFamily: "'Space Grotesk'",
+                      fontSize: 15,
+                      fontWeight: 600,
                       cursor: submittingStep1 ? "not-allowed" : "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      gap: 8, marginTop: 4,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      marginTop: 4,
                     }}
                   >
                     {submittingStep1 ? (
                       <>
-                        <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} />
+                        <Loader2
+                          style={{
+                            width: 16,
+                            height: 16,
+                            animation: "spin 1s linear infinite",
+                          }}
+                        />
                         Saving…
                       </>
                     ) : (
@@ -637,10 +922,31 @@ export default function Enrollment() {
                 </form>
               </div>
 
-              <p style={{ textAlign: "center", fontFamily: "'Inter'", fontSize: 12, color: "hsl(218 16% 30%)", marginTop: 20, lineHeight: 1.65 }}>
-                This page is for clients who have completed a strategy call with the App Squad team.{" "}
-                <button type="button" onClick={() => navigate("/apply")}
-                  style={{ color: "hsl(35 90% 58%)", cursor: "pointer", textDecoration: "underline", background: "none", border: "none", fontFamily: "'Inter'", fontSize: 12 }}>
+              <p
+                style={{
+                  textAlign: "center",
+                  fontFamily: "'Inter'",
+                  fontSize: 12,
+                  color: "hsl(218 16% 30%)",
+                  marginTop: 20,
+                  lineHeight: 1.65,
+                }}
+              >
+                This page is for clients who have completed a strategy call with
+                the App Squad team.{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/apply")}
+                  style={{
+                    color: "hsl(35 90% 58%)",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    background: "none",
+                    border: "none",
+                    fontFamily: "'Inter'",
+                    fontSize: 12,
+                  }}
+                >
                   Apply here
                 </button>{" "}
                 if you haven't started yet.
@@ -652,22 +958,28 @@ export default function Enrollment() {
           {step === 2 && (
             <motion.div
               key="step2"
-              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.25 }}
             >
               {/* Payment Type Toggle */}
-              <div style={{
-                display: "flex",
-                justifyContent: "center",
-                marginBottom: 32,
-              }}>
-                <div style={{
-                  display: "inline-flex",
-                  background: "hsl(226 32% 7%)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  padding: 4,
-                  borderRadius: 99,
-                }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginBottom: 32,
+                }}
+              >
+                <div
+                  style={{
+                    display: "inline-flex",
+                    background: "hsl(226 32% 7%)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    padding: 4,
+                    borderRadius: 99,
+                  }}
+                >
                   <button
                     type="button"
                     onClick={() => setPaymentType("subscription")}
@@ -680,13 +992,18 @@ export default function Enrollment() {
                       border: "none",
                       cursor: "pointer",
                       transition: "all 0.3s",
-                      background: paymentType === "subscription"
-                        ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))"
-                        : "transparent",
-                      color: paymentType === "subscription" ? "white" : "rgba(255,255,255,0.4)",
-                      boxShadow: paymentType === "subscription"
-                        ? "0 0 16px -4px hsl(35 90% 55% / 0.5)"
-                        : "none",
+                      background:
+                        paymentType === "subscription"
+                          ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))"
+                          : "transparent",
+                      color:
+                        paymentType === "subscription"
+                          ? "white"
+                          : "rgba(255,255,255,0.4)",
+                      boxShadow:
+                        paymentType === "subscription"
+                          ? "0 0 16px -4px hsl(35 90% 55% / 0.5)"
+                          : "none",
                     }}
                   >
                     One Time
@@ -703,13 +1020,18 @@ export default function Enrollment() {
                       border: "none",
                       cursor: "pointer",
                       transition: "all 0.3s",
-                      background: paymentType === "monthly"
-                        ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))"
-                        : "transparent",
-                      color: paymentType === "monthly" ? "white" : "rgba(255,255,255,0.4)",
-                      boxShadow: paymentType === "monthly"
-                        ? "0 0 16px -4px hsl(35 90% 55% / 0.5)"
-                        : "none",
+                      background:
+                        paymentType === "monthly"
+                          ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))"
+                          : "transparent",
+                      color:
+                        paymentType === "monthly"
+                          ? "white"
+                          : "rgba(255,255,255,0.4)",
+                      boxShadow:
+                        paymentType === "monthly"
+                          ? "0 0 16px -4px hsl(35 90% 55% / 0.5)"
+                          : "none",
                     }}
                   >
                     Monthly
@@ -717,13 +1039,23 @@ export default function Enrollment() {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 16, marginBottom: 24 }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(6, 1fr)",
+                  gap: 16,
+                  marginBottom: 24,
+                }}
+              >
                 {PLANS.map((plan, idx) => {
                   const Icon = plan.icon;
                   const isSelected = selectedPlan === plan.id;
-                  const gridColumn = idx < 3
-                    ? `${idx * 2 + 1} / span 2`
-                    : idx === 3 ? "2 / span 2" : "4 / span 2";
+                  const gridColumn =
+                    idx < 3
+                      ? `${idx * 2 + 1} / span 2`
+                      : idx === 3
+                        ? "2 / span 2"
+                        : "4 / span 2";
                   return (
                     <motion.button
                       key={plan.id}
@@ -747,80 +1079,155 @@ export default function Enrollment() {
                         cursor: "pointer",
                         textAlign: "left",
                         transition: "all 0.2s",
-                        boxShadow: isSelected ? `0 0 32px -8px ${plan.glow}` : "none",
+                        boxShadow: isSelected
+                          ? `0 0 32px -8px ${plan.glow}`
+                          : "none",
                       }}
                     >
                       {plan.popular && (
-                        <div style={{
-                          position: "absolute", top: -1, right: 16,
-                          background: "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))",
-                          color: "white", fontFamily: "'Space Grotesk'", fontSize: 10, fontWeight: 700,
-                          letterSpacing: "0.08em", textTransform: "uppercase",
-                          padding: "3px 10px", borderRadius: "0 0 8px 8px",
-                        }}>
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: -1,
+                            right: 16,
+                            background:
+                              "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))",
+                            color: "white",
+                            fontFamily: "'Space Grotesk'",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            padding: "3px 10px",
+                            borderRadius: "0 0 8px 8px",
+                          }}
+                        >
                           Most Popular
                         </div>
                       )}
 
                       {isSelected && (
-                        <div style={{
-                          position: "absolute", top: 14, right: 14,
-                          width: 22, height: 22, borderRadius: "50%",
-                          background: plan.color,
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>
-                          <CheckCircle2 style={{ width: 13, height: 13, color: "white" }} />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 14,
+                            right: 14,
+                            width: 22,
+                            height: 22,
+                            borderRadius: "50%",
+                            background: plan.color,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <CheckCircle2
+                            style={{ width: 13, height: 13, color: "white" }}
+                          />
                         </div>
                       )}
 
-                      <div style={{
-                        width: 42, height: 42, borderRadius: 12, marginBottom: 14,
-                        background: `${plan.color}18`,
-                        border: `1px solid ${plan.color}40`,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                      }}>
-                        <Icon style={{ width: 20, height: 20, color: plan.color }} />
+                      <div
+                        style={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: 12,
+                          marginBottom: 14,
+                          background: `${plan.color}18`,
+                          border: `1px solid ${plan.color}40`,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Icon
+                          style={{ width: 20, height: 20, color: plan.color }}
+                        />
                       </div>
 
-                      <h3 style={{
-                        fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700,
-                        letterSpacing: "-0.02em", marginBottom: 8, color: "rgba(255,255,255,0.95)",
-                      }}>
+                      <h3
+                        style={{
+                          fontFamily: "'Space Grotesk'",
+                          fontSize: 16,
+                          fontWeight: 700,
+                          letterSpacing: "-0.02em",
+                          marginBottom: 8,
+                          color: "rgba(255,255,255,0.95)",
+                        }}
+                      >
                         {plan.name}
                       </h3>
-                      <p style={{
-                        fontFamily: "'Inter'", fontSize: 12.5, color: "rgba(255,255,255,0.4)",
-                        lineHeight: 1.6, marginBottom: 16,
-                      }}>
+                      <p
+                        style={{
+                          fontFamily: "'Inter'",
+                          fontSize: 12.5,
+                          color: "rgba(255,255,255,0.4)",
+                          lineHeight: 1.6,
+                          marginBottom: 16,
+                        }}
+                      >
                         {plan.description}
                       </p>
 
                       {/* Pricing Display */}
                       <div style={{ marginBottom: 20 }}>
-                        <div style={{ 
-                          fontFamily: "'Space Grotesk'", 
-                          fontSize: 28, 
-                          fontWeight: 700, 
-                          color: "white" 
-                        }}>
+                        <div
+                          style={{
+                            fontFamily: "'Space Grotesk'",
+                            fontSize: 28,
+                            fontWeight: 700,
+                            color: "white",
+                          }}
+                        >
                           {pricingDetails[paymentType][plan.id].priceText}
                         </div>
-                        <div style={{ 
-                          fontFamily: "'Inter'", 
-                          fontSize: 12, 
-                          color: plan.color,
-                          fontWeight: 500,
-                          marginTop: 2
-                        }}>
+                        <div
+                          style={{
+                            fontFamily: "'Inter'",
+                            fontSize: 12,
+                            color: plan.color,
+                            fontWeight: 500,
+                            marginTop: 2,
+                          }}
+                        >
                           {pricingDetails[paymentType][plan.id].subtext}
                         </div>
                       </div>
 
-                      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 7 }}>
-                        {plan.features.map(f => (
-                          <li key={f} style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                            <CheckCircle2 style={{ width: 13, height: 13, color: plan.color, flexShrink: 0 }} />
-                            <span style={{ fontFamily: "'Inter'", fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+                      <ul
+                        style={{
+                          listStyle: "none",
+                          padding: 0,
+                          margin: 0,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 7,
+                        }}
+                      >
+                        {plan.features.map((f) => (
+                          <li
+                            key={f}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 7,
+                            }}
+                          >
+                            <CheckCircle2
+                              style={{
+                                width: 13,
+                                height: 13,
+                                color: plan.color,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span
+                              style={{
+                                fontFamily: "'Inter'",
+                                fontSize: 12,
+                                color: "rgba(255,255,255,0.6)",
+                              }}
+                            >
                               {f}
                             </span>
                           </li>
@@ -832,17 +1239,49 @@ export default function Enrollment() {
               </div>
 
               {checkoutError && (
-                <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
                   style={{
-                    display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
-                    padding: "12px 16px", borderRadius: 12,
-                    background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
-                  }}>
-                  <AlertCircle style={{ width: 14, height: 14, color: "#f87171", flexShrink: 0 }} />
-                  <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "#f87171", margin: 0, flex: 1 }}>
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginBottom: 16,
+                    padding: "12px 16px",
+                    borderRadius: 12,
+                    background: "rgba(239,68,68,0.08)",
+                    border: "1px solid rgba(239,68,68,0.25)",
+                  }}
+                >
+                  <AlertCircle
+                    style={{
+                      width: 14,
+                      height: 14,
+                      color: "#f87171",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <p
+                    style={{
+                      fontFamily: "'Inter'",
+                      fontSize: 13,
+                      color: "#f87171",
+                      margin: 0,
+                      flex: 1,
+                    }}
+                  >
                     {checkoutError}
                   </p>
-                  <button onClick={() => setCheckoutError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#f87171", padding: 2 }}>
+                  <button
+                    onClick={() => setCheckoutError("")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#f87171",
+                      padding: 2,
+                    }}
+                  >
                     <X style={{ width: 14, height: 14 }} />
                   </button>
                 </motion.div>
@@ -850,15 +1289,31 @@ export default function Enrollment() {
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => { setStep(1); setSelectedPlan(null); setCheckoutError(""); }}
-                  style={{
-                    flex: "0 0 auto", height: 50, paddingInline: 24, borderRadius: 14,
-                    border: "1px solid rgba(255,255,255,0.1)", background: "transparent",
-                    color: "rgba(255,255,255,0.5)", fontFamily: "'Space Grotesk'", fontSize: 14,
-                    fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+                  onClick={() => {
+                    setStep(1);
+                    setSelectedPlan(null);
+                    setCheckoutError("");
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
+                  style={{
+                    flex: "0 0 auto",
+                    height: 50,
+                    paddingInline: 24,
+                    borderRadius: 14,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "transparent",
+                    color: "rgba(255,255,255,0.5)",
+                    fontFamily: "'Space Grotesk'",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.color = "rgba(255,255,255,0.8)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "rgba(255,255,255,0.5)")
+                  }
                 >
                   ← Back
                 </button>
@@ -867,33 +1322,55 @@ export default function Enrollment() {
                   onClick={handleEnroll}
                   disabled={!selectedPlan || loading}
                   style={{
-                    flex: 1, height: 50, borderRadius: 14, border: "none",
-                    background: selectedPlan && !loading
-                      ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))"
-                      : "hsl(35 90% 55% / 0.25)",
-                    color: selectedPlan && !loading ? "white" : "rgba(255,255,255,0.3)",
-                    fontFamily: "'Space Grotesk'", fontSize: 15, fontWeight: 600,
-                    cursor: selectedPlan && !loading ? "pointer" : "not-allowed",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    gap: 8, transition: "all 0.2s",
+                    flex: 1,
+                    height: 50,
+                    borderRadius: 14,
+                    border: "none",
+                    background:
+                      selectedPlan && !loading
+                        ? "linear-gradient(135deg, hsl(38 95% 54%), hsl(24 90% 50%))"
+                        : "hsl(35 90% 55% / 0.25)",
+                    color:
+                      selectedPlan && !loading
+                        ? "white"
+                        : "rgba(255,255,255,0.3)",
+                    fontFamily: "'Space Grotesk'",
+                    fontSize: 15,
+                    fontWeight: 600,
+                    cursor:
+                      selectedPlan && !loading ? "pointer" : "not-allowed",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    transition: "all 0.2s",
                   }}
                 >
                   {loading ? (
                     <>
-                      <Loader2 style={{ width: 16, height: 16, animation: "spin 1s linear infinite" }} />
+                      <Loader2
+                        style={{
+                          width: 16,
+                          height: 16,
+                          animation: "spin 1s linear infinite",
+                        }}
+                      />
                       Redirecting…
                     </>
                   ) : (
                     <>
-                      {selectedPlan ? `Proceed with ${PLANS.find(p => p.id === selectedPlan)!.name}` : "Select a Plan to Continue"}
-                      {selectedPlan && <ArrowRight style={{ width: 15, height: 15 }} />}
+                      {selectedPlan
+                        ? `Proceed with ${PLANS.find((p) => p.id === selectedPlan)!.name}`
+                        : "Select a Plan to Continue"}
+                      {selectedPlan && (
+                        <ArrowRight style={{ width: 15, height: 15 }} />
+                      )}
                     </>
                   )}
                 </button>
               </div>
             </motion.div>
           )}
-
         </AnimatePresence>
       </div>
     </div>
