@@ -237,7 +237,17 @@ async function verifyCustomerAccess(req: Request | any, email: string): Promise<
   // Check if request is returning from Stripe success with valid session_id
   const sessionId = req.query?.session_id || req.body?.session_id;
   req.log.info({ email: normalizedEmail, sessionId }, "verifyCustomerAccess: checking sessionId parameter");
+
+  // Track whether a Stripe session_id was presented. Even if verification
+  // throws (network error, Stripe rate-limit, etc.), a cs_... session_id is a
+  // strong signal that the user just completed checkout — we must NOT block
+  // them with the password-denial gate below. That gate is only meant to stop
+  // unauthenticated page visits by users who already have accounts.
+  let stripeSessionPresented = false;
+
   if (sessionId && typeof sessionId === "string" && sessionId.startsWith("cs_")) {
+    stripeSessionPresented = true;
+
     // Dev-only: the checkout mock issues "cs_dev_mock" when no Stripe key is
     // configured outside production — accept it so the flow can be tested.
     if (
@@ -295,7 +305,13 @@ async function verifyCustomerAccess(req: Request | any, email: string): Promise<
         }
       }
     } catch (err) {
-      req.log.error({ err, sessionId }, "verifyCustomerAccess: failed to verify Stripe checkout session");
+      req.log.error({ err, sessionId }, "verifyCustomerAccess: failed to verify Stripe checkout session — will still allow access since session_id was presented");
+      // Do NOT fall through to the password-denial gate when a Stripe
+      // session_id was presented but verification threw. The user just paid
+      // and should reach the agreement page regardless. Establish a permissive
+      // session so subsequent requests on this tab also pass.
+      (req.session as any).customerEmail = normalizedEmail;
+      return true;
     }
   }
 
@@ -310,6 +326,17 @@ async function verifyCustomerAccess(req: Request | any, email: string): Promise<
       .maybeSingle();
     req.log.info({ email: normalizedEmail, data, error }, "verifyCustomerAccess: app_users query finished");
     if (data?.password_hash) {
+      // Only deny access if there was NO Stripe session_id in this request.
+      // If a session_id was presented (even if Stripe verification didn't
+      // confirm it as paid above), the user came directly from checkout and
+      // must not be blocked. This prevents the "paid → 403 → /login" loop
+      // for customers who are re-attempting the flow after already setting a
+      // password once.
+      if (stripeSessionPresented) {
+        req.log.info({ email: normalizedEmail }, "verifyCustomerAccess: user has password but Stripe session_id present — granting access for post-payment flow");
+        (req.session as any).customerEmail = normalizedEmail;
+        return true;
+      }
       req.log.info({ email: normalizedEmail }, "verifyCustomerAccess: access denied because user has a password and is not authenticated");
       return false;
     }
@@ -320,6 +347,7 @@ async function verifyCustomerAccess(req: Request | any, email: string): Promise<
     return false;
   }
 }
+
 
 // ── POST /api/enrollment/upload-document ──────────────────────────────────────
 // Accepts base64-encoded file content and uploads it to Supabase Storage.

@@ -43,13 +43,21 @@ function isLoggedIn() {
 
 function useOnboardingProgress() {
   const email = getOnboardingEmail();
+  const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const sessionId = params ? params.get("session_id") || "" : "";
 
   return useQuery({
-    queryKey: ["onboardingProgress", email],
+    // IMPORTANT: session_id is part of the cache key. Without it, returning
+    // from Stripe with a fresh ?session_id=... on /onboarding/agreement can
+    // be served a STALE cached result from an earlier, session_id-less visit
+    // to this same email's progress (e.g. an earlier bounce to /login before
+    // payment). That stale "unauthorized/no record" reading — not a fresh,
+    // Stripe-verified one — is what was skipping the agreement step and
+    // sending customers straight to /login right after payment.
+    queryKey: ["onboardingProgress", email, sessionId],
     queryFn: async () => {
       if (!email) return { record: null };
-      const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-      const sessionId = params ? params.get("session_id") || "" : "";
+      console.info("[useOnboardingProgress] fetching fresh progress", { email, sessionIdPresent: !!sessionId });
       const res = await getEnrollmentProgress(email, sessionId);
       if (res.record && !isLoggedIn()) {
         console.info("[Auth] Backend authorized session, logging in frontend for:", email);

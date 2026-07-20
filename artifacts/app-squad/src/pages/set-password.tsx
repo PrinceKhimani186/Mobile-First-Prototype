@@ -304,7 +304,7 @@ export default function SetPassword() {
                 color: "rgba(255,255,255,0.45)",
                 lineHeight: 1.6,
               }}>
-                Password created successfully. Redirecting you to login…
+                Password created successfully. Redirecting you to game selection…
               </p>
             </motion.div>
           ) : (

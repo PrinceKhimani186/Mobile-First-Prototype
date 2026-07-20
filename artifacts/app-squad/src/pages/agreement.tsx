@@ -68,7 +68,10 @@ export default function Agreement() {
 
   useEffect(() => {
     if (!email) {
-      navigate("/login");
+      // No email means the user hasn't enrolled yet — send them back to enrollment,
+      // NOT to /login. Redirecting to /login here was the primary cause of the
+      // "Pricing → Payment Success → Login" broken flow.
+      navigate("/enrollment");
       return;
     }
     loadProgress();

@@ -151,10 +151,11 @@ const selectBase: React.CSSProperties = {
 };
 
 function InputField({
-  label, type = "text", value, onChange, placeholder, required,
+  label, type = "text", value, onChange, placeholder, required, name, autoComplete,
 }: {
   label: string; type?: string; value: string;
   onChange: (v: string) => void; placeholder: string; required?: boolean;
+  name?: string; autoComplete?: string;
 }) {
   const [focused, setFocused] = useState(false);
   return (
@@ -168,10 +169,14 @@ function InputField({
       </label>
       <input
         type={type}
+        name={name}
+        autoComplete={autoComplete}
         value={value}
         onChange={e => onChange(e.target.value)}
+        // Also sync React state on autofill — browsers fire 'input' on autofill
+        // but not always 'change', so we listen to both.
+        onInput={e => onChange((e.target as HTMLInputElement).value)}
         placeholder={placeholder}
-        required={required}
         style={{
           ...inputBase,
           borderColor: focused ? "hsl(35 90% 55% / 0.5)" : "rgba(255,255,255,0.1)",
@@ -284,28 +289,66 @@ export default function Enrollment() {
     return "";
   }
 
-  async function handleStep1Submit(e: React.FormEvent) {
+  async function handleStep1Submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const err = validateStep1();
+
+    // Browser autofill can bypass React's controlled onChange, leaving React
+    // state empty even though inputs appear filled. Read the actual DOM values
+    // via FormData as the authoritative source, then fall back to React state.
+    const fd = new FormData(e.currentTarget);
+    const domFirstName = (fd.get("firstName") as string | null)?.trim() || "";
+    const domLastName  = (fd.get("lastName")  as string | null)?.trim() || "";
+    const domEmail     = (fd.get("email")     as string | null)?.trim() || "";
+    const domCompany   = (fd.get("company")   as string | null)?.trim() || "";
+
+    // Prefer the DOM value (actual input content) over stale React state.
+    const effective = {
+      firstName: domFirstName || form.firstName.trim(),
+      lastName:  domLastName  || form.lastName.trim(),
+      email:     domEmail     || form.email.trim(),
+      company:   domCompany   || form.company.trim(),
+    };
+
+    // Sync React state with effective values so downstream uses (handleEnroll)
+    // have the correct data even if autofill bypassed onChange.
+    if (
+      effective.firstName !== form.firstName ||
+      effective.lastName  !== form.lastName  ||
+      effective.email     !== form.email     ||
+      effective.company   !== form.company
+    ) {
+      setForm(effective);
+    }
+
+    // Validate with the effective (DOM-sourced) values.
+    const err = (() => {
+      if (!effective.firstName) return "First name is required.";
+      if (!effective.lastName)  return "Last name is required.";
+      const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRe.test(effective.email)) return "Please enter a valid email address.";
+      if (!effective.company) return "Business name is required.";
+      return "";
+    })();
+
     if (err) { setFormError(err); return; }
     setFormError("");
     setSubmittingStep1(true);
 
     try {
-      const normalizedEmail = form.email.trim().toLowerCase();
+      const normalizedEmail = effective.email.toLowerCase();
 
       // Save session data for downstream use
       localStorage.setItem("appSquadEnrollment", JSON.stringify({
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: normalizedEmail,
-        company: form.company,
+        firstName: effective.firstName,
+        lastName:  effective.lastName,
+        email:     normalizedEmail,
+        company:   effective.company,
         selectedPlan,
       }));
       localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
-      localStorage.setItem("appSquadEnrollmentName", `${form.firstName} ${form.lastName}`.trim());
+      localStorage.setItem("appSquadEnrollmentName", `${effective.firstName} ${effective.lastName}`.trim());
 
-      // Step D: proceed to plan selection
+      // Advance to plan selection
       setStep(2);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
@@ -498,19 +541,23 @@ export default function Enrollment() {
                   </div>
                 </div>
 
-                <form onSubmit={handleStep1Submit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                <form onSubmit={handleStep1Submit} noValidate style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <InputField label="First Name" value={form.firstName}
+                    <InputField label="First Name" name="firstName" autoComplete="given-name"
+                      value={form.firstName}
                       onChange={v => { setForm(f => ({ ...f, firstName: v })); setFormError(""); }}
                       placeholder="Prince" required />
-                    <InputField label="Last Name" value={form.lastName}
+                    <InputField label="Last Name" name="lastName" autoComplete="family-name"
+                      value={form.lastName}
                       onChange={v => { setForm(f => ({ ...f, lastName: v })); setFormError(""); }}
                       placeholder="Khimani" required />
                   </div>
-                  <InputField label="Email Address" type="email" value={form.email}
+                  <InputField label="Email Address" type="email" name="email" autoComplete="email"
+                    value={form.email}
                     onChange={v => { setForm(f => ({ ...f, email: v })); setFormError(""); }}
                     placeholder="you@example.com" required />
-                  <InputField label="Business Name" value={form.company}
+                  <InputField label="Business Name" name="company" autoComplete="organization"
+                    value={form.company}
                     onChange={v => { setForm(f => ({ ...f, company: v })); setFormError(""); }}
                     placeholder="Your business name" required />
 
