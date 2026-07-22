@@ -70,11 +70,44 @@ const PREMIUM_GAMES = [
   "limo-parking",
 ];
 
+export interface PackageConfig {
+  id: Plan;
+  packageName: string;
+  maxGames: number;
+  minGames: number;
+  allowedGameTypes: "standard" | "premium" | "all";
+}
+
+export const PACKAGE_CONFIGS: Record<Plan, PackageConfig> = {
+  essentials: {
+    id: "essentials",
+    packageName: "App Launch Essentials",
+    maxGames: 1,
+    minGames: 1,
+    allowedGameTypes: "all",
+  },
+  accelerator: {
+    id: "accelerator",
+    packageName: "App Ownership Accelerator",
+    maxGames: 1,
+    minGames: 1,
+    allowedGameTypes: "all",
+  },
+  empire: {
+    id: "empire",
+    packageName: "App Empire Package",
+    maxGames: 2,
+    minGames: 2,
+    allowedGameTypes: "all",
+  },
+};
+
 export const PLAN_GAMES: Record<Plan, string[]> = {
-  essentials: [...STANDARD_GAMES],
+  essentials: [...STANDARD_GAMES, ...PREMIUM_GAMES],
   accelerator: [...STANDARD_GAMES, ...PREMIUM_GAMES],
   empire: [...STANDARD_GAMES, ...PREMIUM_GAMES],
 };
+
 
 // Game display names by ID — used to validate the game_type field (which the
 // onboarding flow stores by name, not ID) against the purchased plan.

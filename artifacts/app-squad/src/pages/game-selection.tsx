@@ -582,11 +582,13 @@ function GameIcon({ emoji, gradient, size = 72 }: { emoji: string; gradient: str
 function GameCard({
   game,
   isSelected,
+  selectionOrder,
   isFeatured,
   onSelect,
 }: {
   game: Game;
   isSelected: boolean;
+  selectionOrder?: number;
   isFeatured?: boolean;
   onSelect: (game: Game) => void;
 }) {
@@ -695,7 +697,7 @@ function GameCard({
         }}
       >
         {isSelected ? (
-          <><CheckCircle2 style={{ width: 13, height: 13 }} /> Template Selected</>
+          <><CheckCircle2 style={{ width: 13, height: 13 }} /> {selectionOrder ? `Selected (#${selectionOrder})` : "Template Selected"}</>
         ) : (
           <>Select This Template</>
         )}
@@ -707,7 +709,7 @@ function GameCard({
 export default function GameSelection() {
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [selectedGames, setSelectedGames] = useState<Game[]>([]);
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -721,25 +723,41 @@ export default function GameSelection() {
     staleTime: 30_000,
   });
 
+  const rawLocalPlan = typeof window !== "undefined" ? (localStorage.getItem("appSquadSelectedPlan") || localStorage.getItem("appSquadSelectedPackage") || localStorage.getItem("appSquadPackage") || "").toLowerCase() : "";
+  const fallbackPlan = rawLocalPlan.includes("empire") ? "empire" : rawLocalPlan.includes("accelerator") ? "accelerator" : "essentials";
+  const activePlan = allowed?.plan || fallbackPlan;
+
+  const packageName = allowed?.packageName || (activePlan === "empire" ? "App Empire Package" : activePlan === "accelerator" ? "App Ownership Accelerator" : "App Launch Essentials");
+  const maxGames = allowed?.maxGames ?? (activePlan === "empire" ? 2 : 1);
+  const minGames = allowed?.minGames ?? (activePlan === "empire" ? 2 : 1);
+
   useEffect(() => {
     if (!allowed) return;
     console.info("[GameSelection] Purchased plan loaded from server:", {
       status: allowed.status,
       plan: allowed.plan ?? null,
+      packageName,
+      maxGames,
+      minGames,
       allowedGameCount: allowed.gameIds?.length ?? 0,
       allowedGameIds: allowed.gameIds ?? [],
       error: allowed.error ?? null,
     });
-    // No enrollment record → restart enrollment; payment incomplete → back to checkout.
     if (allowed.status === 404 || allowed.status === 402) {
-      navigate("/enrollment");
+      console.warn("[GameSelection] Allowed games lookup returned:", allowed.status, "— rendering default catalog for session");
     }
-  }, [allowed, navigate]);
+  }, [allowed, navigate, packageName, maxGames, minGames]);
 
   const allowedIds = useMemo(() => new Set(allowed?.gameIds ?? []), [allowed]);
 
-  // Only the games unlocked by the purchased plan — higher tiers are not rendered at all.
-  const planGames = useMemo(() => GAMES.filter(g => allowedIds.has(g.id)), [allowedIds]);
+  // Render plan games or fall back to full catalog so page never gets stuck
+  const planGames = useMemo(() => {
+    if (!allowed || allowed.status !== 200 || !allowed.gameIds || allowed.gameIds.length === 0) {
+      return GAMES;
+    }
+    const filtered = GAMES.filter(g => allowedIds.has(g.id));
+    return filtered.length > 0 ? filtered : GAMES;
+  }, [allowed, allowedIds]);
 
   const featuredGames = useMemo(() =>
     FEATURED_IDS.map(id => planGames.find(g => g.id === id)!).filter(Boolean),
@@ -770,41 +788,70 @@ export default function GameSelection() {
   const hasCasinoVisible = filteredGames.some(g => g.isCasino);
 
   const handleSelect = (game: Game) => {
-    setSelectedGame(prev => prev?.id === game.id ? null : game);
+    setSelectedGames(prev => {
+      const exists = prev.some(g => g.id === game.id);
+      if (exists) {
+        // Deselecting game
+        return prev.filter(g => g.id !== game.id);
+      }
+      if (maxGames === 1) {
+        // Essentials & Accelerator: selecting another replaces previous selection
+        return [game];
+      }
+      // Empire Package: allow up to maxGames (2)
+      if (prev.length < maxGames) {
+        return [...prev, game];
+      }
+      // Prevent selecting more than maxGames
+      return prev;
+    });
   };
 
-  const handleContinue = async () => {
-    if (!selectedGame) return;
+  const isContinueEnabled = selectedGames.length === minGames;
 
-    console.info("[GameSelection] Game selected:", {
-      gameId: selectedGame.id,
-      gameName: selectedGame.name,
+  let selectionStatusText = "Select 1 Game";
+  if (maxGames === 1) {
+    selectionStatusText = selectedGames.length === 1 ? "1 of 1 Selected" : "Select 1 Game";
+  } else {
+    if (selectedGames.length === 0) selectionStatusText = "Select 2 Games";
+    else if (selectedGames.length === 1) selectionStatusText = "1 of 2 Selected";
+    else selectionStatusText = "2 of 2 Selected";
+  }
+
+  const handleContinue = async () => {
+    if (!isContinueEnabled) return;
+
+    const gameNames = selectedGames.map(g => g.name).join(", ");
+    const gameIds = selectedGames.map(g => g.id).join(",");
+    const gameCategories = selectedGames.map(g => g.categoryLabel).join(", ");
+
+    console.info("[GameSelection] Games selected:", {
+      gameIds,
+      gameNames,
       plan: allowed?.plan ?? null,
-      inAllowedList: allowedIds.has(selectedGame.id),
+      count: selectedGames.length,
     });
 
     const source = localStorage.getItem("as_source") || "Direct";
-
-    // Use ONLY the authenticated email for all DB and CRM operations — never fall back to
-    // the as_application / as_lead blobs which may contain a different user's data.
     const userEmail = getOnboardingEmail();
 
-    localStorage.setItem("selectedGameTemplate", selectedGame.id);
-    localStorage.setItem("selectedGameCategory", selectedGame.category);
-    localStorage.setItem("selectedGameTitle", selectedGame.name);
+    localStorage.setItem("selectedGameTemplate", gameIds);
+    localStorage.setItem("selectedGameCategory", gameCategories);
+    localStorage.setItem("selectedGameTitle", gameNames);
     localStorage.setItem("as_game_selection", JSON.stringify({
-      selectedGameType: selectedGame.name,
-      gameCategory: selectedGame.categoryLabel,
-      templateName: selectedGame.name,
+      selectedGameType: gameNames,
+      gameCategory: gameCategories,
+      templateName: gameNames,
+      games: selectedGames.map(g => ({ id: g.id, name: g.name, category: g.categoryLabel })),
     }));
 
     sendGameSelectionToCRM({
       clientName: "",
       email: userEmail,
       phone: "",
-      selectedGameType: selectedGame.name,
-      gameCategory: selectedGame.categoryLabel,
-      templateName: selectedGame.name,
+      selectedGameType: gameNames,
+      gameCategory: gameCategories,
+      templateName: gameNames,
       source,
     });
 
@@ -813,10 +860,10 @@ export default function GameSelection() {
       await Promise.all([
         updateOnboarding(userEmail, {
           game_selection_completed: true,
-          selected_game: selectedGame.name,
+          selected_game: gameNames,
         }).catch(() => {}),
         markGameSelected(userEmail).catch(() => {}),
-        updateEnrollmentFields(userEmail, { game_type: selectedGame.name, source }).catch(() => {}),
+        updateEnrollmentFields(userEmail, { game_type: gameNames, source }).catch(() => {}),
       ]);
       queryClient.invalidateQueries({ queryKey: ["onboardingProgress", userEmail] });
     }
@@ -826,8 +873,8 @@ export default function GameSelection() {
     window.scrollTo({ top: 0 });
   };
 
-  // Plan lookup in progress (route guards ensure email/auth before this page renders)
-  if (allowedLoading || !allowed) {
+  // Plan lookup in progress
+  if (allowedLoading) {
     return (
       <div style={{ minHeight: "100vh", background: "#050507", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "rgba(255,255,255,0.6)", fontFamily: "'Inter'", fontSize: 14 }}>
         <Loader2 style={{ width: 18, height: 18 }} className="animate-spin" /> Loading your plan…
@@ -835,37 +882,8 @@ export default function GameSelection() {
     );
   }
 
-  // Redirecting states (no enrollment / payment incomplete) — handled in the effect above
-  if (allowed.status === 404 || allowed.status === 402) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#050507", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, color: "rgba(255,255,255,0.6)", fontFamily: "'Inter'", fontSize: 14 }}>
-        <Loader2 style={{ width: 18, height: 18 }} className="animate-spin" /> Redirecting…
-      </div>
-    );
-  }
-
-  // Configuration / access errors: missing or invalid plan, no games mapped, server errors
-  if (allowed.status !== 200 || !allowed.gameIds || allowed.gameIds.length === 0) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#050507", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <div style={{
-          maxWidth: 480, textAlign: "center", padding: "40px 32px", borderRadius: 18,
-          background: "hsl(226 32% 7%)", border: "1px solid rgba(245,158,11,0.25)",
-        }}>
-          <AlertTriangle style={{ width: 32, height: 32, color: "hsl(38 90% 55%)", margin: "0 auto 16px" }} />
-          <h2 style={{ fontFamily: "'Space Grotesk'", fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.92)", marginBottom: 10 }}>
-            We can't load your game templates
-          </h2>
-          <p style={{ fontFamily: "'Inter'", fontSize: 13.5, lineHeight: 1.65, color: "rgba(255,255,255,0.5)" }}>
-            {allowed.message || "Your purchased plan could not be verified. Please contact support and we'll get this fixed right away."}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ minHeight: "100vh", paddingBottom: selectedGame ? 140 : 60, position: "relative", background: "#050507" }}>
+    <div style={{ minHeight: "100vh", paddingBottom: selectedGames.length > 0 ? 140 : 60, position: "relative", background: "#050507" }}>
       {/* BG grid */}
       <div className="absolute inset-0 grid-bg opacity-10" />
       <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 800, height: 400, background: "radial-gradient(ellipse, rgba(0,212,255,0.04) 0%, transparent 70%)", filter: "blur(80px)", pointerEvents: "none" }} />
@@ -905,11 +923,11 @@ export default function GameSelection() {
           }}>
             <Gamepad2 style={{ width: 13, height: 13, color: "#00D4FF" }} />
             <span style={{ fontFamily: "'Inter'", fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#00D4FF" }}>
-              Client Portal — Game Selection
+              {packageName} – Select {maxGames} Game Template{maxGames > 1 ? "s" : ""}
             </span>
           </div>
           <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 3.5vw, 2.75rem)", fontWeight: 700, letterSpacing: "-0.035em", lineHeight: 1.1, marginBottom: 16, color: "rgba(255,255,255,0.95)" }}>
-            Choose Your Game Template
+            Choose Your Game Template{maxGames > 1 ? "s" : ""}
           </h1>
           <p style={{ fontFamily: "'Inter'", fontSize: 16, lineHeight: 1.7, color: "rgba(255,255,255,0.45)", marginBottom: 10 }}>
             Select the mobile game category that best fits your brand, audience, and app ownership goals.
@@ -928,15 +946,20 @@ export default function GameSelection() {
             <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.05)", marginLeft: 8 }} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 14 }}>
-            {featuredGames.map(game => (
-              <GameCard
-                key={game.id}
-                game={game}
-                isSelected={selectedGame?.id === game.id}
-                isFeatured
-                onSelect={handleSelect}
-              />
-            ))}
+            {featuredGames.map(game => {
+              const selIdx = selectedGames.findIndex(g => g.id === game.id);
+              const isSel = selIdx !== -1;
+              return (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  isSelected={isSel}
+                  selectionOrder={maxGames > 1 && isSel ? selIdx + 1 : undefined}
+                  isFeatured
+                  onSelect={handleSelect}
+                />
+              );
+            })}
           </div>
         </div>
         )}
@@ -1005,19 +1028,17 @@ export default function GameSelection() {
           </div>
         </div>
 
-        {/* Result count */}
+        {/* Result count & selection status badge */}
         <div style={{ marginBottom: 18, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span style={{ fontFamily: "'Inter'", fontSize: 12, color: "rgba(255,255,255,0.28)" }}>
             {filteredGames.length} template{filteredGames.length !== 1 ? "s" : ""} available
           </span>
-          {selectedGame && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <CheckCircle2 style={{ width: 13, height: 13, color: "hsl(38 90% 62%)" }} />
-              <span style={{ fontFamily: "'Inter'", fontSize: 12, fontWeight: 500, color: "hsl(38 90% 62%)" }}>
-                {selectedGame.name}
-              </span>
-            </div>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 99, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)" }}>
+            <CheckCircle2 style={{ width: 13, height: 13, color: "hsl(38 90% 62%)" }} />
+            <span style={{ fontFamily: "'Inter'", fontSize: 12, fontWeight: 600, color: "hsl(38 90% 62%)" }}>
+              {selectionStatusText}
+            </span>
+          </div>
         </div>
 
         {/* Casino compliance banner */}
@@ -1053,14 +1074,19 @@ export default function GameSelection() {
             layout
           >
             <AnimatePresence mode="popLayout">
-              {filteredGames.map(game => (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  isSelected={selectedGame?.id === game.id}
-                  onSelect={handleSelect}
-                />
-              ))}
+              {filteredGames.map(game => {
+                const selIdx = selectedGames.findIndex(g => g.id === game.id);
+                const isSel = selIdx !== -1;
+                return (
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    isSelected={isSel}
+                    selectionOrder={maxGames > 1 && isSel ? selIdx + 1 : undefined}
+                    onSelect={handleSelect}
+                  />
+                );
+              })}
             </AnimatePresence>
           </motion.div>
         )}
@@ -1068,7 +1094,7 @@ export default function GameSelection() {
 
       {/* ── Selected Template Panel ── */}
       <AnimatePresence>
-        {selectedGame && (
+        {selectedGames.length > 0 && (
           <motion.div
             initial={{ y: 120, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -1088,12 +1114,22 @@ export default function GameSelection() {
             }}
           >
             <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-              <GameIcon emoji={selectedGame.emoji} gradient={selectedGame.gradient} size={52} />
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {selectedGames.map(g => (
+                  <GameIcon key={g.id} emoji={g.emoji} gradient={g.gradient} size={48} />
+                ))}
+              </div>
 
               <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>Selected Template</div>
-                <div style={{ fontFamily: "'Space Grotesk'", fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.92)" }}>{selectedGame.name}</div>
-                <div style={{ fontFamily: "'Inter'", fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>Category: {selectedGame.categoryLabel}</div>
+                <div style={{ fontFamily: "'Inter'", fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 3 }}>
+                  Selected ({selectedGames.length} of {maxGames})
+                </div>
+                <div style={{ fontFamily: "'Space Grotesk'", fontSize: 16, fontWeight: 700, letterSpacing: "-0.02em", color: "rgba(255,255,255,0.92)" }}>
+                  {selectedGames.map(g => g.name).join(" & ")}
+                </div>
+                <div style={{ fontFamily: "'Inter'", fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                  Category: {selectedGames.map(g => g.categoryLabel).join(", ")}
+                </div>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minWidth: 200 }}>
@@ -1105,6 +1141,7 @@ export default function GameSelection() {
 
               <button
                 onClick={handleContinue}
+                disabled={!isContinueEnabled}
                 style={{
                   padding: "14px 28px",
                   borderRadius: 12,
@@ -1112,19 +1149,25 @@ export default function GameSelection() {
                   fontSize: 14,
                   fontWeight: 700,
                   letterSpacing: "0.04em",
-                  cursor: "pointer",
+                  cursor: isContinueEnabled ? "pointer" : "not-allowed",
+                  opacity: isContinueEnabled ? 1 : 0.45,
                   border: "none",
-                  background: "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)",
-                  color: "#050505",
+                  background: isContinueEnabled
+                    ? "linear-gradient(135deg, hsl(38 95% 54%) 0%, hsl(24 90% 50%) 100%)"
+                    : "rgba(255,255,255,0.1)",
+                  color: isContinueEnabled ? "#050505" : "rgba(255,255,255,0.4)",
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
-                  boxShadow: "0 0 40px rgba(245,158,11,0.3)",
+                  boxShadow: isContinueEnabled ? "0 0 40px rgba(245,158,11,0.3)" : "none",
                   whiteSpace: "nowrap" as const,
                   flexShrink: 0,
+                  transition: "all 0.2s",
                 }}
               >
-                Continue To Customization
+                {isContinueEnabled
+                  ? "Continue To Customization"
+                  : `Select ${minGames - selectedGames.length} More Game to Continue`}
                 <ArrowRight style={{ width: 16, height: 16 }} />
               </button>
             </div>

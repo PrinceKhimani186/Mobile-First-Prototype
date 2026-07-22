@@ -369,9 +369,11 @@ export default function Enrollment() {
       });
     }
 
-    // Strip URL params after reading them so they don't persist in the address bar.
-    if (params.has("plan") || params.has("payment") || params.has("type")) {
-      window.history.replaceState({}, "", window.location.pathname);
+    // Retain selected plan in localStorage so it persists across redirects
+    const storedPlan = localStorage.getItem("appSquadSelectedPlan") as PlanId | null;
+    if (storedPlan && !selectedPlan) {
+      console.info("[Enrollment] Restored selectedPlan from localStorage:", storedPlan);
+      setSelectedPlan(storedPlan);
     }
   }, [toast]);
 
@@ -384,24 +386,137 @@ export default function Enrollment() {
     return "";
   }
 
-  // NOTE: This is intentionally NOT async — there are no async operations here.
-  // Keeping it synchronous ensures e.preventDefault() is never ambiguous about
-  // when it runs relative to React's synthetic event system.
+  async function handleEnrollWithForm(
+    effectiveForm: FormData,
+    planId: PlanId,
+    pType: "subscription" | "monthly"
+  ) {
+    const plan = PLANS.find((p) => p.id === planId) ?? PLANS[0];
+    const pricing = pricingDetails[pType][planId];
+    setLoading(true);
+    setCheckoutError("");
+
+    try {
+      const normalizedEmail = effectiveForm.email.trim().toLowerCase();
+      const origin = window.location.origin;
+      const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+
+      console.info("[Enrollment] 1. Initializing enrollment via /api/enrollment/init...", {
+        email: normalizedEmail,
+        selectedPackage: planId,
+        paymentType: pType,
+      });
+
+      // 1 — Initialize the customer enrollment record in Supabase / DB
+      const initRes = await fetch("/api/enrollment/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: `${effectiveForm.firstName} ${effectiveForm.lastName}`.trim(),
+          email: normalizedEmail,
+          companyName: effectiveForm.company,
+          selectedPackage: planId,
+          paymentType: pType,
+          source: localStorage.getItem("as_source") || "Direct",
+        }),
+      });
+
+      const initData = (await initRes.json()) as { ok?: boolean; url?: string; error?: string };
+
+      if (!initRes.ok) {
+        console.error("[Enrollment] /api/enrollment/init failed:", initData);
+        setCheckoutError(
+          initData.error ?? "Unable to initialize enrollment record. Please try again.",
+        );
+        setSubmittingStep1(false);
+        setLoading(false);
+        return;
+      }
+
+      // Reset stale session flags for new enrollment
+      localStorage.removeItem("appSquadAgreementSigned");
+      localStorage.removeItem("appSquadAgreementPdfUrl");
+      localStorage.removeItem("appSquadPasswordCreated");
+      localStorage.removeItem("appSquadGameSelected");
+      localStorage.removeItem("appSquadCustomizationCompleted");
+      localStorage.removeItem("appSquadLoggedIn");
+
+      if (initData?.url) {
+        console.info("[Enrollment] /api/enrollment/init returned direct checkout URL:", initData.url);
+        localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
+        localStorage.setItem("appSquadUserEmail", normalizedEmail);
+        localStorage.setItem("appSquadEnrollmentPaymentType", pType);
+        localStorage.setItem("appSquadCheckoutUrl", initData.url);
+        localStorage.setItem("appSquadSelectedPlan", planId);
+        window.location.href = initData.url;
+        return;
+      }
+
+      console.info("[Enrollment] 2. Creating checkout session via /api/enrollment/checkout...", {
+        planId,
+        planName: plan.name,
+        paymentType: pType,
+      });
+
+      // 2 — Create the Stripe checkout session
+      const res = await fetch("/api/enrollment/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: effectiveForm.firstName,
+          lastName: effectiveForm.lastName,
+          email: normalizedEmail,
+          selectedPlan: planId,
+          planName: plan.name,
+          planTag: plan.tag,
+          successUrl: `${origin}${base}/onboarding/agreement?email=${encodeURIComponent(normalizedEmail)}&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${origin}${base}/enrollment?payment=cancelled`,
+          package_name: plan.name,
+          payment_type: pType,
+          stripe_price_id: pricing?.stripePriceId ?? "price_essentials_default",
+          setup_price_id: pricing?.setupPriceId,
+        }),
+      });
+
+      const data = (await res.json()) as { url?: string; error?: string };
+
+      if (!res.ok || !data.url) {
+        console.error("[Enrollment] /api/enrollment/checkout failed:", data);
+        setCheckoutError(data.error ?? "Unable to start checkout. Please try again.");
+        setSubmittingStep1(false);
+        setLoading(false);
+        return;
+      }
+
+      // 3 — Save Stripe session URL, payment type, email, and plan for agreement step
+      localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
+      localStorage.setItem("appSquadUserEmail", normalizedEmail);
+      localStorage.setItem("appSquadEnrollmentPaymentType", pType);
+      localStorage.setItem("appSquadCheckoutUrl", data.url);
+      localStorage.setItem("appSquadSelectedPlan", planId);
+
+      // 4 — Navigate to Stripe Checkout page (or dev mock success URL)
+      console.info("[Enrollment] 3. Navigating to Stripe checkout URL:", data.url);
+      window.location.href = data.url;
+    } catch (err) {
+      console.error("[Enrollment] Error initiating checkout:", err);
+      setCheckoutError("Network error. Please check your connection and try again.");
+      setSubmittingStep1(false);
+      setLoading(false);
+    }
+  }
+
   function handleStep1Submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    console.info("[Enrollment] handleStep1Submit called. Current step:", step);
+    console.info("[Enrollment] handleStep1Submit triggered. Current step:", step);
 
-    // Browser autofill can bypass React's controlled onChange, leaving React
-    // state empty even though inputs appear filled. Read the actual DOM values
-    // via FormData as the authoritative source, then fall back to React state.
     const fd = new FormData(e.currentTarget);
     const domFirstName = (fd.get("firstName") as string | null)?.trim() || "";
     const domLastName = (fd.get("lastName") as string | null)?.trim() || "";
     const domEmail = (fd.get("email") as string | null)?.trim() || "";
     const domCompany = (fd.get("company") as string | null)?.trim() || "";
 
-    // Prefer the DOM value (actual input content) over stale React state.
     const effective = {
       firstName: domFirstName || form.firstName.trim(),
       lastName: domLastName || form.lastName.trim(),
@@ -409,17 +524,8 @@ export default function Enrollment() {
       company: domCompany || form.company.trim(),
     };
 
-    console.info("[Enrollment] Form values (effective):", {
-      firstName: effective.firstName || "(empty)",
-      lastName: effective.lastName || "(empty)",
-      email: effective.email || "(empty)",
-      company: effective.company || "(empty)",
-      domValues: { domFirstName, domLastName, domEmail, domCompany },
-      reactState: { ...form },
-    });
+    console.info("[Enrollment] Form effective values:", effective);
 
-    // Sync React state with effective values so downstream uses (handleEnroll)
-    // have the correct data even if autofill bypassed onChange.
     if (
       effective.firstName !== form.firstName ||
       effective.lastName !== form.lastName ||
@@ -429,28 +535,18 @@ export default function Enrollment() {
       setForm(effective);
     }
 
-    // Validate with the effective (DOM-sourced) values.
     const err = (() => {
       if (!effective.firstName) return "First name is required.";
       if (!effective.lastName) return "Last name is required.";
       const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRe.test(effective.email))
-        return "Please enter a valid email address.";
+      if (!emailRe.test(effective.email)) return "Please enter a valid email address.";
       if (!effective.company) return "Business name is required.";
       return "";
     })();
 
-    console.info(
-      "[Enrollment] Validation result:",
-      err ? `FAILED — "${err}"` : "PASSED",
-    );
-
     if (err) {
       setFormError(err);
-      console.warn(
-        "[Enrollment] Staying on step 1 due to validation error:",
-        err,
-      );
+      console.warn("[Enrollment] Validation failed:", err);
       return;
     }
 
@@ -459,7 +555,6 @@ export default function Enrollment() {
 
     const normalizedEmail = effective.email.toLowerCase();
 
-    // Save session data for downstream use
     localStorage.setItem(
       "appSquadEnrollment",
       JSON.stringify({
@@ -467,121 +562,31 @@ export default function Enrollment() {
         lastName: effective.lastName,
         email: normalizedEmail,
         company: effective.company,
-        selectedPlan,
+        selectedPlan: selectedPlan || "essentials",
       }),
     );
     localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
+    localStorage.setItem("appSquadUserEmail", normalizedEmail);
     localStorage.setItem(
       "appSquadEnrollmentName",
       `${effective.firstName} ${effective.lastName}`.trim(),
     );
 
-    console.info(
-      "[Enrollment] Advancing to step 2 (plan selection). Email saved:",
-      normalizedEmail,
-    );
+    const planToUse = selectedPlan || (localStorage.getItem("appSquadSelectedPlan") as PlanId) || "essentials";
+    setSelectedPlan(planToUse);
+    localStorage.setItem("appSquadSelectedPlan", planToUse);
 
-    // Advance to plan selection. Step is React state — the URL does NOT need to
-    // mirror it. Calling navigate() here triggers a Wouter location event that
-    // races with the batched setStep(2) update and can win, leaving the component
-    // re-rendered with step=1 before React commits the step=2 update.
+    console.info("[Enrollment] Step 1 validation passed! Advancing to step 2 (Plan Selection). Plan pre-selected:", planToUse);
+
     setStep(2);
     setSubmittingStep1(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handleEnroll() {
-    if (!selectedPlan) return;
-    const plan = PLANS.find((p) => p.id === selectedPlan)!;
-    const pricing = pricingDetails[paymentType][selectedPlan];
-    setLoading(true);
-    setCheckoutError("");
-
-    try {
-      const normalizedEmail = form.email.trim().toLowerCase();
-      const origin = window.location.origin;
-      const base = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
-
-      // 1 — Initialize the customer enrollment record in Supabase (saving selectedPackage)
-      const initRes = await fetch("/api/enrollment/init", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: `${form.firstName} ${form.lastName}`.trim(),
-          email: normalizedEmail,
-          companyName: form.company,
-          selectedPackage: selectedPlan,
-          paymentType,
-          source: localStorage.getItem("as_source") || "Direct",
-        }),
-      });
-
-      if (!initRes.ok) {
-        const initData = (await initRes.json()) as { error?: string };
-        setCheckoutError(
-          initData.error ??
-            "Unable to initialize enrollment record. Please try again.",
-        );
-        setLoading(false);
-        return;
-      }
-
-      // 2 — Create the Stripe checkout session (passing package details, price, payment type, setup price)
-      if (!pricing.stripePriceId) {
-        setCheckoutError(
-          `Stripe price ID for ${plan.name} (${paymentType}) is not configured. Contact support.`,
-        );
-        setLoading(false);
-        return;
-      }
-      console.info("[Enrollment] Sending to Stripe checkout:", {
-        selectedPlan,
-        planName: plan.name,
-        paymentType,
-        stripePriceId: pricing.stripePriceId,
-      });
-      const res = await fetch("/api/enrollment/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: normalizedEmail,
-          selectedPlan,
-          planName: plan.name,
-          planTag: plan.tag,
-          successUrl: `${origin}${base}/onboarding/agreement?email=${encodeURIComponent(normalizedEmail)}&session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${origin}${base}/enrollment?payment=cancelled`,
-          package_name: plan.name,
-          payment_type: paymentType,
-          stripe_price_id: pricing.stripePriceId,
-          setup_price_id: pricing.setupPriceId,
-        }),
-      });
-
-      const data = (await res.json()) as { url?: string; error?: string };
-
-      if (!res.ok || !data.url) {
-        setCheckoutError(
-          data.error ?? "Unable to start checkout. Please try again.",
-        );
-        return;
-      }
-
-      // 3 — Save Stripe session URL, payment type, and email for the agreement page redirect
-      localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
-      localStorage.setItem("appSquadEnrollmentPaymentType", paymentType);
-      localStorage.setItem("appSquadCheckoutUrl", data.url);
-
-      // 4 — Redirect to Stripe Checkout page
-      window.location.href = data.url;
-    } catch {
-      setCheckoutError(
-        "Network error. Please check your connection and try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
+    const planToUse = selectedPlan || (localStorage.getItem("appSquadSelectedPlan") as PlanId) || "essentials";
+    console.info("[Enrollment] Proceeding from Step 2 to Stripe Checkout for plan:", planToUse, "paymentType:", paymentType);
+    await handleEnrollWithForm(form, planToUse, paymentType);
   }
 
   return (

@@ -134,22 +134,19 @@ function ScaleIn({
 }
 
 const resolveEnrollmentUrl = (route: string) => {
-  // Both the closer-presentation and app-squad artifacts are served through
-  // the same reverse-proxy origin in Replit (dev and production). Always use
-  // window.location.origin so enrollment links work in every environment.
-  const origin = window.location.origin;
-  console.info("[Pricing] Starting enrollment:", `${origin}${route}`);
+  let origin = window.location.origin;
+  // In local multi-port development (closer-presentation runs on 5174, app-squad runs on 5173),
+  // target port 5173 where the /enrollment app and routes actually live.
+  if (typeof window !== "undefined" && window.location.port && window.location.port !== "5173") {
+    origin = `${window.location.protocol}//${window.location.hostname}:5173`;
+  }
+  console.info("[Pricing] Starting enrollment target:", `${origin}${route}`);
   return `${origin}${route}`;
 };
 
 const openEnrollmentUrl = (url: string) => {
-  const a = document.createElement("a");
-  a.href = url;
-  a.target = "_blank";
-  a.rel = "noopener noreferrer";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  console.info("[Pricing] Navigating to enrollment URL:", url);
+  window.location.href = url;
 };
 
 /* Label pill — no section numbers */

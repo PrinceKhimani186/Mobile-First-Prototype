@@ -132,17 +132,17 @@ export default function SetPassword() {
       // Bust the cached onboarding record so guards re-read the updated password_created flag
       await queryClient.invalidateQueries({ queryKey: ["onboardingProgress", normalizedEmail] });
 
-      setDone(true);
-
-      // Auto login the user on the frontend
-      localStorage.setItem("appSquadLoggedIn", "true");
-      localStorage.setItem("appSquadUserEmail", normalizedEmail);
+      // Set password_created flag in localStorage
+      localStorage.setItem("appSquadPasswordCreated", "true");
+      localStorage.setItem("appSquadPrefillEmail", normalizedEmail);
       localStorage.setItem("appSquadEnrollmentEmail", normalizedEmail);
-      localStorage.removeItem("appSquadPrefillEmail");
 
-      // Flow order: agreement is signed before this page, so continue to game selection.
-      const redirectTarget = "/onboarding/game-selection";
-      console.log("[SetPassword] Auto-logged in! Redirecting to next route:", redirectTarget);
+      // Do not auto-login — force user to go through Login step as required
+      localStorage.removeItem("appSquadLoggedIn");
+
+      // Flow order: Set Password → Login → Game Selection
+      const redirectTarget = `/login?email=${encodeURIComponent(normalizedEmail)}`;
+      console.log("[SetPassword] Password created! Redirecting to login route:", redirectTarget);
 
       setTimeout(() => {
         navigate(redirectTarget);

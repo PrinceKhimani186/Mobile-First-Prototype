@@ -46,7 +46,7 @@ export default defineConfig({
     // Local dev only: serve over https with a self-signed cert. Zoho Sign's
     // embedded signing iframe requires the embedding page to be an https
     // origin. Replit provides TLS at its proxy, so skip it there.
-    ...(process.env.NODE_ENV !== "production" && process.env.REPL_ID === undefined
+    ...(process.env.NODE_ENV !== "production" && process.env.REPL_ID === undefined && process.env.VITE_SSL === "true"
       ? [(await import("@vitejs/plugin-basic-ssl")).default()]
       : []),
     ...(process.env.NODE_ENV !== "production" &&

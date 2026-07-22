@@ -35,14 +35,24 @@ async function resolveOnboardingRedirect(email: string): Promise<string> {
   try {
     const { record } = await getEnrollmentProgress(email);
     if (record) {
-      if (!record.game_selected) return "/onboarding/game-selection";
-      if (!record.customization_completed) return "/onboarding/customization";
+      if (!record.agreement_signed && localStorage.getItem("appSquadAgreementSigned") !== "true") return `/onboarding/agreement?email=${encodeURIComponent(email)}`;
+      if (!record.password_created && localStorage.getItem("appSquadPasswordCreated") !== "true") return `/set-password?email=${encodeURIComponent(email)}`;
+      if (!record.game_selected && localStorage.getItem("appSquadGameSelected") !== "true") return "/onboarding/game-selection";
+      if (!record.customization_completed && localStorage.getItem("appSquadCustomizationCompleted") !== "true") return "/onboarding/customization";
       return "/onboarding/dashboard";
     }
   } catch {
-    // DB not reachable — default to first onboarding step
+    // DB not reachable
   }
-  return "/onboarding/game-selection";
+
+  const agreementSigned = localStorage.getItem("appSquadAgreementSigned") === "true";
+  const gameSelected = localStorage.getItem("appSquadGameSelected") === "true";
+  const customizationCompleted = localStorage.getItem("appSquadCustomizationCompleted") === "true";
+
+  if (!agreementSigned) return `/onboarding/agreement?email=${encodeURIComponent(email)}`;
+  if (!gameSelected) return "/onboarding/game-selection";
+  if (!customizationCompleted) return "/onboarding/customization";
+  return "/onboarding/dashboard";
 }
 
 export default function StaffLogin() {

@@ -272,7 +272,7 @@ export default function Customize() {
         </div>
 
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "6px 16px", borderRadius: 99, marginBottom: 20,
@@ -286,9 +286,22 @@ export default function Customize() {
           <h1 style={{ fontFamily: "'Space Grotesk'", fontSize: "clamp(1.75rem, 3.5vw, 2.5rem)", fontWeight: 700, letterSpacing: "-0.035em", lineHeight: 1.1, marginBottom: 14, color: "rgba(255,255,255,0.95)" }}>
             Let's Create Your App Identity
           </h1>
-          <p style={{ fontFamily: "'Inter'", fontSize: 15, lineHeight: 1.7, color: "rgba(255,255,255,0.4)", maxWidth: 540, margin: "0 auto" }}>
+          <p style={{ fontFamily: "'Inter'", fontSize: 15, lineHeight: 1.7, color: "rgba(255,255,255,0.4)", maxWidth: 540, margin: "0 auto 16px" }}>
             Tell us about the type of app brand you want to build and our team will create the visual direction.
           </p>
+
+          {localStorage.getItem("selectedGameTitle") && (
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "8px 16px", borderRadius: 10,
+              background: "rgba(0,212,255,0.06)", border: "1px solid rgba(0,212,255,0.18)",
+            }}>
+              <Sparkles style={{ width: 13, height: 13, color: "#00D4FF" }} />
+              <span style={{ fontFamily: "'Inter'", fontSize: 12.5, fontWeight: 500, color: "rgba(255,255,255,0.85)" }}>
+                Selected Template{localStorage.getItem("selectedGameTitle")?.includes(",") ? "s" : ""}: <strong style={{ color: "#00D4FF" }}>{localStorage.getItem("selectedGameTitle")}</strong>
+              </span>
+            </div>
+          )}
         </div>
 
         <motion.form

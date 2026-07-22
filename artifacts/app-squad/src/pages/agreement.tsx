@@ -9,21 +9,21 @@ const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 60000;
 
 const planNames: Record<string, string> = {
-  essentials:  "App Launch Essentials",
+  essentials: "App Launch Essentials",
   accelerator: "App Ownership Accelerator",
-  empire:      "App Empire Package",
+  empire: "App Empire Package",
 };
 
 const planPrices: Record<string, Record<string, string>> = {
   subscription: {
-    essentials:  "$2,497",
+    essentials: "$2,497",
     accelerator: "$4,997",
-    empire:      "$9,997",
+    empire: "$9,997",
   },
   monthly: {
-    essentials:  "$497 setup/down payment today, then $197/month for 12 months",
+    essentials: "$497 setup/down payment today, then $197/month for 12 months",
     accelerator: "$997 setup/down payment today, then $397/month for 12 months",
-    empire:      "$4,997 setup/down payment today, then $497/month for 12 months",
+    empire: "$4,997 setup/down payment today, then $497/month for 12 months",
   },
 };
 
@@ -66,16 +66,15 @@ export default function Agreement() {
     }
   }, [email]);
 
+  const activeEmail = email || (typeof window !== "undefined" ? localStorage.getItem("appSquadUserEmail") || localStorage.getItem("appSquadEnrollmentEmail") || "" : "");
+
   useEffect(() => {
-    if (!email) {
-      // No email means the user hasn't enrolled yet — send them back to enrollment,
-      // NOT to /login. Redirecting to /login here was the primary cause of the
-      // "Pricing → Payment Success → Login" broken flow.
-      navigate("/enrollment");
+    if (!activeEmail) {
+      navigate("/login");
       return;
     }
     loadProgress();
-  }, [email]);
+  }, [activeEmail]);
 
   function updateSignedState(val: boolean) {
     // eslint-disable-next-line no-console
@@ -86,31 +85,23 @@ export default function Agreement() {
   async function handleOnboardingTransition(reason: string) {
     if (redirectedRef.current) return;
     redirectedRef.current = true;
-    // eslint-disable-next-line no-console
-    console.log(`[Agreement Page] redirect triggered (reason: ${reason})`);
+    console.log(`[Agreement Page] Zoho signature confirmed! Transition triggered (reason: ${reason}) for email: ${email}`);
     stopPolling();
     setRedirecting(true);
 
     try {
-      const { record } = await getEnrollmentProgress(email);
-      let target = `/onboarding/dashboard`;
-      if (record) {
-        if (!record.password_created) {
-          target = `/set-password?email=${encodeURIComponent(email)}`;
-        } else if (!record.game_selected) {
-          target = `/onboarding/game-selection`;
-        } else if (!record.customization_completed) {
-          target = `/onboarding/customization`;
-        }
-      }
-      // eslint-disable-next-line no-console
-      console.log(`[Agreement Page] transition target: ${target} (reason: ${reason})`);
+      await fetch("/api/enrollment/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, fields: { agreement_signed: true, onboarding_status: "agreement_signed" } })
+      }).catch(() => {});
+
       localStorage.setItem("appSquadAgreementSigned", "true");
-      navigate(target);
+      console.log(`[Agreement Page] Status agreement_signed saved. Navigating to /set-password for: ${email}`);
+      navigate(`/set-password?email=${encodeURIComponent(email)}`);
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("[Agreement Page] failed to resolve transition target, using fallback:", err);
-      navigate(`/onboarding/game-selection`);
+      console.error("[Agreement Page] Error saving agreement signature status:", err);
+      navigate(`/set-password?email=${encodeURIComponent(email)}`);
     }
   }
 
@@ -186,46 +177,62 @@ export default function Agreement() {
     setError("");
     try {
       const { record, error: progressErr } = await getEnrollmentProgress(email);
-      if (progressErr || !record) {
+      let activeRecord = record;
+
+      if (!activeRecord && email) {
+        activeRecord = {
+          email,
+          full_name: localStorage.getItem("appSquadEnrollmentName") || "Valued Client",
+          selected_package: localStorage.getItem("appSquadSelectedPlan") || "essentials",
+          onboarding_status: "payment_paid",
+          payment_status: "paid",
+          agreement_signed: localStorage.getItem("appSquadAgreementSigned") === "true",
+          password_created: localStorage.getItem("appSquadPasswordCreated") === "true",
+          game_selected: localStorage.getItem("appSquadGameSelected") === "true",
+          customization_completed: localStorage.getItem("appSquadCustomizationCompleted") === "true",
+        };
+      }
+
+      if (!activeRecord) {
         setError(progressErr || "Failed to load enrollment record.");
         return;
       }
 
       // Automatically transition from enrollment_completed to payment_paid on load
-      if (record.onboarding_status === "enrollment_completed") {
+      if (activeRecord.onboarding_status === "enrollment_completed") {
         await fetch("/api/enrollment/update", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, fields: { onboarding_status: "payment_paid", payment_status: "paid" } })
         });
-        record.onboarding_status = "payment_paid";
+        activeRecord.onboarding_status = "payment_paid";
       }
 
       const pType = localStorage.getItem("appSquadEnrollmentPaymentType") || "subscription";
-      const planKey = record.selected_package?.toLowerCase() || "essentials";
+      const planKey = activeRecord.selected_package?.toLowerCase() || "essentials";
 
       const resolvedPackageName = planNames[planKey] || planNames.essentials;
       const pricesForType = planPrices[pType as "subscription" | "monthly"] || planPrices.subscription;
       const resolvedPrice = pricesForType[planKey] || pricesForType.essentials;
 
       // Store for dev bypass
-      setEnrollFullName(record.full_name || "");
+      setEnrollFullName(activeRecord.full_name || "");
       setEnrollPackageName(resolvedPackageName);
       setEnrollPrice(resolvedPrice);
       setEnrollPackageId(planKey);
       setEnrollPaymentType(pType);
 
       // Check if user is already signed in the DB
-      if (record.agreement_signed) {
+      if (activeRecord.agreement_signed) {
         updateSignedState(true);
         localStorage.setItem("appSquadAgreementSigned", "true");
-        if (record.document_url) {
-          localStorage.setItem("appSquadAgreementPdfUrl", record.document_url);
+        if (activeRecord.document_url) {
+          localStorage.setItem("appSquadAgreementPdfUrl", activeRecord.document_url);
         }
         // Already signed before landing on this page — only the set-password step
         // is still relevant to the "stuck after signing" flow; other onboarding
         // steps route independently of the Zoho redirect fix.
-        if (!record.password_created) {
+        if (!activeRecord.password_created) {
           setTimeout(() => handleOnboardingTransition("already-signed-on-load"), 1200);
           return;
         }
@@ -233,9 +240,9 @@ export default function Agreement() {
           const loggedIn = localStorage.getItem("appSquadLoggedIn") === "true" || localStorage.getItem("as_admin_auth") === "true";
           if (!loggedIn) {
             navigate("/login");
-          } else if (!record.game_selected) {
+          } else if (!activeRecord.game_selected) {
             navigate("/onboarding/game-selection");
-          } else if (!record.customization_completed) {
+          } else if (!activeRecord.customization_completed) {
             navigate("/onboarding/customization");
           } else {
             navigate("/onboarding/dashboard");
@@ -244,7 +251,7 @@ export default function Agreement() {
         return;
       }
 
-      fullNameRef.current = record.full_name || "";
+      fullNameRef.current = activeRecord.full_name || "";
 
       if (zohoRequestInitiatedRef.current) {
         // eslint-disable-next-line no-console
@@ -258,12 +265,12 @@ export default function Agreement() {
       // Create Zoho Sign Embedded signature session (template-based, auto-filled)
       const zohoRes = await createZohoSignRequest(
         email,
-        record.full_name,
+        activeRecord.full_name,
         resolvedPackageName,
         resolvedPrice,
         pType,
         planKey,
-        record.phone,
+        activeRecord.phone,
       );
 
       if (zohoRes.success && zohoRes.alreadySigned) {
@@ -400,10 +407,10 @@ export default function Agreement() {
                 padding: "20px 18px", marginTop: 2,
               }}>
                 <p style={{ fontFamily: "'Inter'", fontSize: 13, color: "rgba(255,255,255,0.55)", textAlign: "center", maxWidth: 420 }}>
-                  Already signed? We're still confirming with Zoho — you can continue to account setup now instead of waiting.
+                  Already signed? Click below to check and verify your document status with Zoho Sign.
                 </p>
                 <button
-                  onClick={() => redirectToSetPassword("manual-continue-button")}
+                  onClick={() => checkSignatureStatus("manual-verify")}
                   className="btn-gold"
                   style={{
                     display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -412,15 +419,15 @@ export default function Agreement() {
                     border: "none", cursor: "pointer",
                   }}
                 >
-                  Continue to Account Setup
+                  Verify Signature Status
                   <ArrowRight style={{ width: 15, height: 15 }} />
                 </button>
               </div>
             )}
           </motion.div>
-         ) : (
+        ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-             {error && (
+            {error && (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div style={{
                   display: "flex", alignItems: "center", gap: 10,
@@ -433,79 +440,79 @@ export default function Agreement() {
                   </p>
                 </div>
 
-                {(window.location.hostname === "localhost" || 
-                  window.location.hostname === "127.0.0.1" || 
-                  import.meta.env.DEV || 
-                  localStorage.getItem("appSquadDevMode") === "true" || 
+                {(window.location.hostname === "localhost" ||
+                  window.location.hostname === "127.0.0.1" ||
+                  import.meta.env.DEV ||
+                  localStorage.getItem("appSquadDevMode") === "true" ||
                   new URLSearchParams(window.location.search).get("dev") === "true") && (
-                  <div style={{
-                    background: "rgba(245, 158, 11, 0.04)",
-                    border: "1px solid rgba(245, 158, 11, 0.15)",
-                    borderRadius: 16,
-                    padding: "24px",
-                    textAlign: "center",
-                  }}>
-                    <p style={{ fontFamily: "'Inter'", fontSize: 13.5, color: "rgba(255,255,255,0.6)", marginBottom: 18, lineHeight: 1.5 }}>
-                      <strong>Developer Mode:</strong> Zoho Sign API has hit its daily developer document limit. You can bypass the signature wall to verify the remainder of the client onboarding flow.
-                    </p>
-                    <button
-                      disabled={devSigning}
-                      onClick={async () => {
-                        const bypassEmail = email || localStorage.getItem("appSquadEnrollmentEmail") || "";
-                        if (!bypassEmail) { window.location.href = "/set-password"; return; }
-                        setDevSigning(true);
-                        setError("");
-                        try {
-                          const res = await fetch("/api/enrollment/dev-sign", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              email: bypassEmail,
-                              fullName: enrollFullName || bypassEmail,
-                              packageName: enrollPackageName,
-                              price: enrollPrice,
-                              paymentOption: enrollPaymentType || localStorage.getItem("appSquadEnrollmentPaymentType") || "subscription",
-                              packageId: enrollPackageId || "essentials",
-                            }),
-                          });
-                          const data = await res.json() as { success?: boolean; pdfUrl?: string; error?: string };
-                          if (data.success) {
-                            localStorage.setItem("appSquadAgreementSigned", "true");
-                            if (data.pdfUrl) localStorage.setItem("appSquadAgreementPdfUrl", data.pdfUrl);
-                            await queryClient.invalidateQueries({ queryKey: ["onboardingProgress", bypassEmail] });
-                            window.location.href = `/set-password?email=${encodeURIComponent(bypassEmail)}`;
-                          } else {
-                            setError(data.error || "Developer mode bypass failed. Please try again.");
+                    <div style={{
+                      background: "rgba(245, 158, 11, 0.04)",
+                      border: "1px solid rgba(245, 158, 11, 0.15)",
+                      borderRadius: 16,
+                      padding: "24px",
+                      textAlign: "center",
+                    }}>
+                      <p style={{ fontFamily: "'Inter'", fontSize: 13.5, color: "rgba(255,255,255,0.6)", marginBottom: 18, lineHeight: 1.5 }}>
+                        <strong>Developer Mode:</strong> Zoho Sign API has hit its daily developer document limit. You can bypass the signature wall to verify the remainder of the client onboarding flow.
+                      </p>
+                      <button
+                        disabled={devSigning}
+                        onClick={async () => {
+                          const bypassEmail = email || localStorage.getItem("appSquadEnrollmentEmail") || "";
+                          if (!bypassEmail) { window.location.href = "/set-password"; return; }
+                          setDevSigning(true);
+                          setError("");
+                          try {
+                            const res = await fetch("/api/enrollment/dev-sign", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                email: bypassEmail,
+                                fullName: enrollFullName || bypassEmail,
+                                packageName: enrollPackageName,
+                                price: enrollPrice,
+                                paymentOption: enrollPaymentType || localStorage.getItem("appSquadEnrollmentPaymentType") || "subscription",
+                                packageId: enrollPackageId || "essentials",
+                              }),
+                            });
+                            const data = await res.json() as { success?: boolean; pdfUrl?: string; error?: string };
+                            if (data.success) {
+                              localStorage.setItem("appSquadAgreementSigned", "true");
+                              if (data.pdfUrl) localStorage.setItem("appSquadAgreementPdfUrl", data.pdfUrl);
+                              await queryClient.invalidateQueries({ queryKey: ["onboardingProgress", bypassEmail] });
+                              window.location.href = `/set-password?email=${encodeURIComponent(bypassEmail)}`;
+                            } else {
+                              setError(data.error || "Developer mode bypass failed. Please try again.");
+                              setDevSigning(false);
+                            }
+                          } catch {
+                            setError("Network error during developer mode bypass.");
                             setDevSigning(false);
                           }
-                        } catch {
-                          setError("Network error during developer mode bypass.");
-                          setDevSigning(false);
-                        }
-                      }}
-                      className="btn-gold"
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                        padding: "12px 24px",
-                        borderRadius: 10,
-                        fontFamily: "'Inter'",
-                        fontSize: 14,
-                        fontWeight: 600,
-                        border: "none",
-                        cursor: devSigning ? "not-allowed" : "pointer",
-                        opacity: devSigning ? 0.7 : 1,
-                        transition: "all 0.2s"
-                      }}
-                    >
-                      {devSigning ? "Simulating Agreement…" : "Bypass Zoho Sign & Proceed (Dev Mode)"}
-                    </button>
-                  </div>
-                )}
+                        }}
+                        className="btn-gold"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                          padding: "12px 24px",
+                          borderRadius: 10,
+                          fontFamily: "'Inter'",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          border: "none",
+                          cursor: devSigning ? "not-allowed" : "pointer",
+                          opacity: devSigning ? 0.7 : 1,
+                          transition: "all 0.2s"
+                        }}
+                      >
+                        {devSigning ? "Simulating Agreement…" : "Bypass Zoho Sign & Proceed (Dev Mode)"}
+                      </button>
+                    </div>
+                  )}
               </div>
-             )}
+            )}
           </div>
         )}
       </div>

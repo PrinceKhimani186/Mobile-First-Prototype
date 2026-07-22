@@ -1922,4 +1922,105 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
   }
 });
 
+// ── OAuth Authorization Flow ──────────────────────────────────────────────────
+router.get("/zoho/oauth/start", (req: Request, res: Response) => {
+  const clientId = getZohoClientId();
+  const region = getZohoRegion();
+  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5173";
+  const proto = req.headers["x-forwarded-proto"] || "http";
+  const redirectUri = process.env.ZOHO_OAUTH_REDIRECT_URI || `${proto}://${host}/api/zoho/oauth/callback`;
+
+  if (!clientId) {
+    res.status(400).send("ZOHO_SIGN_CLIENT_ID is not configured in .env");
+    return;
+  }
+
+  const scope = encodeURIComponent("ZohoSign.documents.ALL,ZohoSign.templates.READ,ZohoSign.templates.ALL");
+  const authUrl = `https://accounts.zoho.${region}/oauth/v2/auth?response_type=code&client_id=${clientId}&scope=${scope}&redirect_uri=${encodeURIComponent(redirectUri)}&access_type=offline&prompt=consent`;
+
+  logger.info({ authUrl, region, clientId, redirectUri }, "Zoho OAuth: redirecting to authorization screen");
+  res.redirect(authUrl);
+});
+
+router.get("/zoho/oauth/callback", async (req: Request, res: Response) => {
+  const code = req.query.code as string;
+  if (!code) {
+    res.status(400).send("Missing authorization code from Zoho callback query parameter");
+    return;
+  }
+
+  const clientId = getZohoClientId();
+  const clientSecret = getZohoClientSecret();
+  const region = getZohoRegion();
+  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5173";
+  const proto = req.headers["x-forwarded-proto"] || "http";
+  const redirectUri = process.env.ZOHO_OAUTH_REDIRECT_URI || `${proto}://${host}/api/zoho/oauth/callback`;
+
+  if (!clientId || !clientSecret) {
+    res.status(400).send("ZOHO_SIGN_CLIENT_ID or ZOHO_SIGN_CLIENT_SECRET missing");
+    return;
+  }
+
+  try {
+    const params = new URLSearchParams();
+    params.append("code", code);
+    params.append("client_id", clientId);
+    params.append("client_secret", clientSecret);
+    params.append("grant_type", "authorization_code");
+    params.append("redirect_uri", redirectUri);
+
+    const tokenUrl = `https://accounts.zoho.${region}/oauth/v2/token`;
+    const tokenRes = await fetch(tokenUrl, {
+      method: "POST",
+      body: params,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
+
+    const data = (await tokenRes.json()) as any;
+    if (!tokenRes.ok || !data.refresh_token) {
+      logger.error({ data, status: tokenRes.status }, "Zoho OAuth callback failed");
+      res.status(500).send(`Failed to obtain refresh token: ${data.error || data.message || JSON.stringify(data)}`);
+      return;
+    }
+
+    const newRefreshToken = data.refresh_token;
+    logger.info({ newRefreshToken: `${newRefreshToken.slice(0, 10)}...` }, "Zoho OAuth success: received new refresh token");
+
+    try {
+      const envPath = path.resolve(process.cwd(), "../../.env");
+      if (fs.existsSync(envPath)) {
+        let envContent = fs.readFileSync(envPath, "utf8");
+        if (envContent.includes("ZOHO_SIGN_REFRESH_TOKEN=")) {
+          envContent = envContent.replace(/ZOHO_SIGN_REFRESH_TOKEN=.*/g, `ZOHO_SIGN_REFRESH_TOKEN=${newRefreshToken}`);
+        } else {
+          envContent += `\nZOHO_SIGN_REFRESH_TOKEN=${newRefreshToken}\n`;
+        }
+        fs.writeFileSync(envPath, envContent, "utf8");
+        process.env.ZOHO_SIGN_REFRESH_TOKEN = newRefreshToken;
+        logger.info("Updated ZOHO_SIGN_REFRESH_TOKEN in .env");
+      }
+    } catch (fsErr) {
+      logger.warn({ fsErr }, "Failed to persist new refresh token to .env file");
+    }
+
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head><title>Zoho Sign OAuth Complete</title></head>
+        <body style="font-family: sans-serif; max-width: 600px; margin: 50px auto; text-align: center; background: #0f172a; color: #f8fafc; padding: 40px; border-radius: 12px; border: 1px solid #334155;">
+          <h1 style="color: #22c55e;">✅ Authorization Successful!</h1>
+          <p style="font-size: 16px; color: #94a3b8;">Fresh Zoho Sign Refresh Token acquired and saved into <code>.env</code>.</p>
+          <div style="background: #1e293b; padding: 12px; border-radius: 6px; font-family: monospace; word-break: break-all; margin: 20px 0; border: 1px solid #475569;">
+            ${newRefreshToken}
+          </div>
+          <a href="/onboarding/agreement" style="display: inline-block; background: #3b82f6; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 10px;">Return to Agreement Page</a>
+        </body>
+      </html>
+    `);
+  } catch (err: any) {
+    logger.error({ err }, "Zoho OAuth callback exception");
+    res.status(500).send(`OAuth exception: ${err.message}`);
+  }
+});
+
 export default router;

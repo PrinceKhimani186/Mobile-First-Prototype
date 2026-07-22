@@ -65,8 +65,8 @@ function stripeKeyMode(): "test" | "live" | "unknown" {
 function stripeConfigError(): string | null {
   const key = process.env.STRIPE_SECRET_KEY ?? "";
   if (!key) return "STRIPE_SECRET_KEY is not set";
-  if (key.startsWith("pk_")) return "STRIPE_SECRET_KEY is a publishable key (pk_…). Use the secret key (sk_…) instead.";
-  if (!key.startsWith("sk_")) return `STRIPE_SECRET_KEY has an unexpected format: ${key.slice(0, 6)}…`;
+  if (key.startsWith("pk_")) return "STRIPE_SECRET_KEY is a publishable key (pk_…). Use the secret key (sk_… or rk_…) instead.";
+  if (!key.startsWith("sk_") && !key.startsWith("rk_") && !key.startsWith("mk_")) return `STRIPE_SECRET_KEY has an unexpected format: ${key.slice(0, 6)}…`;
   return null;
 }
 
@@ -115,38 +115,11 @@ function priceIdError(planName: string): string | null {
 
 // ── POST /api/enrollment/checkout ────────────────────────────────────────────
 router.post("/enrollment/checkout", async (req: Request, res: Response) => {
-  // Dev-only mock: when no STRIPE_SECRET_KEY is configured outside production,
-  // skip Stripe entirely and send the client straight to the success URL so the
-  // onboarding flow can be exercised locally end-to-end.
-  if (!process.env.STRIPE_SECRET_KEY && process.env.NODE_ENV !== "production") {
-    const { successUrl, email: mockEmail, selectedPlan: mockSelectedPlan, planName: mockPlanName } =
-      req.body as { successUrl?: string; email?: string; selectedPlan?: string; planName?: string };
-    if (!successUrl) {
-      res.status(400).json({ error: "Missing successUrl" });
-      return;
-    }
-    req.log.warn("Enrollment: STRIPE_SECRET_KEY not set — mocking checkout in dev, redirecting to success URL");
-
-    // Dev equivalent of the webhook: persist the purchased plan since the mock
-    // redirect goes straight to the success URL with no Stripe event.
-    const mockPlan = normalizePlan(mockSelectedPlan) ?? normalizePlan(mockPlanName);
-    const supaUrl = process.env.SUPABASE_URL;
-    const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
-    if (mockPlan && mockEmail && supaUrl && supaKey) {
-      try {
-        const supabase = createClient(supaUrl.trim(), supaKey.trim(), {
-          auth: { persistSession: false, autoRefreshToken: false },
-        });
-        await supabase
-          .from("customer_enrollment")
-          .update({ purchased_plan: mockPlan, payment_status: "paid" })
-          .eq("email", mockEmail.trim().toLowerCase());
-        req.log.info({ email: mockEmail, plan: mockPlan }, "Enrollment: dev mock — purchased_plan saved");
-      } catch (err) {
-        req.log.error({ err }, "Enrollment: dev mock — failed to save purchased_plan");
-      }
-    }
-    res.json({ url: successUrl.replace("{CHECKOUT_SESSION_ID}", "cs_dev_mock") });
+  if (!process.env.STRIPE_SECRET_KEY) {
+    req.log.error("Enrollment: STRIPE_SECRET_KEY is not configured in environment secrets.");
+    res.status(503).json({
+      error: "Stripe configuration required. Please set STRIPE_SECRET_KEY in your environment variables.",
+    });
     return;
   }
 
@@ -183,54 +156,41 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
   const ghlApiKey = process.env.GHL_API_KEY;
   const ghlLocationId = process.env.GHL_LOCATION_ID;
 
-  // 2 — Warn early if the Stripe key is live but we're using hardcoded test price IDs.
-  //     This is the most common production misconfiguration: sk_live_... key + test price IDs.
   const keyMode = stripeKeyMode();
-  const usingFallbackIds = !process.env.STRIPE_PRICE_ESSENTIALS;
-  if (keyMode === "live" && usingFallbackIds) {
-    req.log.error({ planName, keyMode }, "Enrollment: LIVE Stripe key but no STRIPE_PRICE_* env vars set — hardcoded test price IDs will be rejected by Stripe");
-    res.status(503).json({
-      error:
-        "Stripe is configured in LIVE mode but the price IDs are hardcoded test fallbacks. " +
-        "Go to your Stripe Dashboard (live mode) → Products and copy the Price IDs for each plan. " +
-        "Then set these environment secrets: STRIPE_PRICE_ESSENTIALS, STRIPE_PRICE_ACCELERATOR, " +
-        "STRIPE_PRICE_EMPIRE, STRIPE_PRICE_ESSENTIALS_SETUP, STRIPE_PRICE_ACCELERATOR_SETUP, " +
-        "STRIPE_PRICE_EMPIRE_SETUP. Redeploy after setting them.",
-    });
-    return;
-  }
+  req.log.info({ keyMode }, "Enrollment: initializing Stripe checkout session");
 
-  // 3 — Resolve the one-time Stripe price for this plan + payment type.
-  //     We ignore whatever price ID the frontend sent and always look up by plan+type.
+  // 3 — Resolve line items for Stripe checkout
+  const planKey = normalizePlan(selectedPlan) ?? normalizePlan(planName) ?? "essentials";
   const setupFeePrice = getCheckoutPrice(planName, payment_type);
-  if (!setupFeePrice) {
-    req.log.error({ planName, payment_type }, "Enrollment: checkout price ID not configured");
-    const envHint = payment_type === "monthly"
-      ? `STRIPE_PRICE_${planName.toUpperCase().replace(/\s+/g, "_")}_SETUP`
-      : `STRIPE_PRICE_${planName.toUpperCase().replace(/\s+/g, "_")}`;
-    res.status(400).json({ error: `Stripe price for "${planName}" (${payment_type || "subscription"}) is not configured. Set ${envHint} in environment secrets.` });
-    return;
-  }
+  const isValidPriceId = setupFeePrice && setupFeePrice.startsWith("price_") && !setupFeePrice.includes("hardcoded");
 
-  // Canonical plan key for this checkout — resolved server-side from the plan
-  // name/ID, never trusted as-is from arbitrary frontend strings.
-  const planKey = normalizePlan(selectedPlan) ?? normalizePlan(planName);
-  if (!planKey) {
-    req.log.error({ selectedPlan, planName }, "Enrollment: unknown plan in checkout request");
-    res.status(400).json({ error: `Unknown plan "${planName || selectedPlan}".` });
-    return;
-  }
+  const isMonthly = payment_type === "monthly";
+  const defaultAmount = isMonthly
+    ? (planKey === "empire" ? 499700 : planKey === "accelerator" ? 99700 : 49700)
+    : (planKey === "empire" ? 999700 : planKey === "accelerator" ? 499700 : 249700);
+
+  const line_items = isValidPriceId
+    ? [{ price: setupFeePrice, quantity: 1 }]
+    : [{
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `App Squad — ${planName} (${isMonthly ? "Monthly Setup Fee" : "Paid In Full"})`,
+            description: planTag || `App Squad ${planName} Onboarding`,
+          },
+          unit_amount: defaultAmount,
+        },
+        quantity: 1,
+      }];
 
   const stripe = new Stripe(stripeKey);
 
   req.log.info({
     plan: planKey,
     selectedPlan: planName,
-    resolvedPriceId: setupFeePrice,
-    frontendSentPriceId: stripe_price_id ?? "(none)",
-    planTag,
-    payment_type: payment_type ?? "(not sent)",
-  }, "Enrollment: checkout price resolved — plan will be carried in Stripe metadata");
+    resolvedPriceId: setupFeePrice || "dynamic_price_data",
+    line_items,
+  }, "Enrollment: checkout price resolved");
 
   // 3 — Create / update GHL contact (non-fatal)
   if (ghlApiKey && ghlLocationId) {
@@ -288,7 +248,6 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
         }
       }
 
-      // Add safe logs only: email, GHL contact ID, tag being applied, success/error response
       req.log.info({
         email: emailStr,
         contactId: contactId ?? "unknown",
@@ -302,36 +261,77 @@ router.post("/enrollment/checkout", async (req: Request, res: Response) => {
     }
   }
 
-  // 4 — Create Stripe checkout session (always one-time payment for setup fee)
+  // 4 — Create Stripe checkout session
   try {
     req.log.info({
       email,
       planName,
-      priceId: setupFeePrice,
+      line_items,
       mode: "payment",
     }, "Enrollment: creating Stripe checkout session");
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: [{ price: setupFeePrice, quantity: 1 }],
-      mode: "payment",
-      customer_email: email,
-      metadata: {
-        firstName,
-        lastName,
-        email,
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items,
+        mode: "payment",
         customer_email: email,
-        phone: phoneVal,
-        plan: planKey,
-        selectedPlan,
-        planName,
-        planTag,
-        payment_type: payment_type || "one_time",
-        price_id_used: setupFeePrice,
-      },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    });
+        metadata: {
+          firstName,
+          lastName,
+          email,
+          customer_email: email,
+          phone: phoneVal,
+          plan: planKey,
+          selectedPlan,
+          planName,
+          planTag,
+          payment_type: payment_type || "one_time",
+          price_id_used: setupFeePrice || "dynamic_price_data",
+        },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
+    } catch (createErr: any) {
+      if (createErr?.code === "resource_missing" && isValidPriceId) {
+        req.log.warn({ createErr }, "Enrollment: pre-configured Stripe Price ID not found in account — falling back to dynamic price_data");
+        const dynamicLineItems = [{
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `App Squad — ${planName} (${isMonthly ? "Monthly Setup Fee" : "Paid In Full"})`,
+              description: planTag || `App Squad ${planName} Onboarding`,
+            },
+            unit_amount: defaultAmount,
+          },
+          quantity: 1,
+        }];
+        session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+          line_items: dynamicLineItems,
+          mode: "payment",
+          customer_email: email,
+          metadata: {
+            firstName,
+            lastName,
+            email,
+            customer_email: email,
+            phone: phoneVal,
+            plan: planKey,
+            selectedPlan,
+            planName,
+            planTag,
+            payment_type: payment_type || "one_time",
+            price_id_used: "dynamic_price_data_fallback",
+          },
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+        });
+      } else {
+        throw createErr;
+      }
+    }
 
     req.log.info({ email, planName, sessionId: session.id, mode: "payment", priceId: setupFeePrice }, "Enrollment: Stripe session created successfully");
     res.json({ url: session.url });

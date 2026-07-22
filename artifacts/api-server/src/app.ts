@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import path from "path";
+import fs from "fs";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
@@ -361,21 +362,30 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // route guards bounce the user back to earlier steps (including re-signing the
 // agreement). Backing sessions with Postgres — the same DB already in use —
 // makes them survive restarts and work across multiple server instances.
-const PgSession = connectPgSimple(session);
-const pgSessionStore = new PgSession({
-  pool,
-  tableName: "user_sessions",
-  // Table is created via Drizzle (lib/db/src/schema/session.ts + `pnpm --filter
-  // @workspace/db run push`), not this library's own createTableIfMissing —
-  // that feature reads a table.sql asset by relative path, which breaks once
-  // the API server is compiled into a single esbuild bundle (ENOENT at runtime).
-  createTableIfMissing: false,
-});
-pgSessionStore.on("connect", () => logger.info("Session store: Postgres table ready"));
-pgSessionStore.on("error", (err: Error) => logger.error({ err }, "Session store: Postgres error"));
+const memoryStore = new session.MemoryStore();
+let storeInstance: session.Store = memoryStore;
+
+if (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes("localhost:5432")) {
+  try {
+    const PgSession = connectPgSimple(session);
+    const pgSessionStore = new PgSession({
+      pool,
+      tableName: "user_sessions",
+      createTableIfMissing: false,
+    });
+    pgSessionStore.on("error", (err: Error) => logger.warn({ err }, "Session store: Postgres error — falling back to memory store"));
+    storeInstance = pgSessionStore;
+  } catch {
+    storeInstance = memoryStore;
+  }
+} else {
+  logger.info("Session store: using in-memory store for development");
+  storeInstance = memoryStore;
+}
+
 app.use(
   session({
-    store: pgSessionStore,
+    store: storeInstance,
     secret: process.env.SESSION_SECRET || "fallback-dev-secret",
     resave: false,
     saveUninitialized: false,
@@ -394,9 +404,15 @@ app.use("/api", router);
 const staticPath = path.resolve(__dirname, "../../app-squad/dist/public");
 app.use(express.static(staticPath));
 
-// Support React SPA routing by serving index.html as a fallback (using RegExp to bypass path-to-regexp)
+// Support React SPA routing by serving index.html as a fallback, or forwarding to Vite dev server port 5173
 app.get(/^.*$/, (req, res) => {
-  res.sendFile(path.join(staticPath, "index.html"));
+  const indexPath = path.join(staticPath, "index.html");
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    logger.info({ url: req.originalUrl }, "API server: static index.html not found — redirecting to Vite dev server on port 5173");
+    res.redirect(`http://localhost:5173${req.originalUrl}`);
+  }
 });
 
 export default app;

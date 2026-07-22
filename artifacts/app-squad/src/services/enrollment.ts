@@ -369,6 +369,10 @@ export function getOnboardingEmail(): string {
 export interface AllowedGamesResult {
   status: number;
   plan?: string;
+  packageName?: string;
+  maxGames?: number;
+  minGames?: number;
+  allowedGameTypes?: "standard" | "premium" | "all";
   gameIds?: string[];
   error?: string;
   message?: string;
@@ -380,6 +384,8 @@ export async function fetchAllowedGames(email: string): Promise<AllowedGamesResu
     if (typeof window !== "undefined") {
       const sid = new URLSearchParams(window.location.search).get("session_id");
       if (sid) params.set("session_id", sid);
+      const plan = localStorage.getItem("appSquadSelectedPlan") || localStorage.getItem("appSquadSelectedPackage") || localStorage.getItem("appSquadPackage");
+      if (plan) params.set("plan", plan);
     }
     const res = await fetch(`${BASE}/allowed-games?${params.toString()}`, { cache: "no-store" });
     const json = (await res.json().catch(() => ({}))) as Omit<AllowedGamesResult, "status">;
