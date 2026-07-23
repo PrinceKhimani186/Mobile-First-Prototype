@@ -71,7 +71,7 @@ const PLANS = [
     description:
       "Premium done-for-you experience with VIP support and strategic guidance.",
     features: [
-      "Up to 2 game templates",
+      "One 2D or 3D premium game template",
       "Premium branding & customization",
       "Full monetization suite",
       "ASO guidance + launch checklist",
