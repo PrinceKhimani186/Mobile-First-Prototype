@@ -436,6 +436,7 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
     if (!email || !fullName) {
       req.log.error({ fullName, email }, "[ENROLLMENT/INIT Step 1 FAILED] Missing required fields: email or fullName");
       res.status(400).json({
+        success: false,
         ok: false,
         error: "email and fullName are required fields",
         step: 1,
@@ -451,35 +452,33 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
       empire: "App Empire Package",
     };
     const resolvedPlanName = planNameMap[planKey] || "App Launch Essentials";
-    const isMonthly = paymentType === "monthly";
+    const isMonthly = paymentType === "monthly" || paymentType === "subscription";
 
     req.log.info(
-      { normalizedEmail, fullName, planKey, resolvedPlanName, paymentType, source },
-      "[ENROLLMENT/INIT Step 1 OK] Request validated successfully"
+      { normalizedEmail, fullName, planKey, resolvedPlanName, paymentType, isMonthly, source },
+      "[ENROLLMENT/INIT Step 1 OK] Request payload validated successfully"
     );
 
     // ── STEP 2: Environment Validation & Logging ──
     const stripeKey = process.env.STRIPE_SECRET_KEY?.trim();
+    const dbUrl = process.env.DATABASE_URL?.trim();
+    const sessionSecret = process.env.SESSION_SECRET?.trim();
     const supaUrl = process.env.SUPABASE_URL?.trim();
     const supaKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY)?.trim();
-    const dbUrl = process.env.DATABASE_URL?.trim();
 
-    const missingEnvVars: string[] = [];
-    if (!stripeKey) missingEnvVars.push("STRIPE_SECRET_KEY");
-    if (!supaUrl) missingEnvVars.push("SUPABASE_URL");
-    if (!supaKey) missingEnvVars.push("SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY");
-    if (!dbUrl) missingEnvVars.push("DATABASE_URL");
+    // Check Stripe Price IDs
+    const envVarsChecked = {
+      DATABASE_URL: !!dbUrl,
+      SESSION_SECRET: !!sessionSecret,
+      STRIPE_SECRET_KEY: stripeKey ? `${stripeKey.slice(0, 8)}…` : "MISSING",
+      STRIPE_PRICE_ESSENTIALS: process.env.STRIPE_PRICE_ESSENTIALS || process.env.VITE_STRIPE_PRICE_ESSENTIALS || "NOT_SET",
+      STRIPE_PRICE_ACCELERATOR: process.env.STRIPE_PRICE_ACCELERATOR || process.env.VITE_STRIPE_PRICE_ACCELERATOR || "NOT_SET",
+      STRIPE_PRICE_EMPIRE: process.env.STRIPE_PRICE_EMPIRE || process.env.VITE_STRIPE_PRICE_EMPIRE || "NOT_SET",
+    };
 
     req.log.info(
-      {
-        hasStripeKey: !!stripeKey,
-        stripeKeyPrefix: stripeKey ? `${stripeKey.slice(0, 8)}…` : "MISSING",
-        hasSupabaseUrl: !!supaUrl,
-        hasSupabaseKey: !!supaKey,
-        hasDatabaseUrl: !!dbUrl,
-        missingEnvVars,
-      },
-      "[ENROLLMENT/INIT Step 2] Environment validation completed"
+      { envVarsChecked, hasSupabaseUrl: !!supaUrl, hasSupabaseKey: !!supaKey },
+      "[ENROLLMENT/INIT Step 2] Environment variables audit completed"
     );
 
     // ── STEP 3: Database Connectivity & Record Creation ──
@@ -517,7 +516,7 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
 
           if (!error) {
             dbSaved = true;
-            req.log.info({ email: normalizedEmail, attempt }, "[ENROLLMENT/INIT Step 3 OK] Record upserted to Supabase");
+            req.log.info({ email: normalizedEmail, attempt }, "[ENROLLMENT/INIT Step 3 OK] Record upserted to Supabase customer_enrollment");
             break;
           }
 
@@ -529,7 +528,7 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
               continue;
             }
           }
-          req.log.warn({ error, attempt }, "[ENROLLMENT/INIT Step 3 WARN] Supabase upsert error");
+          req.log.warn({ error, attempt }, "[ENROLLMENT/INIT Step 3 WARN] Supabase upsert notice");
           break;
         }
       } catch (supaErr) {
@@ -543,19 +542,39 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
       dbSaved = true;
       req.log.info({ email: normalizedEmail }, "[ENROLLMENT/INIT Step 3 OK] Record synced to local Postgres");
     } catch (localErr) {
-      req.log.warn({ localErr }, "[ENROLLMENT/INIT Step 3 WARN] Local Postgres sync warning");
+      req.log.warn({ localErr }, "[ENROLLMENT/INIT Step 3 WARN] Local Postgres sync notice");
     }
 
-    // ── STEP 4: Stripe Lookup & Checkout Session Creation ──
+    // ── STEP 4: Stripe Lookup & Price ID Resolution ──
     if (!stripeKey) {
-      req.log.warn("[ENROLLMENT/INIT Step 4 WARN] STRIPE_SECRET_KEY missing — bypassing Stripe session and returning OK");
-      const jsonResponse = { ok: true, saved: dbSaved, message: "STRIPE_SECRET_KEY not set; skipped online payment session" };
+      req.log.warn("[ENROLLMENT/INIT Step 4 WARN] STRIPE_SECRET_KEY missing — bypassing Stripe session");
+      const jsonResponse = { success: true, ok: true, saved: dbSaved, message: "STRIPE_SECRET_KEY not set; skipped online payment session" };
       req.log.info({ jsonResponse }, "[ENROLLMENT/INIT Step 5] Sending final JSON response (No Stripe Key)");
       res.json(jsonResponse);
       return;
     }
 
-    req.log.info({ email: normalizedEmail, planKey, resolvedPlanName }, "[ENROLLMENT/INIT Step 4] Initializing Stripe Checkout session");
+    // Resolve Stripe Price ID based on planKey & paymentType
+    let mappedPriceId: string | undefined = undefined;
+    const e = process.env;
+    if (planKey === "accelerator") {
+      mappedPriceId = isMonthly
+        ? (e.STRIPE_PRICE_ACCELERATOR_SETUP || e.STRIPE_PRICE_ACCELERATOR_MONTHLY || e.VITE_STRIPE_PRICE_ACCELERATOR_SETUP || e.VITE_STRIPE_PRICE_ACCELERATOR_MONTHLY || e.STRIPE_PRICE_ACCELERATOR || e.VITE_STRIPE_PRICE_ACCELERATOR)
+        : (e.STRIPE_PRICE_ACCELERATOR || e.VITE_STRIPE_PRICE_ACCELERATOR);
+    } else if (planKey === "empire") {
+      mappedPriceId = isMonthly
+        ? (e.STRIPE_PRICE_EMPIRE_SETUP || e.STRIPE_PRICE_EMPIRE_MONTHLY || e.VITE_STRIPE_PRICE_EMPIRE_SETUP || e.VITE_STRIPE_PRICE_EMPIRE_MONTHLY || e.STRIPE_PRICE_EMPIRE || e.VITE_STRIPE_PRICE_EMPIRE)
+        : (e.STRIPE_PRICE_EMPIRE || e.VITE_STRIPE_PRICE_EMPIRE);
+    } else {
+      mappedPriceId = isMonthly
+        ? (e.STRIPE_PRICE_ESSENTIALS_SETUP || e.STRIPE_PRICE_ESSENTIALS_MONTHLY || e.VITE_STRIPE_PRICE_ESSENTIALS_SETUP || e.VITE_STRIPE_PRICE_ESSENTIALS_MONTHLY || e.STRIPE_PRICE_ESSENTIALS || e.VITE_STRIPE_PRICE_ESSENTIALS)
+        : (e.STRIPE_PRICE_ESSENTIALS || e.VITE_STRIPE_PRICE_ESSENTIALS);
+    }
+
+    req.log.info(
+      { planKey, resolvedPlanName, isMonthly, mappedPriceId: mappedPriceId || "NONE_CONFIGURED" },
+      "[ENROLLMENT/INIT Step 4] Stripe Price ID resolution"
+    );
 
     // Safe origin resolution
     let refererOrigin: string | null = null;
@@ -579,53 +598,99 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
       : (planKey === "empire" ? 999700 : planKey === "accelerator" ? 499700 : 249700);
 
     req.log.info(
-      { planKey, resolvedPlanName, isMonthly, defaultAmount, successUrl, cancelUrl },
-      "[ENROLLMENT/INIT Step 4] Calculated package pricing & URLs"
+      { planKey, resolvedPlanName, isMonthly, defaultAmount, mappedPriceId, successUrl, cancelUrl },
+      "[ENROLLMENT/INIT Step 4] Final calculated package pricing & redirect URLs"
     );
 
+    // ── STEP 5: Create Stripe Checkout Session ──
     const stripe = new Stripe(stripeKey);
-    const lineItems = [{
-      price_data: {
-        currency: "usd",
-        product_data: {
-          name: `App Squad — ${resolvedPlanName} (${isMonthly ? "Monthly Setup Fee" : "Paid In Full"})`,
-          description: `App Squad ${resolvedPlanName} Onboarding`,
+    let session: Stripe.Checkout.Session | null = null;
+
+    // First attempt using configured Stripe Price ID if valid
+    if (mappedPriceId && (mappedPriceId.startsWith("price_") || mappedPriceId.startsWith("plan_"))) {
+      try {
+        req.log.info({ mappedPriceId }, "[ENROLLMENT/INIT Step 5] Attempting Stripe session creation using configured Price ID");
+        session = await stripe.checkout.sessions.create({
+          payment_method_types: ["card"],
+          line_items: [{ price: mappedPriceId, quantity: 1 }],
+          mode: "payment",
+          customer_email: normalizedEmail,
+          metadata: {
+            fullName,
+            email: normalizedEmail,
+            customer_email: normalizedEmail,
+            phone: phone || "",
+            plan: planKey,
+            selectedPlan: planKey,
+            planName: resolvedPlanName,
+            payment_type: paymentType || (isMonthly ? "monthly" : "paid_in_full"),
+          },
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+        });
+      } catch (priceErr: any) {
+        req.log.warn(
+          { priceErr: priceErr?.message, mappedPriceId },
+          "[ENROLLMENT/INIT Step 5 WARN] Stripe session creation with Price ID failed — falling back to dynamic price_data"
+        );
+        session = null;
+      }
+    }
+
+    // Fallback attempt using dynamic price_data with calculated amount
+    if (!session) {
+      const lineItems = [{
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `App Squad — ${resolvedPlanName} (${isMonthly ? "Monthly Setup Fee" : "Paid In Full"})`,
+            description: `App Squad ${resolvedPlanName} Onboarding`,
+          },
+          unit_amount: defaultAmount,
         },
-        unit_amount: defaultAmount,
-      },
-      quantity: 1,
-    }];
+        quantity: 1,
+      }];
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: lineItems,
-      mode: "payment",
-      customer_email: normalizedEmail,
-      metadata: {
-        fullName,
-        email: normalizedEmail,
+      session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items: lineItems,
+        mode: "payment",
         customer_email: normalizedEmail,
-        phone: phone || "",
-        plan: planKey,
-        selectedPlan: planKey,
-        planName: resolvedPlanName,
-        payment_type: paymentType || "monthly",
-      },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    });
+        metadata: {
+          fullName,
+          email: normalizedEmail,
+          customer_email: normalizedEmail,
+          phone: phone || "",
+          plan: planKey,
+          selectedPlan: planKey,
+          planName: resolvedPlanName,
+          payment_type: paymentType || (isMonthly ? "monthly" : "paid_in_full"),
+        },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
+    }
 
-    const successResponse = { ok: true, url: session.url, sessionId: session.id };
+    const successResponse = {
+      success: true,
+      ok: true,
+      url: session.url,
+      sessionId: session.id,
+      plan: planKey,
+      priceId: mappedPriceId || "dynamic_price_data",
+    };
+
     req.log.info({ email: normalizedEmail, sessionId: session.id, url: session.url }, "[ENROLLMENT/INIT Step 5 OK] Stripe Checkout session created successfully");
     res.json(successResponse);
   } catch (err: any) {
     const errorStack = err?.stack || String(err);
     req.log.error(
-      { err, stack: errorStack, body: req.body },
+      { err, stack: errorStack, file: "enrollment-supabase.ts", line: 411, body: req.body },
       "[ENROLLMENT/INIT CRITICAL ERROR] Uncaught exception in enrollment init endpoint"
     );
 
     res.status(500).json({
+      success: false,
       ok: false,
       error: err?.message || "Internal server error during enrollment initialization",
       type: err?.name || "UnhandledException",
