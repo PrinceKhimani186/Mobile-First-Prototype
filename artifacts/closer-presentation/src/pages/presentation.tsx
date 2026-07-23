@@ -411,7 +411,7 @@ const PACKAGES = [
     isAccelerator: false,
     isEmpire: true,
     features: [
-      "One 2D or 3D premium game template",
+      "Up to 2 game templates",
       "Premium branding & customization",
       "Full monetization suite",
       "ASO guidance + launch checklist",

@@ -139,6 +139,7 @@ router.post("/projects/:projectId/approvals", async (req: Request, res: Response
   }
 
   const activeProjectId = resolvedProject?.projectId || rawProjectId;
+  const projectId: string = activeProjectId;
 
   // Log detailed diagnostic audit info
   logger.info(
@@ -148,12 +149,12 @@ router.post("/projects/:projectId/approvals", async (req: Request, res: Response
       email: userEmail || "N/A",
       enrollmentId: lookupDetails?.enrollmentId ?? "N/A",
       rawProjectId,
-      resolvedProjectId: activeProjectId,
+      resolvedProjectId: projectId,
       milestoneName,
       action,
       clientName,
       lookupQuery: lookupDetails?.query ?? `SELECT * FROM projects WHERE project_id = '${rawProjectId}'`,
-      queryResult: lookupDetails ? { found: lookupDetails.found, projectId: activeProjectId } : { found: false },
+      queryResult: lookupDetails ? { found: lookupDetails.found, projectId } : { found: false },
       reasonIfNotFound: lookupDetails?.found ? null : (lookupDetails?.reason ?? "No matching project row"),
     },
     `Approvals API audit: Client "${clientName}" (${userEmail || "anonymous"}) triggered action "${action}" for milestone "${milestoneName}"`
@@ -190,7 +191,7 @@ router.post("/projects/:projectId/approvals", async (req: Request, res: Response
       // 1. Save approval record in DB
       try {
         await db.insert(milestoneApprovalsTable).values({
-          projectId: activeProjectId,
+          projectId,
           milestoneName,
           status: "approved",
           comment: comment ?? null,
@@ -239,21 +240,21 @@ router.post("/projects/:projectId/approvals", async (req: Request, res: Response
         await db
           .update(projectsTable)
           .set({ currentStage: nextStage, updatedAt: new Date() })
-          .where(eq(projectsTable.projectId, activeProjectId));
+          .where(eq(projectsTable.projectId, projectId));
       } catch (dbErr) {
         logger.warn({ dbErr }, "Database update for next stage skipped (DB offline)");
       }
 
       // 4. Log notification for admin
-      logger.info({ projectId: activeProjectId, milestoneName, clientName }, `Admin Notification: Client approved milestone "${milestoneName}"`);
+      logger.info({ projectId, milestoneName, clientName }, `Admin Notification: Client approved milestone "${milestoneName}"`);
 
-      res.json({ ok: true, status: "approved", nextStage, projectId: activeProjectId });
+      res.json({ ok: true, status: "approved", nextStage, projectId });
     } else {
       // action === "revision"
       // 1. Save revision request in DB
       try {
         await db.insert(milestoneApprovalsTable).values({
-          projectId: activeProjectId,
+          projectId,
           milestoneName,
           status: "revision_requested",
           comment: comment,
@@ -275,7 +276,7 @@ router.post("/projects/:projectId/approvals", async (req: Request, res: Response
       // 3. Log notification for admin
       logger.info({ projectId, milestoneName, comment }, `Admin Notification: Client requested revisions on "${milestoneName}". Comment: "${comment}"`);
 
-      res.json({ ok: true, status: "revision_requested" });
+      res.json({ ok: true, status: "revision_requested", projectId });
     }
   } catch (err) {
     logger.error({ err, projectId, milestoneName }, "Failed to process milestone approval");
