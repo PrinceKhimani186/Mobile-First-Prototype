@@ -314,6 +314,7 @@ export default function Dashboard() {
   const [showApprovalConfirm, setShowApprovalConfirm] = useState<{ open: boolean; milestoneName: string } | null>(null);
 
   const fetchApprovalsHistory = useCallback((projId: string) => {
+    if (!projId) return;
     fetch(`/api/projects/${projId}/approvals`, { cache: "no-store" })
       .then(r => r.ok ? r.json() : [])
       .then((data) => setApprovalsHistory(data))
@@ -321,9 +322,11 @@ export default function Dashboard() {
   }, []);
 
   const handleApproveMilestone = async (milestoneName: string) => {
+    const targetProjectId = projectId || (enrollmentRecord as any)?.id || `AS-${(email || "client").split("@")[0]}`;
+
     setSubmittingApproval(milestoneName);
     try {
-      const res = await fetch(`/api/projects/${projectId}/approvals`, {
+      const res = await fetch(`/api/projects/${targetProjectId}/approvals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -331,18 +334,21 @@ export default function Dashboard() {
           action: "approve",
           comment: reviewComment,
           clientName: clientName || "Client",
+          email: email || localStorage.getItem("as_client_email") || "",
         }),
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Failed to approve milestone");
+      const text = await res.text();
+      let json: any = {};
+      try { json = JSON.parse(text); } catch { /* non-JSON HTML error */ }
+      if (!res.ok) throw new Error(json.error ?? `Server returned ${res.status}`);
 
       toast({
         title: "Milestone approved",
         description: `Successfully approved "${milestoneName}".`,
       });
       setReviewComment("");
-      fetchApprovalsHistory(projectId);
+      fetchApprovalsHistory(targetProjectId);
       refreshClickupData(email);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -366,9 +372,11 @@ export default function Dashboard() {
       return;
     }
 
+    const targetProjectId = projectId || (enrollmentRecord as any)?.id || `AS-${(email || "client").split("@")[0]}`;
+
     setSubmittingApproval(milestoneName);
     try {
-      const res = await fetch(`/api/projects/${projectId}/approvals`, {
+      const res = await fetch(`/api/projects/${targetProjectId}/approvals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -376,18 +384,21 @@ export default function Dashboard() {
           action: "revision",
           comment: reviewComment,
           clientName: clientName || "Client",
+          email: email || localStorage.getItem("as_client_email") || "",
         }),
       });
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Failed to request revisions");
+      const text = await res.text();
+      let json: any = {};
+      try { json = JSON.parse(text); } catch { /* non-JSON HTML error */ }
+      if (!res.ok) throw new Error(json.error ?? `Server returned ${res.status}`);
 
       toast({
         title: "Revisions requested",
         description: `Successfully requested revisions for "${milestoneName}".`,
       });
       setReviewComment("");
-      fetchApprovalsHistory(projectId);
+      fetchApprovalsHistory(targetProjectId);
       refreshClickupData(email);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

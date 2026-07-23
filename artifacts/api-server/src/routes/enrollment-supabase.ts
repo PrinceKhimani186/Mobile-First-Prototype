@@ -411,150 +411,165 @@ router.post("/enrollment/upload-document", async (req: Request, res: Response) =
 router.post("/enrollment/init", async (req: Request, res: Response) => {
   noCache(res);
 
-  const {
-    fullName,
-    email,
-    phone,
-    companyName,
-    country,
-    businessType,
-    preferredContact,
-    documentName,
-    documentUrl,
-    selectedPackage,
-    paymentType,
-    source,
-    successUrl: customSuccessUrl,
-    cancelUrl: customCancelUrl,
-  } = req.body as {
-    fullName?: string;
-    email?: string;
-    phone?: string;
-    companyName?: string;
-    country?: string;
-    businessType?: string;
-    preferredContact?: string;
-    documentName?: string;
-    documentUrl?: string;
-    selectedPackage?: string;
-    paymentType?: string;
-    source?: string;
-    successUrl?: string;
-    cancelUrl?: string;
-  };
+  try {
+    // ── STEP 1: Request Body Logging & Validation ──
+    const body = (req.body || {}) as Record<string, any>;
+    req.log.info({ body }, "[ENROLLMENT/INIT Step 1] Received enrollment init payload");
 
-  // 1. Request Validation
-  if (!email || !fullName) {
-    req.log.error({ fullName, email }, "[ENROLLMENT/INIT Step 1 FAILED] Missing email or fullName");
-    res.status(400).json({ error: "email and fullName are required" });
-    return;
-  }
+    const {
+      fullName,
+      email,
+      phone,
+      companyName,
+      country,
+      businessType,
+      preferredContact,
+      documentName,
+      documentUrl,
+      selectedPackage,
+      paymentType,
+      source,
+      successUrl: customSuccessUrl,
+      cancelUrl: customCancelUrl,
+    } = body;
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const planKey = normalizePlan(selectedPackage) ?? "essentials";
-  const planNameMap: Record<string, string> = {
-    essentials: "App Launch Essentials",
-    accelerator: "App Ownership Accelerator",
-    empire: "App Empire Package",
-  };
-  const resolvedPlanName = planNameMap[planKey] || "App Launch Essentials";
-  const isMonthly = paymentType === "monthly";
+    if (!email || !fullName) {
+      req.log.error({ fullName, email }, "[ENROLLMENT/INIT Step 1 FAILED] Missing required fields: email or fullName");
+      res.status(400).json({
+        ok: false,
+        error: "email and fullName are required fields",
+        step: 1,
+      });
+      return;
+    }
 
-  req.log.info(
-    { normalizedEmail, fullName, planKey, resolvedPlanName, paymentType, source },
-    "[ENROLLMENT/INIT Step 1 OK] Request validated"
-  );
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const planKey = normalizePlan(selectedPackage) ?? "essentials";
+    const planNameMap: Record<string, string> = {
+      essentials: "App Launch Essentials",
+      accelerator: "App Ownership Accelerator",
+      empire: "App Empire Package",
+    };
+    const resolvedPlanName = planNameMap[planKey] || "App Launch Essentials";
+    const isMonthly = paymentType === "monthly";
 
-  // 2. Audit Environment Variables
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-  const supaUrl = process.env.SUPABASE_URL;
-  const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY;
+    req.log.info(
+      { normalizedEmail, fullName, planKey, resolvedPlanName, paymentType, source },
+      "[ENROLLMENT/INIT Step 1 OK] Request validated successfully"
+    );
 
-  req.log.info(
-    {
-      hasStripeKey: !!stripeKey,
-      stripeKeyPrefix: stripeKey ? stripeKey.slice(0, 10) + "…" : "MISSING",
-      hasSupabaseUrl: !!supaUrl,
-      hasSupabaseKey: !!supaKey,
-    },
-    "[ENROLLMENT/INIT Step 2] Environment secrets checked"
-  );
+    // ── STEP 2: Environment Validation & Logging ──
+    const stripeKey = process.env.STRIPE_SECRET_KEY?.trim();
+    const supaUrl = process.env.SUPABASE_URL?.trim();
+    const supaKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_ANON_KEY)?.trim();
+    const dbUrl = process.env.DATABASE_URL?.trim();
 
-  // 3. Database Record Upsert (Supabase + local Postgres fallback)
-  const payload: Record<string, unknown> = {
-    full_name: fullName,
-    email: normalizedEmail,
-    phone: phone ?? null,
-    company_name: companyName ?? null,
-    country: country ?? null,
-    business_type: businessType ?? null,
-    preferred_contact: preferredContact ?? null,
-    document_name: documentName ?? null,
-    document_url: documentUrl ?? null,
-    selected_package: selectedPackage ?? planKey,
-    ...(paymentType ? { payment_type: paymentType } : {}),
-    ...(source ? { source } : {}),
-    onboarding_status: "enrollment_completed",
-    payment_status: "pending",
-    password_created: false,
-    game_selected: false,
-    customization_completed: false,
-    dashboard_completed: false,
-  };
+    const missingEnvVars: string[] = [];
+    if (!stripeKey) missingEnvVars.push("STRIPE_SECRET_KEY");
+    if (!supaUrl) missingEnvVars.push("SUPABASE_URL");
+    if (!supaKey) missingEnvVars.push("SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY");
+    if (!dbUrl) missingEnvVars.push("DATABASE_URL");
 
-  let dbSaved = false;
-  const supabase = getSupabase();
-  if (supabase) {
-    try {
-      for (let attempt = 0; attempt < 5; attempt++) {
-        const { error } = await supabase
-          .from("customer_enrollment")
-          .upsert(payload, { onConflict: "email" });
+    req.log.info(
+      {
+        hasStripeKey: !!stripeKey,
+        stripeKeyPrefix: stripeKey ? `${stripeKey.slice(0, 8)}…` : "MISSING",
+        hasSupabaseUrl: !!supaUrl,
+        hasSupabaseKey: !!supaKey,
+        hasDatabaseUrl: !!dbUrl,
+        missingEnvVars,
+      },
+      "[ENROLLMENT/INIT Step 2] Environment validation completed"
+    );
 
-        if (!error) {
-          dbSaved = true;
-          req.log.info({ email: normalizedEmail }, "[ENROLLMENT/INIT Step 3 OK] Record upserted to Supabase");
+    // ── STEP 3: Database Connectivity & Record Creation ──
+    const payload: Record<string, unknown> = {
+      full_name: fullName,
+      email: normalizedEmail,
+      phone: phone ?? null,
+      company_name: companyName ?? null,
+      country: country ?? null,
+      business_type: businessType ?? null,
+      preferred_contact: preferredContact ?? null,
+      document_name: documentName ?? null,
+      document_url: documentUrl ?? null,
+      selected_package: selectedPackage ?? planKey,
+      ...(paymentType ? { payment_type: paymentType } : {}),
+      ...(source ? { source } : {}),
+      onboarding_status: "enrollment_completed",
+      payment_status: "pending",
+      password_created: false,
+      game_selected: false,
+      customization_completed: false,
+      dashboard_completed: false,
+    };
+
+    req.log.info({ email: normalizedEmail, payload }, "[ENROLLMENT/INIT Step 3] Initiating database upsert");
+
+    let dbSaved = false;
+    const supabase = getSupabase();
+    if (supabase) {
+      try {
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const { error } = await supabase
+            .from("customer_enrollment")
+            .upsert(payload, { onConflict: "email" });
+
+          if (!error) {
+            dbSaved = true;
+            req.log.info({ email: normalizedEmail, attempt }, "[ENROLLMENT/INIT Step 3 OK] Record upserted to Supabase");
+            break;
+          }
+
+          if (isMissingColumnError(error)) {
+            const missingCol = extractMissingColumn(error);
+            if (missingCol && missingCol in payload) {
+              req.log.warn({ missingCol, attempt }, "[ENROLLMENT/INIT Step 3 WARN] Missing column in Supabase schema — retrying");
+              delete payload[missingCol];
+              continue;
+            }
+          }
+          req.log.warn({ error, attempt }, "[ENROLLMENT/INIT Step 3 WARN] Supabase upsert error");
           break;
         }
-
-        if (isMissingColumnError(error)) {
-          const missingCol = extractMissingColumn(error);
-          if (missingCol && missingCol in payload) {
-            req.log.warn({ missingCol }, "[ENROLLMENT/INIT Step 3 WARN] Missing column in Supabase schema — retrying");
-            delete payload[missingCol];
-            continue;
-          }
-        }
-        req.log.warn({ error }, "[ENROLLMENT/INIT Step 3 WARN] Supabase upsert error");
-        break;
+      } catch (supaErr) {
+        req.log.warn({ supaErr }, "[ENROLLMENT/INIT Step 3 WARN] Supabase network exception");
       }
-    } catch (supaErr) {
-      req.log.warn({ supaErr }, "[ENROLLMENT/INIT Step 3 WARN] Supabase network exception");
     }
-  }
 
-  // Always sync to local Postgres fallback
-  try {
-    await syncToLocalPostgres(normalizedEmail, payload);
-    dbSaved = true;
-    req.log.info({ email: normalizedEmail }, "[ENROLLMENT/INIT Step 3 OK] Record synced to local Postgres");
-  } catch (localErr) {
-    req.log.warn({ localErr }, "[ENROLLMENT/INIT Step 3 WARN] Local Postgres sync warning");
-  }
+    // Sync to local Postgres fallback
+    try {
+      await syncToLocalPostgres(normalizedEmail, payload);
+      dbSaved = true;
+      req.log.info({ email: normalizedEmail }, "[ENROLLMENT/INIT Step 3 OK] Record synced to local Postgres");
+    } catch (localErr) {
+      req.log.warn({ localErr }, "[ENROLLMENT/INIT Step 3 WARN] Local Postgres sync warning");
+    }
 
-  // 4. Create Stripe Checkout Session (if STRIPE_SECRET_KEY present)
-  if (!stripeKey) {
-    req.log.warn("[ENROLLMENT/INIT Step 4 WARN] STRIPE_SECRET_KEY not set — returning ok without checkout url");
-    res.json({ ok: true, saved: dbSaved });
-    return;
-  }
+    // ── STEP 4: Stripe Lookup & Checkout Session Creation ──
+    if (!stripeKey) {
+      req.log.warn("[ENROLLMENT/INIT Step 4 WARN] STRIPE_SECRET_KEY missing — bypassing Stripe session and returning OK");
+      const jsonResponse = { ok: true, saved: dbSaved, message: "STRIPE_SECRET_KEY not set; skipped online payment session" };
+      req.log.info({ jsonResponse }, "[ENROLLMENT/INIT Step 5] Sending final JSON response (No Stripe Key)");
+      res.json(jsonResponse);
+      return;
+    }
 
-  try {
     req.log.info({ email: normalizedEmail, planKey, resolvedPlanName }, "[ENROLLMENT/INIT Step 4] Initializing Stripe Checkout session");
-    const stripe = new Stripe(stripeKey);
 
-    const refererOrigin = req.headers.referer ? new URL(req.headers.referer).origin : null;
-    const origin = refererOrigin || (req.headers.host?.includes("8080") ? "http://localhost:5173" : `${req.protocol}://${req.headers.host}`);
+    // Safe origin resolution
+    let refererOrigin: string | null = null;
+    if (req.headers.referer) {
+      try {
+        refererOrigin = new URL(req.headers.referer).origin;
+      } catch (urlErr) {
+        req.log.warn({ urlErr, rawReferer: req.headers.referer }, "[ENROLLMENT/INIT Step 4 WARN] Referer header was not a valid URL — ignoring");
+        refererOrigin = null;
+      }
+    }
+
+    const hostHeader = req.headers.host ?? "";
+    const origin = refererOrigin || (hostHeader.includes("8080") ? "http://localhost:5173" : `${req.protocol}://${hostHeader}`);
 
     const successUrl = customSuccessUrl || `${origin}/onboarding/agreement?email=${encodeURIComponent(normalizedEmail)}&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = customCancelUrl || `${origin}/enrollment?payment=cancelled`;
@@ -563,6 +578,12 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
       ? (planKey === "empire" ? 499700 : planKey === "accelerator" ? 99700 : 49700)
       : (planKey === "empire" ? 999700 : planKey === "accelerator" ? 499700 : 249700);
 
+    req.log.info(
+      { planKey, resolvedPlanName, isMonthly, defaultAmount, successUrl, cancelUrl },
+      "[ENROLLMENT/INIT Step 4] Calculated package pricing & URLs"
+    );
+
+    const stripe = new Stripe(stripeKey);
     const lineItems = [{
       price_data: {
         currency: "usd",
@@ -594,14 +615,21 @@ router.post("/enrollment/init", async (req: Request, res: Response) => {
       cancel_url: cancelUrl,
     });
 
-    req.log.info({ email: normalizedEmail, sessionId: session.id, url: session.url }, "[ENROLLMENT/INIT Step 4 OK] Stripe Checkout session created");
-    res.json({ ok: true, url: session.url, sessionId: session.id });
-  } catch (stripeErr: any) {
-    req.log.error({ stripeErr }, "[ENROLLMENT/INIT Step 4 FAILED] Stripe session creation exception");
-    res.status(502).json({
-      error: stripeErr?.message || "Stripe checkout session creation failed",
-      code: stripeErr?.code || "stripe_error",
-      type: stripeErr?.type || "StripeError",
+    const successResponse = { ok: true, url: session.url, sessionId: session.id };
+    req.log.info({ email: normalizedEmail, sessionId: session.id, url: session.url }, "[ENROLLMENT/INIT Step 5 OK] Stripe Checkout session created successfully");
+    res.json(successResponse);
+  } catch (err: any) {
+    const errorStack = err?.stack || String(err);
+    req.log.error(
+      { err, stack: errorStack, body: req.body },
+      "[ENROLLMENT/INIT CRITICAL ERROR] Uncaught exception in enrollment init endpoint"
+    );
+
+    res.status(500).json({
+      ok: false,
+      error: err?.message || "Internal server error during enrollment initialization",
+      type: err?.name || "UnhandledException",
+      stack: process.env.NODE_ENV === "development" ? errorStack : undefined,
     });
   }
 });

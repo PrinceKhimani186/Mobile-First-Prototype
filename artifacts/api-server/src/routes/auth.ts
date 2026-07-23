@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { getOrProvisionProject } from "../lib/project-service";
 
 const router: IRouter = Router();
 
@@ -141,6 +142,14 @@ router.post("/auth/save-password", async (req, res) => {
 
     req.log.info({ email: normalizedEmail }, "Auth: password saved to Supabase");
     (req.session as any).customerEmail = normalizedEmail;
+
+    // Immediately provision local project record so project exists when user hits dashboard
+    try {
+      await getOrProvisionProject(normalizedEmail, req.log);
+    } catch (projErr) {
+      req.log.warn({ projErr, email: normalizedEmail }, "Non-fatal: project auto-provisioning after save-password skipped");
+    }
+
     res.json({ ok: true });
   } catch (err) {
     req.log.error({ err }, "Auth: save-password unexpected error");

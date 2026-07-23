@@ -1,6 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, projectsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { getOrProvisionProject } from "../lib/project-service";
 
 const router: IRouter = Router();
 
@@ -14,26 +13,29 @@ router.get("/projects/stage", async (req: Request, res: Response) => {
   }
 
   try {
-    const [project] = await db
-      .select({
-        projectId: projectsTable.projectId,
-        currentStage: projectsTable.currentStage,
-        customerName: projectsTable.customerName,
-        appName: projectsTable.appName,
-        updatedAt: projectsTable.updatedAt,
-      })
-      .from(projectsTable)
-      .where(eq(projectsTable.email, email));
+    const { project, details } = await getOrProvisionProject(email, req.log);
 
     if (!project) {
-      res.status(404).json({ error: "Project not found" });
+      req.log.warn({ details }, `Project not found and auto-provisioning failed for email: ${email}`);
+      res.status(404).json({
+        error: `No project record found for account ${email} and auto-provisioning failed: ${details.reason ?? "Unknown error"}`,
+        details,
+      });
       return;
     }
 
-    res.json(project);
+    res.json({
+      projectId: project.projectId,
+      currentStage: project.currentStage,
+      customerName: project.customerName,
+      appName: project.appName,
+      updatedAt: project.updatedAt,
+    });
   } catch (err) {
-    req.log.error({ err }, "Failed to get project stage");
-    res.status(500).json({ error: "Failed to get stage" });
+    req.log.error({ err, email }, "Failed to resolve or provision project stage");
+    res.status(500).json({
+      error: `Failed to resolve project stage for ${email}: ${err instanceof Error ? err.message : String(err)}`,
+    });
   }
 });
 
