@@ -36,6 +36,12 @@ const appEnv = {
   API_SERVER_PORT: process.env.API_SERVER_PORT || "8080",
   BASE_PATH: "/",
   NODE_ENV: "development",
+  // Serve the local dev frontend over HTTPS. Zoho Sign's embedded signing iframe
+  // requires the embedding page to be an https origin (its embedtoken API rejects
+  // http hosts with error 3006), so an http dev page renders a blank frame. The
+  // Vite config only activates basic-ssl off-Replit, so this is a no-op on Replit
+  // (where TLS is already terminated at the proxy). Set VITE_SSL=false to opt out.
+  VITE_SSL: process.env.VITE_SSL || "true",
 };
 
 const apiServer = spawn(execCmd, ["pnpm", "--filter", "@workspace/api-server", "run", "dev"], {
@@ -52,9 +58,29 @@ const appSquad = spawn(execCmd, ["pnpm", "--filter", "@workspace/app-squad", "ru
   shell: true,
 });
 
+const closerEnv = {
+  ...process.env,
+  PORT: process.env.CLOSER_PORT || "5174",
+  API_SERVER_PORT: process.env.API_SERVER_PORT || "8080",
+  BASE_PATH: "/",
+  NODE_ENV: "development",
+  // Match app-squad: serve over https locally. Chrome's https upgrade is keyed on
+  // the hostname (localhost), not the port, so once 5173 is https the browser also
+  // tries https here — this keeps 5174 answering https instead of ERR_SSL_PROTOCOL_ERROR.
+  VITE_SSL: process.env.VITE_SSL || "true",
+};
+
+const closerPresentation = spawn(execCmd, ["pnpm", "--filter", "@workspace/closer-presentation", "run", "dev"], {
+  cwd: rootDir,
+  env: closerEnv,
+  stdio: "inherit",
+  shell: true,
+});
+
 function cleanup() {
   apiServer.kill();
   appSquad.kill();
+  closerPresentation.kill();
   process.exit(0);
 }
 

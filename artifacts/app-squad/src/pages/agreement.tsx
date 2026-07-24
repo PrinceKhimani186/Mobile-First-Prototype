@@ -283,13 +283,24 @@ export default function Agreement() {
         await queryClient.invalidateQueries({ queryKey: ["onboardingProgress", email] });
         handleOnboardingTransition("resolved-already-signed");
       } else if (zohoRes.success && zohoRes.embedUrl) {
+        const officialUrl = zohoRes.embedUrl;
         if (zohoRes.requestId) {
           requestIdRef.current = zohoRes.requestId;
           setRequestId(zohoRes.requestId);
         }
+        
         // eslint-disable-next-line no-console
-        console.log("[Agreement Page] Zoho request ready. Request ID:", zohoRes.requestId);
-        setEmbedUrl(zohoRes.embedUrl);
+        console.log("[Agreement Page] BEFORE IFRAME RENDERING — Official Zoho Embed Details:", {
+          iframeSrc: officialUrl,
+          requestId: zohoRes.requestId,
+          actionId: zohoRes.actionId || "resolved-on-backend",
+          embedUrl: officialUrl,
+          apiResponse: zohoRes,
+          windowOrigin: window.location.origin,
+          startsWithHttps: officialUrl.startsWith("https://"),
+        });
+
+        setEmbedUrl(officialUrl);
       } else {
         setError(zohoRes.error || "Failed to initialize secure signature session. Please reload or try again.");
       }
@@ -300,6 +311,32 @@ export default function Agreement() {
       setLoading(false);
     }
   }
+
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  useEffect(() => {
+    if (embedUrl && iframeRef.current) {
+      // eslint-disable-next-line no-console
+      console.log("[Zoho Sign] DOM MOUNT VERIFICATION:", {
+        isMountedInDOM: document.body.contains(iframeRef.current),
+        computedSrc: iframeRef.current.src,
+        clientWidth: iframeRef.current.clientWidth,
+        clientHeight: iframeRef.current.clientHeight,
+        styleWidth: iframeRef.current.style.width,
+        styleHeight: iframeRef.current.style.height,
+        parentTag: iframeRef.current.parentElement?.tagName,
+      });
+    }
+  }, [embedUrl]);
+
+  const isApprovedZohoDomain = (() => {
+    if (!embedUrl) return false;
+    try {
+      const h = new URL(embedUrl).hostname.toLowerCase();
+      return ["sign.zoho.com", "sign.zoho.in", "sign.zoho.eu", "sign.zoho.com.au", "sign.zoho.ca", "sign.zoho.jp"]
+        .some(d => h === d || h.endsWith("." + d));
+    } catch { return false; }
+  })();
 
   return (
     <div style={{
@@ -385,11 +422,38 @@ export default function Agreement() {
               overflow: "hidden"
             }}
           >
+            {/* Dev Diagnostic Panel */}
+            {!import.meta.env.PROD && (
+              <div style={{
+                margin: "8px 12px", padding: "10px 14px",
+                background: "rgba(15, 23, 42, 0.9)",
+                border: "1px solid rgba(245, 158, 11, 0.3)",
+                borderRadius: 10, fontFamily: "monospace", fontSize: 11,
+                color: "#fbbf24", wordBreak: "break-all",
+              }}>
+                <div style={{ fontWeight: "bold", marginBottom: 4 }}>🛠️ Zoho Sign Embedded Session Diagnostics (Dev Mode)</div>
+                <div>Top Window Origin: <code>{window.location.origin}</code></div>
+                <div>RequestId: <code>{requestId || "N/A"}</code></div>
+                <div>Approved Domain: <code>{isApprovedZohoDomain ? "YES ✅ (sign.zoho.com)" : "NO ❌"}</code></div>
+                <div>Iframe Src: <code style={{ color: "#38bdf8" }}>{embedUrl}</code></div>
+                <div style={{ marginTop: 6 }}>
+                  <a href={embedUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", textDecoration: "underline" }}>
+                    ↗ Open Zoho Sign URL in New Tab (Direct Test)
+                  </a>
+                </div>
+              </div>
+            )}
+
             <iframe
+              ref={iframeRef}
               src={embedUrl}
               onLoad={() => {
                 // eslint-disable-next-line no-console
-                console.log("[Zoho Sign] iframe loaded", { email, requestId: requestIdRef.current });
+                console.log("[Zoho Sign] iframe onLoad event fired", { email, requestId: requestIdRef.current, iframeSrc: embedUrl });
+              }}
+              onError={(e) => {
+                // eslint-disable-next-line no-console
+                console.error("[Zoho Sign] iframe onError event fired", e);
               }}
               style={{
                 width: "100%",
@@ -398,7 +462,8 @@ export default function Agreement() {
                 borderRadius: 18,
                 background: "#ffffff"
               }}
-              allow="signature"
+              allow="camera; microphone; signature"
+              referrerPolicy="no-referrer-when-downgrade"
               title="Zoho Sign Document"
             />
             {pollTimedOut && (
@@ -440,7 +505,11 @@ export default function Agreement() {
                   </p>
                 </div>
 
-                {(window.location.hostname === "localhost" ||
+                {/* Developer bypass affordance — never shown in a production build.
+                    The backend /api/enrollment/dev-sign is also hard-blocked when
+                    NODE_ENV=production, so this can never be enabled in production. */}
+                {!import.meta.env.PROD &&
+                  (window.location.hostname === "localhost" ||
                   window.location.hostname === "127.0.0.1" ||
                   import.meta.env.DEV ||
                   localStorage.getItem("appSquadDevMode") === "true" ||

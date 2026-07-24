@@ -254,6 +254,16 @@ router.post("/enrollment/custom-sign", async (req: Request, res: Response) => {
 // Developer Mode bypass — simulates a full Zoho Sign completion without consuming
 // API quota. Performs every backend action the Zoho webhook performs.
 router.post("/enrollment/dev-sign", async (req: Request, res: Response) => {
+  // Hard production guard: the developer bypass simulates a signed agreement
+  // without Zoho verification and must be impossible to reach in production,
+  // regardless of any client-side flag, query param, or localStorage trick.
+  // NODE_ENV=production ⇒ this endpoint does not exist.
+  if (process.env.NODE_ENV === "production") {
+    logger.warn({ ip: req.headers["x-forwarded-for"] || req.socket.remoteAddress }, "[DEV SIGN] Blocked — developer bypass is disabled in production");
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
   const { email, fullName, packageName, price, paymentOption, packageId } = req.body as {
     email?: string;
     fullName?: string;

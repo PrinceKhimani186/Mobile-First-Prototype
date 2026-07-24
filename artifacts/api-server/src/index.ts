@@ -8,6 +8,7 @@ dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 import app from "./app";
 import { logger } from "./lib/logger";
+import { logZohoEnvironmentDiagnostics, verifyRefreshTokenOwnsTemplates } from "./routes/zoho";
 
 const rawPort = process.env["PORT"];
 
@@ -30,4 +31,10 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  // Boot-time Zoho diagnostics — masked-prefix credential comparison (local vs
+  // hosted) plus a best-effort confirmation that the refresh token's account
+  // actually owns the Zoho Sign templates. Both are non-blocking and never throw.
+  logZohoEnvironmentDiagnostics();
+  void verifyRefreshTokenOwnsTemplates();
 });

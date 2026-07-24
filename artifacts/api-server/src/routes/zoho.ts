@@ -11,6 +11,31 @@ import crypto from "crypto";
 
 const router: IRouter = Router();
 
+// ── User-facing error copy ────────────────────────────────────────────────────
+// The ONLY message a user ever sees when Zoho reports error 8026 (the connected
+// OAuth account has no Zoho Sign API license). Never leak the raw Zoho code,
+// tokens, client IDs, or API responses to the browser — those go to server logs.
+const ZOHO_NO_API_ACCESS_MESSAGE =
+  "The connected Zoho Sign account does not have API access. Please contact support.";
+// Generic fallback for every other backend/credential failure. Keeps developer
+// details (env var names, regions, raw Zoho messages) out of the UI.
+const ZOHO_GENERIC_ERROR_MESSAGE =
+  "We couldn't start the signing session right now. Please try again or contact support.";
+
+// ── Masking helpers (diagnostics only — never returned to the browser) ────────
+function maskPrefix(val?: string, keep = 6): string {
+  if (!val) return "∅ (not set)";
+  if (val.length <= keep) return `**** (${val.length} chars)`;
+  return `${val.slice(0, keep)}… (${val.length} chars)`;
+}
+
+function maskEmail(email?: string): string {
+  if (!email) return "∅";
+  const [user, domain] = email.split("@");
+  if (!domain) return maskPrefix(email, 3);
+  return `${user.slice(0, 2)}…@${domain}`;
+}
+
 // ── Region helpers ────────────────────────────────────────────────────────────
 // Reads ZOHO_REGION env var (default "com"). Accepted values: com | in | eu | com.au | ca | jp
 function getZohoRegion(): string {
@@ -57,6 +82,17 @@ function getSupabase() {
 // Cache the access token in-memory (Zoho tokens are valid ~1hr) so bursts of requests
 // don't each trigger a fresh OAuth round-trip and get throttled ("Access Denied").
 let accessTokenCache: { token: string; expiresAt: number } | null = null;
+
+// Whenever the Zoho credentials change (a new refresh token is persisted, or the
+// secrets are swapped out), the previously cached access token was minted against
+// the OLD account and must be discarded so the very next call exchanges the new
+// refresh token for a fresh access token.
+function clearAccessTokenCache(reason: string): void {
+  if (accessTokenCache) {
+    logger.info({ reason }, "Zoho: clearing cached access token — a new token will be obtained on the next request");
+  }
+  accessTokenCache = null;
+}
 
 async function getZohoAccessToken(): Promise<string> {
   if (accessTokenCache && accessTokenCache.expiresAt > Date.now()) {
@@ -122,10 +158,10 @@ async function getZohoAccessToken(): Promise<string> {
 //   2. ZOHO_TEMPLATE_<PLAN>_NAME — template name, matched leniently
 //   3. Built-in default name     — legacy fallback only
 // Fixing a mismatch never requires a code change: set the env var and restart.
-const PLAN_TEMPLATE_CONFIG: Record<string, { idVar: string; nameVar: string; defaultName: string }> = {
-  essentials:  { idVar: "ZOHO_TEMPLATE_ESSENTIALS_ID",  nameVar: "ZOHO_TEMPLATE_ESSENTIALS_NAME",  defaultName: "App Squad Essentials Agreement" },
-  accelerator: { idVar: "ZOHO_TEMPLATE_ACCELERATOR_ID", nameVar: "ZOHO_TEMPLATE_ACCELERATOR_NAME", defaultName: "App Squad Ownership Accelerator Agreement" },
-  empire:      { idVar: "ZOHO_TEMPLATE_EMPIRE_ID",      nameVar: "ZOHO_TEMPLATE_EMPIRE_NAME",      defaultName: "App Squad Empire Agreement" },
+const PLAN_TEMPLATE_CONFIG: Record<string, { idVar: string; nameVar: string; defaultName: string; fallbackKeywords: string[] }> = {
+  essentials:  { idVar: "ZOHO_TEMPLATE_ESSENTIALS_ID",  nameVar: "ZOHO_TEMPLATE_ESSENTIALS_NAME",  defaultName: "App Squad Starter Launch Agreement", fallbackKeywords: ["starter", "essentials"] },
+  accelerator: { idVar: "ZOHO_TEMPLATE_ACCELERATOR_ID", nameVar: "ZOHO_TEMPLATE_ACCELERATOR_NAME", defaultName: "App Squad Growth Launch Agreement", fallbackKeywords: ["growth", "accelerator"] },
+  empire:      { idVar: "ZOHO_TEMPLATE_EMPIRE_ID",      nameVar: "ZOHO_TEMPLATE_EMPIRE_NAME",      defaultName: "App Squad App Empire Agreement", fallbackKeywords: ["empire"] },
 };
 
 const PACKAGE_PRICING: Record<string, { name: string; setup: string; monthly: string; pif: string }> = {
@@ -261,6 +297,12 @@ async function resolveTemplateId(packageId: string): Promise<{ templateId: strin
     const wantedCanon = canonicalTemplateName(configuredName);
     const canon = templates.find(t => canonicalTemplateName(t.template_name || "") === wantedCanon);
     if (canon) return { templateId: canon.template_id, templateName: canon.template_name };
+
+    // 3 — Keyword matching fallback (e.g. starter, growth, empire)
+    for (const kw of cfg.fallbackKeywords || []) {
+      const kwMatch = templates.find(t => normalizeTemplateName(t.template_name || "").includes(kw));
+      if (kwMatch) return { templateId: kwMatch.template_id, templateName: kwMatch.template_name };
+    }
     return null;
   };
 
@@ -350,19 +392,48 @@ function mapTemplateFields(fields: any[], values: Record<string, string>): Recor
 
 // ── OAuth redirect URI ────────────────────────────────────────────────────────
 function getOAuthRedirectUri(req: Request): string {
-  // Allow explicit override via env var
-  if (process.env.ZOHO_OAUTH_REDIRECT_URI) return process.env.ZOHO_OAUTH_REDIRECT_URI;
-  const domains = process.env.REPLIT_DOMAINS || "";
-  const primary = domains.split(",")[0].trim();
-  if (primary) return `https://${primary}/api/zoho/oauth/callback`;
-  // Fallback: derive from request
-  const host = req.headers.host || "localhost";
-  const proto = req.headers["x-forwarded-proto"] || "https";
-  return `${proto}://${host}/api/zoho/oauth/callback`;
+  let uri = process.env.ZOHO_OAUTH_REDIRECT_URI;
+  if (!uri) {
+    const domains = process.env.REPLIT_DOMAINS || "";
+    const primary = domains.split(",")[0].trim();
+    if (primary) {
+      uri = `https://${primary}/api/zoho/oauth/callback`;
+    } else {
+      const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:8080";
+      const proto = req.headers["x-forwarded-proto"] || "https";
+      uri = `${proto}://${host}/api/zoho/oauth/callback`;
+    }
+  }
+  // Ensure redirect URI always uses the backend callback endpoint
+  if (uri && !uri.endsWith("/api/zoho/oauth/callback")) {
+    const cleanBase = uri.replace(/\/+$/, "");
+    if (!cleanBase.endsWith("/api/zoho/oauth/callback")) {
+      uri = `${cleanBase}/api/zoho/oauth/callback`;
+    }
+  }
+  return uri;
 }
 
 // ── Token persistence (survives process restarts) ─────────────────────────────
 const TOKEN_FILE = path.join("/tmp", "zoho_oauth_result.json");
+
+function updateEnvFile(filePath: string, key: string, value: string) {
+  try {
+    if (fs.existsSync(filePath)) {
+      let content = fs.readFileSync(filePath, "utf8");
+      const reg = new RegExp(`^${key}=.*$`, "m");
+      if (reg.test(content)) {
+        content = content.replace(reg, `${key}=${value}`);
+      } else {
+        content = content.trimEnd() + `\n${key}=${value}\n`;
+      }
+      fs.writeFileSync(filePath, content, "utf8");
+      logger.info({ filePath, key }, "OAuth persist: updated .env file");
+    }
+  } catch (err) {
+    logger.warn({ err, filePath, key }, "OAuth persist: could not update .env file");
+  }
+}
 
 function persistToken(tokenData: Record<string, string>) {
   try {
@@ -374,10 +445,25 @@ function persistToken(tokenData: Record<string, string>) {
   if (tokenData.refresh_token) {
     process.env.ZOHO_SIGN_REFRESH_TOKEN = tokenData.refresh_token;
     process.env.ZOHO_REFRESH_TOKEN      = tokenData.refresh_token;
+
+    const cwd = process.cwd();
+    const envPaths = [
+      path.resolve(cwd, ".env"),
+      path.resolve(cwd, "artifacts/api-server/.env"),
+      path.resolve(cwd, "../.env"),
+      path.resolve(__dirname, "../../.env"),
+    ];
+    for (const p of envPaths) {
+      updateEnvFile(p, "ZOHO_SIGN_REFRESH_TOKEN", tokenData.refresh_token);
+      updateEnvFile(p, "ZOHO_REFRESH_TOKEN", tokenData.refresh_token);
+    }
   }
   if (tokenData.region) {
     process.env.ZOHO_REGION = tokenData.region;
   }
+  // Credentials were just replaced — drop any access token minted from the old
+  // refresh token so the next request exchanges the new one.
+  clearAccessTokenCache("refresh token replaced via OAuth persistToken");
 }
 
 function readPersistedToken(): Record<string, string> | null {
@@ -393,7 +479,7 @@ function readPersistedToken(): Record<string, string> | null {
 // OAUTH ROUTES
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ZOHO_SCOPES = "ZohoSign.documents.ALL,ZohoSign.templates.ALL,ZohoSign.account.READ";
+const ZOHO_SCOPES = "ZohoSign.documents.ALL,ZohoSign.templates.ALL,ZohoSign.requests.ALL,ZohoSign.account.READ";
 
 // GET /api/zoho/oauth/start → landing page with both options (redirect + Self Client)
 router.get(["/zoho/oauth/start", "/zoho/oauth/setup", "/zoho/setup"], (req: Request, res: Response) => {
@@ -1533,7 +1619,6 @@ router.get("/zoho/templates", async (req: Request, res: Response) => {
       });
       return;
     }
-
     res.json({
       connection: {
         region: getZohoRegion(),
@@ -1569,9 +1654,6 @@ router.get("/zoho/templates", async (req: Request, res: Response) => {
 });
 
 // POST /api/zoho/create-signature-request
-// Template-based signing: resolves the Zoho template matching the client's selected package,
-// auto-fills client + package + payment data into the template's merge fields, and returns
-// an embedded signing URL for that request.
 router.post("/zoho/create-signature-request", async (req: Request, res: Response) => {
   const {
     email, fullName, phone, address, packageId: clientPackageId,
@@ -1588,20 +1670,20 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
 
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Resolve the frame origin once, up front, so both the "resume an existing
-  // request" path and the "create a new one" path can use it.
-  let embedOrigin = req.headers.referer || req.headers.origin || "https://localhost:22474";
+  // Resolve the frame origin once, up front. The origin we hand Zoho becomes the
+  // iframe's allowed frame-ancestor AND Zoho's embedtoken API REQUIRES an https
+  // scheme (an http host is rejected with error 3006 "Url has invalid scheme").
+  // So the scheme is always https here — which means the parent page that embeds
+  // the iframe must ALSO be served over https, or the origins won't match and the
+  // frame stays blank. Locally that means running the dev frontend over https.
+  let embedOrigin = req.headers.referer || req.headers.origin || "https://localhost:5173";
   try {
     const parsed = new URL(String(embedOrigin));
-    parsed.protocol = "https:";
-    embedOrigin = parsed.origin;
-  } catch { embedOrigin = "https://localhost:22474"; }
+    embedOrigin = `https://${parsed.host}`;
+  } catch { embedOrigin = "https://localhost:5173"; }
 
   // Prefer the VERIFIED purchased plan on the enrollment record over the
   // client-sent packageId, so a customer never signs another plan's agreement.
-  // Same lookup also carries agreement_signed / agreement_contract_id so we
-  // can detect "already signed" or "already has a pending document" before
-  // ever creating a new one — see the resume check below.
   let packageId = normalizePlan(clientPackageId) ?? clientPackageId;
   let existingRecord: { agreement_signed?: boolean | null; agreement_contract_id?: string | null } | null = null;
   try {
@@ -1614,7 +1696,6 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
         .eq("email", normalizedEmail)
         .maybeSingle();
       if (sel.error) {
-        // purchased_plan column may predate migration 006 — retry without it
         const retry = await supaForPlan
           .from("customer_enrollment")
           .select("selected_package, agreement_signed, agreement_contract_id")
@@ -1638,20 +1719,12 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
     logger.warn({ err, email: normalizedEmail }, "Zoho Sign: enrollment record lookup for plan verification failed — using client packageId");
   }
 
-  // Already signed per our own DB — nothing to do, tell the client to move on.
   if (existingRecord?.agreement_signed) {
     logger.info({ email: normalizedEmail }, "Zoho Sign: record already marked agreement_signed — skipping document creation");
     res.json({ success: true, alreadySigned: true });
     return;
   }
 
-  // A prior visit already created a document for this customer. Creating
-  // another one here would (a) waste the account's daily send quota and
-  // (b) orphan a document the customer may have already signed but whose
-  // completion never reached our DB yet — most commonly because Zoho's
-  // webhook can't reach a local dev machine and the browser tab that was
-  // polling for confirmation got closed/reloaded before it caught up.
-  // Resolve the EXISTING request against Zoho itself before creating a new one.
   const existingRequestId = existingRecord?.agreement_contract_id;
   if (existingRequestId) {
     try {
@@ -1678,7 +1751,6 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
             res.json({ success: true, alreadySigned: true });
             return;
           }
-          logger.warn({ email: normalizedEmail, existingRequestId, error: result.error }, "Zoho Sign: existing request completed but finalize failed — falling back to a fresh embed link");
         }
 
         const resumableStatuses = ["inprogress", "sent", "viewed", "draft"];
@@ -1687,7 +1759,7 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
           if (signAction?.action_id) {
             const token2 = await getZohoAccessToken();
             const embedRes = await fetch(
-              `${getZohoSignBase()}/api/v1/requests/${existingRequestId}/actions/${signAction.action_id}/embedtoken?host=${embedOrigin}`,
+              `${getZohoSignBase()}/api/v1/requests/${existingRequestId}/actions/${signAction.action_id}/embedtoken?host=${encodeURIComponent(embedOrigin)}`,
               { method: "POST", headers: { Authorization: `Zoho-oauthtoken ${token2}` } },
             );
             if (embedRes.ok) {
@@ -1698,17 +1770,12 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
                 res.json({ success: true, embedUrl: signUrl, requestId: existingRequestId });
                 return;
               }
-              logger.warn({ email: normalizedEmail, existingRequestId, embedData }, "Zoho Sign: embed token response missing sign_url or non-success status");
             } else {
               const errText = await embedRes.text().catch(() => "");
               logger.warn({ email: normalizedEmail, existingRequestId, status: embedRes.status, errText }, "Zoho Sign: embed token request for existing document failed");
             }
           }
         }
-        // Any other status (expired/declined/recalled/deleted/etc.) — the old
-        // document is unusable, fall through and create a new one below.
-      } else {
-        logger.warn({ email: normalizedEmail, existingRequestId, status: statusRes.status }, "Zoho Sign: failed to look up existing request — falling back to creating a new document");
       }
     } catch (err) {
       logger.warn({ err, email: normalizedEmail, existingRequestId }, "Zoho Sign: error checking existing request — falling back to creating a new document");
@@ -1772,6 +1839,14 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
       },
     };
 
+    logger.info({
+      endpoint: `${getZohoSignBase()}/api/v1/templates/${templateId}/createdocument`,
+      requestPayload,
+      templateId,
+      templateName,
+      signerActionId: signAction.action_id,
+    }, "Zoho Sign: sending createdocument request");
+
     const formData = new FormData();
     formData.append("data", JSON.stringify(requestPayload));
 
@@ -1780,65 +1855,81 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
       headers: { Authorization: `Zoho-oauthtoken ${token}` },
     });
 
+    const createText = await createRes.text();
+    logger.info({
+      status: createRes.status,
+      responseBody: createText,
+      templateId,
+    }, "Zoho Sign: createdocument response received");
+
     if (!createRes.ok) {
-      const errText = await createRes.text();
-      logger.error({ errText, status: createRes.status, templateId, packageId }, "Zoho Sign: failed to create document from template");
+      let zohoCode: number | undefined;
+      let zohoMsg: string | undefined;
       try {
-        const p = JSON.parse(errText);
+        const p = JSON.parse(createText);
+        zohoCode = p.code;
+        zohoMsg = p.message;
         if (p.code === 8026) {
-          res.status(402).json({ error: "Your Zoho Sign account or API token does not have a license that supports this operation. Please upgrade the Zoho Sign plan or use a licensed account.", zohoCode: 8026 });
+          logger.error({ zohoCode: 8026, status: createRes.status, templateId, packageId }, "Zoho Sign: 8026 — connected account has no API license");
+          res.status(402).json({ error: ZOHO_NO_API_ACCESS_MESSAGE, zohoCode: 8026 });
           return;
         }
-        if (p.message) { res.status(502).json({ error: p.message }); return; }
       } catch {}
-      res.status(502).json({ error: "Failed to create signature request from Zoho template" });
+      logger.error({ status: createRes.status, responseBody: createText, zohoCode, zohoMsg, requestPayload }, "Zoho Sign: createdocument failed");
+      res.status(502).json({
+        error: zohoMsg || `Zoho createdocument failed (HTTP ${createRes.status})`,
+        zohoCode,
+        responseBody: createText,
+      });
       return;
     }
 
-    const createData = (await createRes.json()) as any;
-    const requestObj = createData.requests || createData.templates;
+    let createData: any;
+    try { createData = JSON.parse(createText); } catch {}
+    const requestObj = createData?.requests || createData?.templates;
     if (!requestObj) {
-      logger.error({ createData, templateId }, "Zoho Sign: unexpected createdocument response shape");
-      res.status(502).json({ error: "Unexpected response from Zoho when creating document from template" });
+      logger.error({ createData, createText, templateId }, "Zoho Sign: unexpected createdocument response shape");
+      res.status(502).json({ error: "Unexpected response shape from Zoho createdocument", responseBody: createText });
       return;
     }
 
     const requestId = requestObj.request_id;
-    const actionId  = requestObj.actions?.[0]?.action_id;
+    const responseActions: any[] = requestObj.actions || [];
+    const signerAction = responseActions.find((a: any) => 
+      a.recipient_email?.trim().toLowerCase() === normalizedEmail
+    ) || responseActions.find((a: any) => String(a.action_type || "").toUpperCase() === "SIGN") || responseActions[0];
+
+    const actionId = signerAction?.action_id;
+    const actionRecipientEmail = signerAction?.recipient_email;
+    const actionStatus = signerAction?.action_status || "UNOPENED";
     const requestStatus = String(requestObj.request_status || "").toLowerCase();
 
     if (!requestId || !actionId) {
-      res.status(502).json({ error: "Invalid response from signature service (missing request/action id)" });
+      res.status(502).json({ error: "Invalid response from signature service (missing request/action id)", responseBody: createText });
       return;
     }
 
-    logger.info({ packageId, paymentType, templateId, requestId, requestStatus }, "Zoho Sign: document created from template");
+    let submitRequestResponse = "Skipped (request already active from createdocument)";
 
-    // Zoho's createdocument endpoint auto-submits/routes the request in some account
-    // configurations (request_status already "inprogress"/"completed"), in which case
-    // calling /submit again fails with "This document is already submitted." Only
-    // submit explicitly when the request is still sitting in draft.
     if (requestStatus === "draft" || requestStatus === "") {
       const submitRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${requestId}/submit`, {
         method: "POST",
         headers: { Authorization: `Zoho-oauthtoken ${token}` },
       });
+      submitRequestResponse = await submitRes.text();
+      logger.info({ status: submitRes.status, submit_request_response: submitRequestResponse, requestId }, "Zoho Sign: submit response received");
 
       if (!submitRes.ok) {
-        const errText = await submitRes.text();
-        let errMsg = "Failed to activate signature request";
+        let zohoMsg = "";
+        let zohoCode: number | undefined;
         try {
-          const p = JSON.parse(errText);
-          if (p.code === 8026) {
-            res.status(402).json({ error: "Your Zoho Sign account or API token does not have a license that supports this operation. Please upgrade the Zoho Sign plan or use a licensed account.", zohoCode: 8026 });
-            return;
-          }
-          if (p.message) errMsg = p.message;
+          const p = JSON.parse(submitRequestResponse);
+          zohoCode = p.code;
+          if (p.message) zohoMsg = p.message;
         } catch {}
-        // "Already submitted" is not a real failure — the document is already active, proceed.
-        if (!/already submitted/i.test(errMsg)) {
-          logger.error({ errText, status: submitRes.status, requestId, templateId, packageId }, "Zoho Sign: failed to submit request");
-          res.status(502).json({ error: errMsg });
+        if (!/already submitted/i.test(zohoMsg)) {
+          logger.error({ status: submitRes.status, submit_request_response: submitRequestResponse, zohoCode, requestId }, "Zoho Sign: submit failed");
+          res.status(502).json({ error: zohoMsg || `Zoho submit failed (HTTP ${submitRes.status})`, zohoCode, responseBody: submitRequestResponse });
           return;
         }
         logger.info({ requestId }, "Zoho Sign: request was already submitted by createdocument, continuing");
@@ -1847,31 +1938,76 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
       logger.info({ requestId, requestStatus }, "Zoho Sign: request already active from createdocument, skipping explicit submit");
     }
 
-    const embedRes = await fetch(`${getZohoSignBase()}/api/v1/requests/${requestId}/actions/${actionId}/embedtoken?host=${origin}`, {
+    // Dynamically resolve frame origin from incoming request headers
+    let rawClientHost = req.headers.origin || req.headers.referer || req.headers.host || "localhost:5173";
+    let hostValue = "https://localhost:5173";
+    try {
+      if (!rawClientHost.startsWith("http://") && !rawClientHost.startsWith("https://")) {
+        rawClientHost = `http://${rawClientHost}`;
+      }
+      const parsed = new URL(rawClientHost);
+      hostValue = `https://${parsed.host}`;
+    } catch {
+      hostValue = "https://localhost:5173";
+    }
+
+    const embedUrlEndpoint = `${getZohoSignBase()}/api/v1/requests/${requestId}/actions/${actionId}/embedtoken?host=${encodeURIComponent(hostValue)}`;
+    logger.info({
+      embedTokenEndpointUrl: embedUrlEndpoint,
+      request_status: requestStatus,
+      action_status: actionStatus,
+      action_id: actionId,
+      email: normalizedEmail,
+      hostValue,
+    }, "Zoho Sign: requesting embed token after request is submitted and active");
+
+    const embedRes = await fetch(embedUrlEndpoint, {
       method: "POST",
       headers: { Authorization: `Zoho-oauthtoken ${token}` },
     });
 
+    const embedText = await embedRes.text();
+    let embedData: any;
+    try { embedData = JSON.parse(embedText); } catch {}
+
+    logger.info({
+      request_status: requestStatus,
+      action_status: actionStatus,
+      action_id: actionId,
+      email: normalizedEmail,
+      submit_request_response: submitRequestResponse,
+      embed_token_response: embedText,
+      embedResponseFields: {
+        code: embedData?.code,
+        message: embedData?.message,
+        status: embedData?.status,
+        sign_url: embedData?.sign_url,
+      },
+    }, "Zoho Sign: embedtoken response received and logged");
+
     if (!embedRes.ok) {
-      const errText = await embedRes.text();
-      let errMsg = "Failed to generate embedded signing URL";
-      try { const p = JSON.parse(errText); if (p.message) errMsg = p.message; } catch {}
-      logger.error({ errText, status: embedRes.status, requestId, templateId, packageId }, "Zoho Sign: failed to generate embed token");
-      res.status(502).json({ error: errMsg });
+      let zohoCode: number | undefined;
+      let zohoMsg: string | undefined;
+      try {
+        const p = JSON.parse(embedText);
+        zohoCode = p.code;
+        zohoMsg = p.message;
+      } catch {}
+      logger.error({ status: embedRes.status, responseBody: embedText, zohoCode, zohoMsg, requestId, actionId, hostValue }, "Zoho Sign: embedtoken failed");
+      res.status(502).json({ error: zohoMsg || `Zoho embedtoken failed (HTTP ${embedRes.status})`, zohoCode, responseBody: embedText });
       return;
     }
 
-    const embedData = (await embedRes.json()) as any;
-    const signUrl = embedData.sign_url || embedData.embedurl;
+    const signUrl = embedData?.sign_url || embedData?.embedurl;
 
-    if (embedData.status !== "success" || !signUrl) {
-      res.status(502).json({ error: embedData.message || "Failed to generate embedded signing link" });
+    if (embedData?.status !== "success" || !signUrl) {
+      logger.error({ embedData, embedText, requestId, actionId, hostValue, templateId, packageId }, "Zoho Sign: embed token response missing sign_url or non-success status");
+      res.status(502).json({ error: embedData?.message || "Zoho embed token response missing sign_url", responseBody: embedText });
       return;
     }
 
     logger.info({ email: normalizedEmail, requestId, templateId, packageId, paymentType }, "Zoho Sign: embedded signing link generated");
 
-    // Save generated requestId as agreement_contract_id in Supabase
     try {
       const supabase = getSupabase();
       if (supabase && normalizedEmail && requestId) {
@@ -1890,137 +2026,93 @@ router.post("/zoho/create-signature-request", async (req: Request, res: Response
     }
 
     res.json({ success: true, embedUrl: signUrl, requestId });
-
-  } catch (err) {
-    logger.error({ err, packageId, email: normalizedEmail }, "Zoho Sign: unexpected error creating template-based request");
-    const msg = (err as Error).message || "";
-    if (msg.includes("invalid_client_secret") || msg.includes("invalid_client") || msg.includes("ZOHO_SIGN_CLIENT_SECRET")) {
-      res.status(503).json({
-        error: "Zoho Sign credentials are misconfigured. The Client Secret is incorrect.",
-        action: "Update ZOHO_SIGN_CLIENT_SECRET in Replit Secrets with the correct value from api-console.zoho.in",
-        detail: msg,
-      });
-    } else if (msg.includes("refresh") || msg.includes("ZOHO_SIGN_REFRESH_TOKEN")) {
-      res.status(503).json({
-        error: "Zoho Sign refresh token is missing or invalid.",
-        action: "Visit /api/zoho/oauth/start to generate a valid refresh token",
-        detail: msg,
-      });
-    } else if (msg.startsWith("ZOHO_LICENSE_8026") || msg.includes("8026")) {
-      res.status(402).json({
-        error: "Your Zoho Sign account or API token does not have a license that supports this operation. Please upgrade the Zoho Sign plan or use a licensed account.",
-        zohoCode: 8026,
-      });
-    } else if (msg.toLowerCase().includes("template")) {
-      res.status(503).json({
-        error: msg,
-        action: "Verify the Zoho template exists in your account and its name matches exactly. Check /api/zoho/templates to confirm.",
-      });
-    } else {
-      res.status(500).json({ error: "Internal server error", detail: msg });
-    }
-  }
-});
-
-// ── OAuth Authorization Flow ──────────────────────────────────────────────────
-router.get("/zoho/oauth/start", (req: Request, res: Response) => {
-  const clientId = getZohoClientId();
-  const region = getZohoRegion();
-  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5173";
-  const proto = req.headers["x-forwarded-proto"] || "http";
-  const redirectUri = process.env.ZOHO_OAUTH_REDIRECT_URI || `${proto}://${host}/api/zoho/oauth/callback`;
-
-  if (!clientId) {
-    res.status(400).send("ZOHO_SIGN_CLIENT_ID is not configured in .env");
-    return;
-  }
-
-  const scope = encodeURIComponent("ZohoSign.documents.ALL,ZohoSign.templates.READ,ZohoSign.templates.ALL");
-  const authUrl = `https://accounts.zoho.${region}/oauth/v2/auth?response_type=code&client_id=${clientId}&scope=${scope}&redirect_uri=${encodeURIComponent(redirectUri)}&access_type=offline&prompt=consent`;
-
-  logger.info({ authUrl, region, clientId, redirectUri }, "Zoho OAuth: redirecting to authorization screen");
-  res.redirect(authUrl);
-});
-
-router.get("/zoho/oauth/callback", async (req: Request, res: Response) => {
-  const code = req.query.code as string;
-  if (!code) {
-    res.status(400).send("Missing authorization code from Zoho callback query parameter");
-    return;
-  }
-
-  const clientId = getZohoClientId();
-  const clientSecret = getZohoClientSecret();
-  const region = getZohoRegion();
-  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5173";
-  const proto = req.headers["x-forwarded-proto"] || "http";
-  const redirectUri = process.env.ZOHO_OAUTH_REDIRECT_URI || `${proto}://${host}/api/zoho/oauth/callback`;
-
-  if (!clientId || !clientSecret) {
-    res.status(400).send("ZOHO_SIGN_CLIENT_ID or ZOHO_SIGN_CLIENT_SECRET missing");
-    return;
-  }
-
-  try {
-    const params = new URLSearchParams();
-    params.append("code", code);
-    params.append("client_id", clientId);
-    params.append("client_secret", clientSecret);
-    params.append("grant_type", "authorization_code");
-    params.append("redirect_uri", redirectUri);
-
-    const tokenUrl = `https://accounts.zoho.${region}/oauth/v2/token`;
-    const tokenRes = await fetch(tokenUrl, {
-      method: "POST",
-      body: params,
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
-
-    const data = (await tokenRes.json()) as any;
-    if (!tokenRes.ok || !data.refresh_token) {
-      logger.error({ data, status: tokenRes.status }, "Zoho OAuth callback failed");
-      res.status(500).send(`Failed to obtain refresh token: ${data.error || data.message || JSON.stringify(data)}`);
-      return;
-    }
-
-    const newRefreshToken = data.refresh_token;
-    logger.info({ newRefreshToken: `${newRefreshToken.slice(0, 10)}...` }, "Zoho OAuth success: received new refresh token");
-
-    try {
-      const envPath = path.resolve(process.cwd(), "../../.env");
-      if (fs.existsSync(envPath)) {
-        let envContent = fs.readFileSync(envPath, "utf8");
-        if (envContent.includes("ZOHO_SIGN_REFRESH_TOKEN=")) {
-          envContent = envContent.replace(/ZOHO_SIGN_REFRESH_TOKEN=.*/g, `ZOHO_SIGN_REFRESH_TOKEN=${newRefreshToken}`);
-        } else {
-          envContent += `\nZOHO_SIGN_REFRESH_TOKEN=${newRefreshToken}\n`;
-        }
-        fs.writeFileSync(envPath, envContent, "utf8");
-        process.env.ZOHO_SIGN_REFRESH_TOKEN = newRefreshToken;
-        logger.info("Updated ZOHO_SIGN_REFRESH_TOKEN in .env");
-      }
-    } catch (fsErr) {
-      logger.warn({ fsErr }, "Failed to persist new refresh token to .env file");
-    }
-
-    res.send(`
-      <!DOCTYPE html>
-      <html>
-        <head><title>Zoho Sign OAuth Complete</title></head>
-        <body style="font-family: sans-serif; max-width: 600px; margin: 50px auto; text-align: center; background: #0f172a; color: #f8fafc; padding: 40px; border-radius: 12px; border: 1px solid #334155;">
-          <h1 style="color: #22c55e;">✅ Authorization Successful!</h1>
-          <p style="font-size: 16px; color: #94a3b8;">Fresh Zoho Sign Refresh Token acquired and saved into <code>.env</code>.</p>
-          <div style="background: #1e293b; padding: 12px; border-radius: 6px; font-family: monospace; word-break: break-all; margin: 20px 0; border: 1px solid #475569;">
-            ${newRefreshToken}
-          </div>
-          <a href="/onboarding/agreement" style="display: inline-block; background: #3b82f6; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin-top: 10px;">Return to Agreement Page</a>
-        </body>
-      </html>
-    `);
   } catch (err: any) {
-    logger.error({ err }, "Zoho OAuth callback exception");
-    res.status(500).send(`OAuth exception: ${err.message}`);
+    logger.error({ err: err.message, stack: err.stack, details: err.details }, "Zoho Sign: exception during create-signature-request");
+    res.status(500).json({
+      error: err.message || "Failed to create signature request",
+      details: err.details || undefined,
+    });
   }
 });
+
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STARTUP DIAGNOSTICS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Logs the Zoho environment configuration using ONLY masked credential prefixes,
+// so local and hosted deployments can be compared side-by-side from their logs
+// without any secret ever being written in full.
+export function logZohoEnvironmentDiagnostics(): void {
+  const env = process.env.NODE_ENV || "development";
+  logger.info(
+    {
+      environment: env,
+      isProduction: env === "production",
+      region: getZohoRegion(),
+      accountsBase: getZohoAccountsBase(),
+      signBase: getZohoSignBase(),
+      clientId: maskPrefix(getZohoClientId()),
+      clientSecret: maskPrefix(getZohoClientSecret()),
+      refreshToken: maskPrefix(getZohoRefreshToken()),
+      organizationId: maskPrefix(process.env.ZOHO_SIGN_ORGANIZATION_ID || process.env.ZOHO_SIGN_ORG_ID),
+    },
+    "Zoho env diagnostics: masked credential prefixes — compare these across local vs hosted",
+  );
+}
+
+// Confirms the configured refresh token actually belongs to the licensed Zoho
+// account that owns the templates. If the token's account is not among the
+// template owners, signing will fail with 8026-style errors even though every
+// credential "looks" set — this surfaces that mismatch at boot. Best-effort and
+// non-blocking: never throws, only logs.
+export async function verifyRefreshTokenOwnsTemplates(): Promise<void> {
+  if (!getZohoRefreshToken()) {
+    logger.info("Zoho ownership check: no refresh token configured — skipping");
+    return;
+  }
+  try {
+    const token = await getZohoAccessToken();
+
+    let accountEmail: string | undefined;
+    let orgName: string | undefined;
+    try {
+      const settingsRes = await fetch(`${getZohoSignBase()}/api/v1/settings`, {
+        headers: { Authorization: `Zoho-oauthtoken ${token}` },
+      });
+      if (settingsRes.ok) {
+        const sd = (await settingsRes.json()) as any;
+        accountEmail = sd?.settings?.user_email || sd?.user_email;
+        orgName = sd?.settings?.org_name || sd?.org_name;
+      }
+    } catch { /* identity lookup is best-effort */ }
+
+    const templates = await fetchZohoTemplateList(true);
+    const owners = [...new Set(templates.map(t => t.owner_email).filter(Boolean))] as string[];
+    const tokenAccount = accountEmail?.trim().toLowerCase();
+    const ownsTemplates = tokenAccount && owners.length > 0
+      ? owners.some(o => o.trim().toLowerCase() === tokenAccount)
+      : undefined;
+
+    logger.info(
+      {
+        refreshTokenAccount: maskEmail(accountEmail),
+        organization: orgName || null,
+        templateOwners: owners.map(maskEmail),
+        templateCount: templates.length,
+        refreshTokenOwnsTemplates: ownsTemplates,
+      },
+      ownsTemplates === false
+        ? "Zoho ownership check: WARNING — the refresh token's account does NOT own any of the Zoho Sign templates. Signing will fail (8026). Re-authorize with the licensed account that owns the templates."
+        : "Zoho ownership check: refresh token account vs template owners",
+    );
+  } catch (err) {
+    logger.warn(
+      { err: (err as Error).message },
+      "Zoho ownership check: could not verify refresh token / template ownership (non-fatal)",
+    );
+  }
+}
 
 export default router;

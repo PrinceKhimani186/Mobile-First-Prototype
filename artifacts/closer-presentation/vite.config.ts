@@ -32,6 +32,12 @@ export default defineConfig({
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    // Local dev only: serve over https with a self-signed cert. Kept consistent
+    // with the app-squad frontend so the browser's localhost-wide https upgrade
+    // doesn't break this server. Replit terminates TLS at its proxy, so skip there.
+    ...(process.env.NODE_ENV !== "production" && process.env.REPL_ID === undefined && process.env.VITE_SSL === "true"
+      ? [(await import("@vitejs/plugin-basic-ssl")).default()]
+      : []),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
